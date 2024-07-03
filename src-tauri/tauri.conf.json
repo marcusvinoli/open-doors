@@ -6,13 +6,24 @@
     "devPath": "http://localhost:5173",
     "distDir": "../build"
   },
+  "plugins": {
+    "dialog": {}
+  },
   "package": {
     "productName": "OpenDOORs",
     "version": "0.1.0"
   },
   "tauri": {
     "allowlist": {
-      "all": false
+      "all": false,
+      "dialog": {
+        "all": true,
+        "ask": true,
+        "confirm": true,
+        "message": true,
+        "open": true,
+        "save": true
+      }
     },
     "bundle": {
       "active": true,

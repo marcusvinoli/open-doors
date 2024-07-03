@@ -47,13 +47,17 @@
 
 </script>
 
-<div class="flex flex-col w-full h-full bg-slate-200">
-    {#if showToolbar}
-    <ToolBar />
-    {/if}
-    <TabHeader tabs={tabs} on:close={closeTab} on:open={openTab} active={activeTab}/>
-    <div class="grow my-1">
+<div class="flex flex-col h-full bg-slate-200">
+    <div class="">
+        {#if showToolbar}
+            <ToolBar />
+            <TabHeader tabs={tabs} on:close={closeTab} on:open={openTab} active={activeTab}/>
+        {/if}
+    </div>
+    <div class="grow my-1 overflow-auto">
         <slot />
     </div>
-    <StatusBar />
+    <div class="">
+        <StatusBar />
+    </div> 
 </div>
