@@ -16,6 +16,7 @@
     function openRepositoryDialog() {
         openRepositoryFlag = true;
     }
+    
     function openRepository(event: any) {
         console.log(event.detail);
         openRepositoryFlag = false;
