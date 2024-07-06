@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { invoke } from "@tauri-apps/api";
+    //const invoke = window.__TAURI__.invoke; 
+
     import OpenDoorsLogo from "$lib/assets/open-doors-logo-111725.svg";
     
     import Icon from '@iconify/svelte';
@@ -18,21 +21,37 @@
     }
     
     function openRepository(event: any) {
-        console.log(event.detail);
-        openRepositoryFlag = false;
+        console.log(event.detail.path);
+        invoke('read_repo', {path: event.detail.path})
+            .then(() => {
+                window.location.href = "/homepage";
+                openRepositoryFlag = false;
+            })
+            .catch((err) => {
+                console.log(err);
+                openRepositoryFlag = true;
+            })
     }
 
     let createRepositoryFlag: boolean = false;
-    let createRepositoryData: CreateRepositoryData = { name: "", path: "", remote: null, error: null };
+    let createRepositoryData: CreateRepositoryData = { name: "", path: "", remote: null };
 
     function createRepositoryDialog() {
         createRepositoryFlag = true;
     }
 
-    function createRepository(event: any) {
-        console.log(event.detail);
-        createRepositoryFlag = false;
-    }
+    async function createRepository(event: any) {
+        console.log(event.detail.data);
+        invoke('create_repo', {repo: event.detail.data})
+            .then(() => {
+                window.location.href = "/homepage"
+                createRepositoryFlag = false;
+            })
+            .catch((err) => {
+                console.log(err);
+                createRepositoryFlag = true;
+            })
+    }   
 
     let cloneRepositoryFlag: boolean = false;
     let cloneRepositoryData: CloneRepositoryData = { path: "", remote: "", error: null };
@@ -43,7 +62,15 @@
 
     function cloneRepository(event: any) {
         console.log(event.detail);
-        cloneRepositoryFlag = false;
+        invoke('clone_repo', {repo: event.detail.data})
+            .then(() => {
+                window.location.href = "/homepage"
+                createRepositoryFlag = false;
+            })
+            .catch((err) => {
+                console.log(err);
+                createRepositoryFlag = true;
+            })
     }
 </script>
 
