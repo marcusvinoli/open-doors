@@ -88,9 +88,6 @@ impl Repository {
     }
 
     pub fn delete(path: PathBuf) -> Result<(), RepositoryError> {
-        todo!("Delete operation not Implemented.");
-        // mid::delete_manifest_file(&path)?;
-        // mid::delete_structure_file(&path)?;
-        // Ok(())
+        mid::delete_repositoru(&path)
     }
 }
