@@ -42,6 +42,10 @@ pub enum RepositoryError {
 pub enum ProjectError {
     #[error("Generic IO error!")]
     GenericIOError(#[from] std::io::Error),
+    #[error("Parsing failure. {0}")]
+    SerDeGenericFailure(#[from] serde_yaml::Error),
+    #[error("The Directory is not a Project")]
+    InvalidProjectDirectory,
     #[error("Fail creating project {0}: {1}")]
     ProjectCouldNotBeCreated(String, String),
     #[error("Fail reading project {0}: {1}")]
@@ -54,6 +58,10 @@ pub enum ProjectError {
 pub enum ModuleError {
     #[error("Generic IO error!")]
     GenericIOError(#[from] std::io::Error),
+    #[error("Parsing failure. {0}")]
+    SerDeGenericFailure(#[from] serde_yaml::Error),
+    #[error("The Directory is not a Module")]
+    InvalidModuleDirectory,
     #[error("Unknown Error!")]
     UnknownError,
 }

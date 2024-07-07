@@ -1,3 +1,3 @@
-mod project;
-mod middleware;
+pub mod project;
 mod definitions;
+mod middleware;
