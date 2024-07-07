@@ -6,13 +6,14 @@ use crate::core::ProjectError;
 
 use super::{baseline::Baseline, object::Object};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {
     pub title: String,
     pub prefix: String,
     pub separator: String,
 }
 
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Module{
     pub path: PathBuf,
     pub baseline: Vec<Baseline>,

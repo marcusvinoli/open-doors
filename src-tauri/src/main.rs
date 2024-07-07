@@ -4,17 +4,12 @@ pub mod core;
 pub mod git;
 mod state;
 
-use std::{path::PathBuf, sync::{Arc, Mutex}};
+use std::path::PathBuf;
 
-use core::{OpenDoorsError, Repository, RespositoryManifest};
-use crate::state::State;
-
-#[derive(Default)]
-struct AppState(Arc<Mutex<State>>);
+use core::{OpenDoorsError, Project, Repository, RepositoryManifest, ProjectManifest};
 
 fn main() {
 	tauri::Builder::default()
-		.manage(AppState::default())
 		.invoke_handler(tauri::generate_handler![
 		clone_repo,
 		read_repo,
@@ -25,24 +20,24 @@ fn main() {
 }
 
 #[tauri::command]
-fn clone_repo(st: tauri::State<AppState>, repo: RespositoryManifest) -> Result<Repository, OpenDoorsError> {
-	let rep_man = repo.clone();
-	git::clone(rep_man.remote.unwrap_or_default().clone(), rep_man.path.clone().display().to_string().clone())?;
-	read_repo(st, repo.path)
+fn clone_repo(man: RepositoryManifest, path: PathBuf) -> Result<Repository, OpenDoorsError> {
+	git::clone(man.remote.unwrap_or_default().clone(), path.clone().display().to_string().clone())?;
+	read_repo(path)
 }
 
 #[tauri::command]
-fn read_repo(st: tauri::State<AppState>, path: PathBuf) -> Result<Repository, OpenDoorsError> {
-	let repo: Repository = Repository::read(&path)?;
-	let repo_res = repo.clone();
-	st.0.lock().unwrap().repository = repo;
-	Ok(repo_res)
+fn read_repo(path: PathBuf) -> Result<Repository, OpenDoorsError> {
+	Ok(Repository::read(path)?)
 }
 
 #[tauri::command]
-fn create_repo(st: tauri::State<AppState>, repo: RespositoryManifest) -> Result<Repository, OpenDoorsError> {
-	let repo: Repository = Repository::create(&repo.path, repo.name, repo.remote)?;
-	read_repo(st, repo.manifest.path)
+fn create_repo(man: RepositoryManifest, path: PathBuf) -> Result<Repository, OpenDoorsError> {
+	Ok(Repository::create(path, man.name, man.remote)?)
+}
+
+#[tauri::command]
+fn create_project(project: ProjectManifest, path: PathBuf) -> Result<Project, OpenDoorsError> {
+	todo!()
 }
 
 /*
