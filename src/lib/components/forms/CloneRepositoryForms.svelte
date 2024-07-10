@@ -6,12 +6,13 @@
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
-    import type { CloneRepositoryData } from "./CloneRepository";
+    import type { RepositoryManifest } from "$lib/components/structs/Repo";
     import Loading from '../ui/loading/Loading.svelte';
     
     export let openDialog: boolean = false;
     export let loading: boolean = false;
-    export let data: CloneRepositoryData;
+    export let data: RepositoryManifest;
+    export let path: string | string[];
 
     function closeDialog() {
         loading = false;
@@ -24,7 +25,7 @@
             multiple: false
         });
         if (folder) {
-            data.path = folder as string;
+            path = folder as string;
         }
     }
 
@@ -59,7 +60,7 @@
             <div class="grid grid-cols-5 items-center gap-4">
                 <Label for="name" class="text-right col-span-1">Location</Label>
                 <div class="flex flex-row gap-3 col-span-4">
-                    <Input id="name" bind:value={data.path} class="" />
+                    <Input id="name" bind:value={path} class="" />
                     <Button variant="secondary" class="" on:click={selectFolder}>
                         <Icon icon="gravity-ui:folder-magnifier" width="25px"/>
                     </Button>

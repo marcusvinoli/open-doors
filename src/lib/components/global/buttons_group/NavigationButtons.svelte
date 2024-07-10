@@ -3,6 +3,7 @@
     import ButtonsGroup from './ButtonsGroup.svelte';
     import Button from '$lib/components/ui/button/button.svelte';
     import * as Tooltip from "$lib/components/ui/tooltip";
+    import { goto } from '$app/navigation';
 </script>
 
 <ButtonsGroup>
@@ -18,7 +19,7 @@
     </Tooltip.Root>
     <Tooltip.Root openDelay={200}>
         <Tooltip.Trigger>
-            <Button variant="ghost" class="cursor-default">
+            <Button variant="ghost" class="cursor-default" on:click={()=>{goto("/home")}}>
                 <Icon icon="gravity-ui:house" width="20px"/>
             </Button>
         </Tooltip.Trigger>

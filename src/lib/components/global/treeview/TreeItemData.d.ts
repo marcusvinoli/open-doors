@@ -9,6 +9,24 @@ export interface TreeItemData {
     type: ItemType;
     name: String;
     path: String;
-    children?: TreeItem[];
+    children: TreeItem[];
     attributes: TreeItemAttributes | undefined;
+}
+
+export function intoTreeItem(data: any): TreeItemData {
+    let children: TreeItemData[]; 
+    data.children.forEach(
+        (child) => {
+            children.push(intoTreeItem(child))
+        });
+    return TreeItemData = {
+        type: data.itemType ?? "other",
+        name: data.name ?? "",
+        path: data.paht ?? "",
+        children: children,
+        attributes: {
+            selected: false,
+            open: false,
+        }
+    };
 }

@@ -1,5 +1,5 @@
 export interface TabData {
-    id: number;
+    path: string;
     icon: string | null;
     title: string;
 }

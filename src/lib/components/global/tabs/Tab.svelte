@@ -4,19 +4,19 @@
     
     export let icon: string | null;
     export let title: string;
-    export let id: number;
+    export let path: string;
     export let active: boolean = false;
     
     const dispatch = createEventDispatcher();
     
     function handleClose(event: any) {
         event.stopPropagation();
-        dispatch('close', {id: id});
+        dispatch('close', {path: path});
     }
 
     function handleOpen(event: any) {
         event.stopPropagation();
-        dispatch('open', {id: id});
+        dispatch('open', {path: path});
     }
 </script>
 

@@ -11,10 +11,6 @@
         dispatch('click', event.detail);
     }
 
-    function trackHierarchy() {
-
-    }
-
 </script>
 
 <div class="flex flex-col w-full min-h-[180px] overflow-auto">
