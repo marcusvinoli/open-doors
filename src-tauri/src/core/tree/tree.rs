@@ -14,6 +14,7 @@ pub enum TreeItemType {
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all="camelCase")]
 pub struct TreeItem {
     pub item_type: TreeItemType,
     pub name: String,

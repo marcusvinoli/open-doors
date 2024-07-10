@@ -7,6 +7,7 @@ use crate::core::{RepositoryError, TreeItem, TreeItemType};
 use crate::git::{self, GitError};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all="camelCase")]
 pub struct RepositoryManifest {
     pub name: String,
     #[serde(skip_serializing_if="Option::is_none")]
@@ -14,6 +15,7 @@ pub struct RepositoryManifest {
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all="camelCase")]
 pub struct Repository{
     pub manifest: RepositoryManifest,
     pub structure: TreeItem,
