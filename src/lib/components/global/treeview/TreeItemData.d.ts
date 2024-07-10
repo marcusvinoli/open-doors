@@ -22,7 +22,7 @@ export function intoTreeItem(data: any): TreeItemData {
     return TreeItemData = {
         type: data.itemType ?? "other",
         name: data.name ?? "",
-        path: data.paht ?? "",
+        path: data.path ?? "",
         children: children,
         attributes: {
             selected: false,

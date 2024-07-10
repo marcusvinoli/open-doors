@@ -1,11 +1,11 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import Tree from "./Tree.svelte";
-    import type { TreeItemData } from "./TreeItemData";
+    import type { TreeItem } from '$lib/components/structs/Tree';
 
     const dispatch = createEventDispatcher();
 
-    export let treeItems: TreeItemData[] = []
+    export let treeItems: TreeItem;
 
     function handleClick(event: any) {
         console.log(event.detail);
@@ -14,5 +14,7 @@
 </script>
 
 <div>
-    <Tree items={treeItems} on:click={handleClick}/>
+    {#if treeItems}
+        <Tree structure={treeItems} on:click={handleClick}/>
+    {/if}
 </div>

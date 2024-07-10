@@ -1,9 +1,9 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
-    import type { TreeItemData } from './TreeItemData';
     import TreeItem from "./TreeItem.svelte";
+    import type { TreeItem as TreeItemType } from '$lib/components/structs/Tree';
 
-    export let items: TreeItemData[];
+    export let structure: TreeItemType;
 
     const dispatch = createEventDispatcher();
 
@@ -14,7 +14,7 @@
 </script>
 
 <div class="flex flex-col w-full min-h-[180px] overflow-auto">
-    {#each items as item}
-        <TreeItem item={item} level={0} on:click={handleClick}/>
-    {/each}
+    {#if structure}
+        <TreeItem item={structure} level={0} on:click={handleClick}/>
+    {/if}
 </div>

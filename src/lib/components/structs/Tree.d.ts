@@ -1,4 +1,4 @@
-export type TreeItemType = "repository" | "folder" | "object" | "module" | null;
+export type TreeItemType = "repository" | "folder" | "project" | "object" | "module" | null;
 
 export interface TreeItem {
     itemType: TreeItemType;
