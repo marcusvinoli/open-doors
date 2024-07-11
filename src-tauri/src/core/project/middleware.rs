@@ -16,7 +16,7 @@ pub fn check_for_project_folder(path: &PathBuf) -> Result<(), ProjectError> {
 
 pub fn create_project_folder(path: &PathBuf, man: &ProjectManifest) -> Result<PathBuf, ProjectError> {
     fs::create_dir(path.join(&man.prefix))?;
-    Ok(path.clone())
+    Ok(path.join(&man.prefix))
 }
 
 pub fn delete_project_folder(path: &PathBuf) -> Result<(), ProjectError> {

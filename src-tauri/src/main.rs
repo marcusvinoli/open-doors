@@ -6,7 +6,7 @@ mod state;
 
 use std::path::PathBuf;
 
-use core::{OpenDoorsError, Project, Repository, RepositoryManifest, ProjectManifest};
+use core::{OpenDoorsError, Project, ProjectManifest, Repository, RepositoryManifest, TreeItem, TreeItemType};
 
 fn main() {
 	tauri::Builder::default()
@@ -14,6 +14,8 @@ fn main() {
 		clone_repo,
 		read_repo,
 		create_repo,
+		create_project,
+		update_structure_file,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running OpenDOORs.");
@@ -36,8 +38,55 @@ fn create_repo(man: RepositoryManifest, path: PathBuf) -> Result<Repository, Ope
 }
 
 #[tauri::command]
-fn create_project(project: ProjectManifest, path: PathBuf) -> Result<Project, OpenDoorsError> {
-	todo!()
+fn create_project(path: PathBuf, man: ProjectManifest) -> Result<Project, OpenDoorsError> {
+	Ok(Project::create(&path, &man)?)
+}
+
+#[tauri::command]
+fn update_structure_file(new_tree: TreeItem, parent: TreeItem) -> Result<(), OpenDoorsError> {
+	match parent.item_type {
+		TreeItemType::Repository => {
+			let mut repo = Repository::read(parent.path)?;
+			repo.structure.children.push(new_tree);
+			Repository::update_structure(repo.path, repo.structure)?;
+		},
+		TreeItemType::Folder => {
+			let mut prj = Project::read(&parent.path)?;
+			if prj.tree.children.len() == 0 {
+				prj.tree.children.push(new_tree);
+			} else {
+				let add_child_to_parent = |tree_item: &mut TreeItem, parent_name: &str, child: TreeItem| -> bool {
+					let mut found = false;
+			
+					let mut visit = |node: &mut TreeItem| {
+						if node.name == parent_name {
+							node.children.push(child.clone());
+							found = true;
+						}
+					};
+			
+					fn visit_all(tree_item: &mut TreeItem, parent_name: &str, visit: &mut impl FnMut(&mut TreeItem)) {
+						visit(tree_item);
+						for child in &mut tree_item.children {
+							visit_all(child, parent_name, visit);
+						}
+					}
+			
+					visit_all(tree_item, parent_name, &mut visit);
+					found
+				};
+				add_child_to_parent(&mut prj.tree, &parent.name, new_tree);
+				Project::update_structure(&prj.path, prj.tree)?;
+			}
+		},
+		TreeItemType::Project => {
+			let mut prj = Project::read(&parent.path)?;
+			prj.tree.children.push(new_tree);
+			Project::update_structure(&prj.path, prj.tree)?;
+		}
+		_ => return Err(OpenDoorsError::GenericError("Indexing error".into()))
+	}
+	Ok(())
 }
 
 /*

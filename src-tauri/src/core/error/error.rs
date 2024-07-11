@@ -9,7 +9,9 @@ pub enum OpenDoorsError {
     #[error("PROJECT ERROR: {0}")]
     ProjectError(#[from] ProjectError),
     #[error("MODULE ERROR: {0}")]
-    ModuleError(#[from] ModuleError)
+    ModuleError(#[from] ModuleError),
+    #[error("{0}")]
+    GenericError(String)
 }
 
 impl serde::Serialize for OpenDoorsError {
