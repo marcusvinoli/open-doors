@@ -70,7 +70,7 @@
                 console.log(err);
                 createRepositoryFlag = true;
             })
-    }  
+    }
 
     async function cloneRepository(event: any) {
         console.log(event.detail);

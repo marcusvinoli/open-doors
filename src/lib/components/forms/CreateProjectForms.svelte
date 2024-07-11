@@ -6,12 +6,13 @@
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
-    import type { ProjectManifest } from "$lib/components/structs/Project";
+    import type { ProjectManifest, Project } from "$lib/components/structs/Project";
     import Loading from '../ui/loading/Loading.svelte';
     import type { Repository } from '../structs/Repo';
     import type { TreeItem } from '../structs/Tree';
     import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
     import ComboboxAllRecipientsOnRepository from './ComboboxAllRecipientsOnRepository.svelte';
+    import { goto } from "$app/navigation";
 
     export let openDialog: boolean = false;
 
@@ -36,14 +37,29 @@
     function handleCreate(event: any) {
         loading = true;
         event.stopPropagation();
+        createNewProject();
         dispatch('create', {prj});
     }
 
+    async function updateTree(prj: Project) {
+        invoke('update_structure_file', {newTree: prj.tree, parent: baseRecipient})
+            .then(() => {
+                closeDialog()
+            })
+            .catch((err) => {
+                console.log(err)
+            })
+    }
+
+    function updateState() {
+        
+    }
 
     async function createNewProject() {
-        invoke('create_project', {project: prj, path: repo.path})
-            .then((project) => {
-                project
+        invoke('create_project', {man: prj, path: repo.path})
+            .then((prj) => {
+                console.log(prj);
+                updateTree(prj as Project);
             })
             .catch((err) => {
                 console.log(err);
