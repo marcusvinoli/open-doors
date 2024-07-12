@@ -7,8 +7,8 @@ use super::project::ProjectManifest;
 use super::definitions::{OD_PROJECT_MANIFEST_FILE_NAME, OD_PROJ_STRUCTURE_FILE_NAME};
 
 pub fn check_for_project_folder(path: &PathBuf) -> Result<(), ProjectError> {
-    if path.join(OD_PROJECT_MANIFEST_FILE_NAME).exists() &&
-        path.join(OD_PROJ_STRUCTURE_FILE_NAME).exists() {
+    if !path.join(OD_PROJECT_MANIFEST_FILE_NAME).exists() ||
+        !path.join(OD_PROJ_STRUCTURE_FILE_NAME).exists() {
         return Err(ProjectError::InvalidProjectDirectory)
     }
     Ok(())
