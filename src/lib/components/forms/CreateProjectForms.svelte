@@ -1,29 +1,27 @@
 <script lang="ts">
-    import { invoke } from "@tauri-apps/api";
-
+    import Loading from '../ui/loading/Loading.svelte';
+    import ComboboxAllRecipientsOnRepository from './ComboboxAllRecipientsOnRepository.svelte';
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
     import { createEventDispatcher, onMount } from 'svelte';
     import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import { loadRepoInformation, reloadRepository } from "$lib/controllers/Repository";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
+    import { goto } from "$app/navigation";
     import type { ProjectManifest, Project } from "$lib/components/structs/Project";
-    import Loading from '../ui/loading/Loading.svelte';
     import type { Repository } from '../structs/Repo';
     import type { TreeItem } from '../structs/Tree';
-    import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
-    import ComboboxAllRecipientsOnRepository from './ComboboxAllRecipientsOnRepository.svelte';
-    import { goto } from "$app/navigation";
-    import { reloadRepository } from "$lib/controllers/Repository";
     import { repository } from "../../../routes/store";
+    import { createProject } from '$lib/controllers/Project';
 
     export let openDialog: boolean = false;
 
+    let repo: Repository | null;
     let loading: boolean = false;
-    let repo: Repository;
     let recipients: TreeItem[];
-    let baseRecipient: TreeItem;
-
-    let prj: ProjectManifest = {
+    let treeParent: TreeItem;
+    let projectManifest: ProjectManifest = {
         name:"",
         separator: "-",
         prefix:"",
@@ -36,46 +34,25 @@
 
     const dispatch = createEventDispatcher();
 
-    function handleCreate(event: any) {
+    function handleCreateProject(event: any) {
         loading = true;
         event.stopPropagation();
-        createNewProject().then(() => {
+        createProject(projectManifest, treeParent).then(() => {
             reloadRepository();
-            goto("/home")
         })
-        dispatch('create', {prj});
-    }
-
-    async function updateTree(prj: Project) {
-        console.log(prj);
-        console.log(baseRecipient);
-        invoke('update_structure_file', {newTree: prj.tree, parent: baseRecipient})
-            .then(() => {
-                closeDialog()
-            })
-            .catch((err) => {
-                console.log(err)
-            })
+        dispatch('create', {manifest: projectManifest, parent: treeParent});
     }
 
     function updateState() {
         
     }
 
-    async function createNewProject() {
-        invoke('create_project', {man: prj, path: repo.path})
-            .then((prj) => {
-                updateTree(prj as Project);
-            })
-            .catch((err) => {
-                console.log(err);
-            })
-    }
-
     onMount(() => {
-        repo = JSON.parse(localStorage.getItem('repository') as string) as Repository
-        recipients = listAllRecipientItemsFromRepository(repo);
-        baseRecipient = recipients[0];
+        repo = $repository;
+        if (repo) {
+            recipients = listAllRecipientItemsFromRepository(repo);
+            treeParent = recipients[0];
+        }
     })
 </script>
 
@@ -97,29 +74,29 @@
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Create Here</Label>
                 <div class="col-span-3">
-                    <ComboboxAllRecipientsOnRepository recipients={recipients} baseRecipient={baseRecipient} />
+                    <ComboboxAllRecipientsOnRepository recipients={recipients} baseRecipient={treeParent} />
                 </div>
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Project Name</Label>
-                <Input id="name" placeholder="My Awesome Project" bind:value={prj.name}  class="col-span-3" />
+                <Input id="name" placeholder="My Awesome Project" bind:value={projectManifest.name}  class="col-span-3" />
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="prefix" class="text-right col-span-1">Prefix</Label>
-                <Input id="prefix" placeholder="PRJ" bind:value={prj.prefix} class="col-span-1" />
+                <Input id="prefix" placeholder="PRJ" bind:value={projectManifest.prefix} class="col-span-1" />
                 <Label for="name" class="text-right col-span-1">Separator</Label>
-                <Input id="name" placeholder="-" bind:value={prj.separator} class="col-span-1"/>
+                <Input id="name" placeholder="-" bind:value={projectManifest.separator} class="col-span-1"/>
             </div>
             <Dialog.Description>
-                {#if prj.name !== ""}
-                Your project will be displayed as <strong>{prj?.prefix} {prj?.separator} {prj?.name}</strong>.
+                {#if (projectManifest.name !== "") && (projectManifest.prefix !== "")}
+                Your project will be displayed as <strong>{projectManifest?.prefix} {projectManifest?.separator} {projectManifest?.name}</strong>.
                 {/if}
             </Dialog.Description>
             {/if}
         </div>
         <Dialog.Footer>
             <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleCreate}>Create</Button>
+            <Button on:click={handleCreateProject}>Create</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

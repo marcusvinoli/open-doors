@@ -1,29 +1,19 @@
-<script lang="ts">
-    import { invoke } from "@tauri-apps/api";
-    
+<script lang="ts">   
     import Icon from '@iconify/svelte';
     import Button from "$lib/components/ui/button/button.svelte";
     import OpenDoorsLogo from "$lib/assets/open-doors-logo-111725.svg";
     import OpenRepositoryForm from "$lib/components/forms/OpenRepositoryForm.svelte";
     import CreateRepositoryForms from "$lib/components/forms/CreateRepositoryForms.svelte";
     import CloneRepositoryForms from "$lib/components/forms/CloneRepositoryForms.svelte";
-    import type { Repository } from "$lib/components/structs/Repo";
+    import type { Repository, RepositoryManifest } from "$lib/components/structs/Repo";
     import { goto } from "$app/navigation";
-    import { repository, showToolbar } from "./store";
     import { onMount } from "svelte";
+    import { showToolbar } from './store';
+    import { cloneRepository, createRepository, loadRepoInformation, openRepository } from '$lib/controllers/Repository';
     
     let openRepositoryFlag: boolean = false;
     let createRepositoryFlag: boolean = false;
     let cloneRepositoryFlag: boolean = false;
-
-    let repo: Repository = {
-        path: "",
-        structure: null,
-        manifest: {
-            name: "",
-            remote: null   
-        }
-    }
 
     function openRepositoryDialog() {
         openRepositoryFlag = true;
@@ -37,65 +27,52 @@
         cloneRepositoryFlag = true;
     }
 
-    function saveRepoInformation(repos: any) {
-        localStorage.setItem('repository', JSON.stringify(repos));
-    }
-
     function redirectHome() {
         goto("/home")
     }
 
-    async function openRepository(event: any) {
-        invoke('read_repo', {path: event.detail.path})
-            .then((repos) => {
-                openRepositoryFlag = false;
-                saveRepoInformation(repos);
+    async function handleOpenRepository(event: any) {
+        let path = event.detail.path as string;
+        openRepository(path)
+            .then(() => {
                 redirectHome();
-            })
-            .catch((err) => {
-                console.log(err);
-                openRepositoryFlag = true;
+                openRepositoryFlag = false;
             })
     }
 
-    async function createRepository(event: any) {
-        console.log(event.detail.data);
-        invoke('create_repo', {repo: event.detail.data})
-            .then((repos) => {
-                createRepositoryFlag = false;
-                saveRepoInformation(repos);
-                redirectHome()
-            })
-            .catch((err) => {
-                console.log(err);
-                createRepositoryFlag = true;
+    async function handleCloneRepository(event: any) {
+        let path = event.detail.path as string;
+        let remote = event.detail.remote as string;
+        cloneRepository(remote, path)
+            .then(() => {
+                redirectHome();
+                cloneRepositoryFlag = false;
             })
     }
 
-    async function cloneRepository(event: any) {
-        console.log(event.detail);
-        invoke('clone_repo', {repo: event.detail.data})
-            .then((repos) => {
+    async function handleCreateRepository(event: any) {
+        let path = event.detail.path as string;
+        let manifest = event.detail.manifest as RepositoryManifest;
+        createRepository(path, manifest)
+            .then(() => {
+                redirectHome();
                 createRepositoryFlag = false;
-                saveRepoInformation(repos);
-                redirectHome()
-            })
-            .catch((err) => {
-                console.log(err);
-                createRepositoryFlag = true;
             })
     }
 
     onMount(() => {
+        if(loadRepoInformation()) {
+            //redirectHome();
+        }
         $showToolbar = false;
     })
 
 </script>
 
 <div class="flex flex-col items-center text-zinc-60 py-20">
-    <OpenRepositoryForm bind:openDialog={openRepositoryFlag} path={repo.path} on:open={openRepository}/>
-    <CreateRepositoryForms bind:openDialog={createRepositoryFlag} path={repo.path} data={repo.manifest} on:create={createRepository}/>
-    <CloneRepositoryForms bind:openDialog={cloneRepositoryFlag} path={repo.path} data={repo.manifest} on:clone={cloneRepository} />
+    <OpenRepositoryForm bind:openDialog={openRepositoryFlag} on:open={handleOpenRepository}/>
+    <CreateRepositoryForms bind:openDialog={createRepositoryFlag} on:create={handleCreateRepository}/>
+    <CloneRepositoryForms bind:openDialog={cloneRepositoryFlag} on:clone={handleCloneRepository} />
     <div class="w-32 mb-5">
         <img class="object-contain" src={OpenDoorsLogo} alt="OpenDOORs" />
     </div>

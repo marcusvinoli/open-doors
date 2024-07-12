@@ -10,7 +10,7 @@
 
     export let openDialog: boolean = false;
     export let loading: boolean = false;
-    export let path: string | string[];
+    let path: string | string[] = "";
 
     function closeDialog() {
         loading = false;

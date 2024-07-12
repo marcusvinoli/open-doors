@@ -11,8 +11,11 @@
     
     export let openDialog: boolean = false;
     export let loading: boolean = false;
-    export let data: RepositoryManifest;
-    export let path: string | string[];
+    let path: string | string[] = "";
+    let manifest: RepositoryManifest = {
+        name: "",
+        remote: null,
+    }
 
     function closeDialog() {
         loading = false;
@@ -34,7 +37,7 @@
     function handleCreate(event: any) {
         loading = true;
         event.stopPropagation();
-        dispatch('create', {data});
+        dispatch('create', {manifest: manifest, path: path});
     }
 </script>
 
@@ -64,11 +67,11 @@
             </div>
             <div class="grid grid-cols-5 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Name</Label>
-                <Input id="name" bind:value={data.name} class="col-span-4" />
+                <Input id="name" bind:value={manifest.name} class="col-span-4" />
             </div>
             <div class="grid grid-cols-5 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Remote URL</Label>
-                <Input id="name" bind:value={data.remote} class="col-span-4" placeholder="*Optional"/>
+                <Input id="name" bind:value={manifest.remote} class="col-span-4" placeholder="*Optional"/>
             </div>
             {/if}
         </div>

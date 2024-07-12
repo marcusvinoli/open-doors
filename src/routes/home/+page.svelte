@@ -9,7 +9,7 @@
     import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
     import CreateProjectForms from "$lib/components/forms/CreateProjectForms.svelte"
 
-    let openRepo: Repository;
+    let repo: Repository | null;
     let newProjectDialog = false;
 
     function openNewProjectDialog() {
@@ -18,7 +18,7 @@
 
     onMount(() => {
         $showToolbar = true;
-        openRepo = JSON.parse(localStorage.getItem('repository') as string) as Repository;
+        repo = $repository;
         let homeTab: TabData = {
             path: "/home",
             icon: "gravity-ui:house",
@@ -33,12 +33,14 @@
     <CreateProjectForms bind:openDialog={newProjectDialog} />
     <Resizable.PaneGroup direction="horizontal">
         <Resizable.Pane defaultSize={20} minSize={5}>
-            <Tree treeItems={openRepo?.structure}/>
+            <Tree treeItems={repo?.structure}/>
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
         <Resizable.Pane minSize={5}>
-            {#if openRepo?.structure.length > 0}
-                <div></div>
+            {#if repo?.structure.length > 0}
+                <div>
+                    Projects...
+                </div>
             {:else}
                 <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
                     <div class="my-5">
