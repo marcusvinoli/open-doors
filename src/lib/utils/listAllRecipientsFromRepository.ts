@@ -6,7 +6,7 @@ function listSubItems(item: TreeItem): TreeItem[] {
     item.children.forEach((subitem) => {
         if(subitem.itemType === "project" || subitem.itemType === "folder" ) {
             list.push(subitem);
-            list.push.apply(list, listSubItems(subitem)); 
+            Array.prototype.push.apply(list, listSubItems(subitem))
         }
     });
     return list;
@@ -21,7 +21,8 @@ export function listAllRecipientItemsFromRepository(repo: Repository): TreeItem[
         children: []
     });
     repo.structure.children.forEach((child: TreeItem) => {
-        list.push.apply(list, listSubItems(child));
+        list.push(child)
+        Array.prototype.push.apply(list, listSubItems(child))
     });
     return list;
 }

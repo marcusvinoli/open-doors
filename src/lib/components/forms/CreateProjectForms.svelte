@@ -13,6 +13,8 @@
     import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
     import ComboboxAllRecipientsOnRepository from './ComboboxAllRecipientsOnRepository.svelte';
     import { goto } from "$app/navigation";
+    import { reloadRepository } from "$lib/controllers/Repository";
+    import { repository } from "../../../routes/store";
 
     export let openDialog: boolean = false;
 
@@ -37,11 +39,16 @@
     function handleCreate(event: any) {
         loading = true;
         event.stopPropagation();
-        createNewProject();
+        createNewProject().then(() => {
+            reloadRepository();
+            goto("/home")
+        })
         dispatch('create', {prj});
     }
 
     async function updateTree(prj: Project) {
+        console.log(prj);
+        console.log(baseRecipient);
         invoke('update_structure_file', {newTree: prj.tree, parent: baseRecipient})
             .then(() => {
                 closeDialog()
@@ -58,7 +65,6 @@
     async function createNewProject() {
         invoke('create_project', {man: prj, path: repo.path})
             .then((prj) => {
-                console.log(prj);
                 updateTree(prj as Project);
             })
             .catch((err) => {
