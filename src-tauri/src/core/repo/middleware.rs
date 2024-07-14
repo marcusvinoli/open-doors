@@ -62,6 +62,6 @@ pub fn delete_structure_file(path: &PathBuf) -> Result<(), RepositoryError> {
     Ok(())
 }
 
-pub fn delete_repositoru(path: &PathBuf) -> Result<(), RepositoryError> {
+pub fn delete_repository(path: &PathBuf) -> Result<(), RepositoryError> {
     Ok(fs::remove_dir_all(path)?)
 }

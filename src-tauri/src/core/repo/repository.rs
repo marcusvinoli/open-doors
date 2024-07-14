@@ -90,6 +90,6 @@ impl Repository {
     }
 
     pub fn delete(path: PathBuf) -> Result<(), RepositoryError> {
-        mid::delete_repositoru(&path)
+        mid::delete_repository(&path)
     }
 }
