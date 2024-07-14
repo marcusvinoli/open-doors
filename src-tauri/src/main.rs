@@ -43,24 +43,28 @@ fn create_project(path: PathBuf, man: ProjectManifest) -> Result<Project, OpenDo
 }
 
 #[tauri::command]
-fn update_structure_file(new_tree: TreeItem, parent: TreeItem) -> Result<(), OpenDoorsError> {
+fn update_structure_file(child: TreeItem, parent: TreeItem) -> Result<TreeItem, OpenDoorsError> {
+	let mut parent_update: TreeItem = parent.clone();
 	match parent.item_type {
 		TreeItemType::Repository => {
 			let mut repo = Repository::read(parent.path)?;
-			repo.structure.children.push(new_tree);
+			repo.structure.children.push(child);
+			parent_update = repo.structure.clone();
 			Repository::update_structure(repo.path, repo.structure)?;
 		},
 		TreeItemType::Folder => {
 			let mut prj = Project::read(&parent.path)?;
 			if prj.tree.children.len() == 0 {
-				prj.tree.children.push(new_tree);
+				prj.tree.children.push(child);
+				parent_update = prj.tree;
 			} else {
-				let add_child_to_parent = |tree_item: &mut TreeItem, parent_name: &str, child: TreeItem| -> bool {
+				let mut add_child_to_parent = |tree_item: &mut TreeItem, parent_name: &str, child: TreeItem| -> bool {
 					let mut found = false;
 			
 					let mut visit = |node: &mut TreeItem| {
 						if node.name == parent_name {
 							node.children.push(child.clone());
+							parent_update = node.clone();
 							found = true;
 						}
 					};
@@ -75,18 +79,19 @@ fn update_structure_file(new_tree: TreeItem, parent: TreeItem) -> Result<(), Ope
 					visit_all(tree_item, parent_name, &mut visit);
 					found
 				};
-				add_child_to_parent(&mut prj.tree, &parent.name, new_tree);
+				add_child_to_parent(&mut prj.tree, &parent.name, child);
 				Project::update_structure(&prj.path, prj.tree)?;
 			}
 		},
 		TreeItemType::Project => {
 			let mut prj = Project::read(&parent.path)?;
-			prj.tree.children.push(new_tree);
+			prj.tree.children.push(child);
+			parent_update = prj.tree.clone();
 			Project::update_structure(&prj.path, prj.tree)?;
 		}
 		_ => return Err(OpenDoorsError::GenericError("Indexing error".into()))
 	}
-	Ok(())
+	Ok(parent_update)
 }
 
 /*

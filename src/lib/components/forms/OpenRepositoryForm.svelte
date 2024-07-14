@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-    import { open } from '@tauri-apps/api/dialog';
-    import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
     import Icon from '@iconify/svelte';
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import { Input } from "$lib/components/ui/input/index.js";
-    import { Label } from "$lib/components/ui/label/index.js";
     import Loading from '../ui/loading/Loading.svelte';
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
+    import { createEventDispatcher } from 'svelte';
+    import { Label } from "$lib/components/ui/label/index.js";
+    import { Input } from "$lib/components/ui/input/index.js";
+    import { open } from '@tauri-apps/api/dialog';
 
     export let openDialog: boolean = false;
     export let loading: boolean = false;
