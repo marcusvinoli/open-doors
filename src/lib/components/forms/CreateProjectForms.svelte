@@ -12,7 +12,7 @@
     import type { ProjectManifest, Project } from "$lib/components/structs/Project";
     import type { Repository } from '../structs/Repo';
     import type { TreeItem } from '../structs/Tree';
-    import { repository } from "../../../routes/store";
+    import { counter, repository } from "../../../routes/store";
     import { createProject } from '$lib/controllers/Project';
 
     export let openDialog: boolean = false;
@@ -36,15 +36,12 @@
 
     function handleCreateProject(event: any) {
         loading = true;
-        event.stopPropagation();
         createProject(projectManifest, treeParent).then(() => {
             reloadRepository();
+            closeDialog();
         })
+        event.stopPropagation();
         dispatch('create', {manifest: projectManifest, parent: treeParent});
-    }
-
-    function updateState() {
-        
     }
 
     onMount(() => {

@@ -9,16 +9,6 @@
 <ButtonsGroup>
     <Tooltip.Root openDelay={200}>
         <Tooltip.Trigger>
-            <Button variant="ghost" class="cursor-default">
-                <Icon icon="gravity-ui:arrow-left" width="20px"/>
-            </Button>
-        </Tooltip.Trigger>
-        <Tooltip.Content>
-            <p>Go back</p>
-        </Tooltip.Content>
-    </Tooltip.Root>
-    <Tooltip.Root openDelay={200}>
-        <Tooltip.Trigger>
             <Button variant="ghost" class="cursor-default" on:click={()=>{goto("/home")}}>
                 <Icon icon="gravity-ui:house" width="20px"/>
             </Button>

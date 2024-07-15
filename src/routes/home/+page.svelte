@@ -5,20 +5,27 @@
     import * as Resizable from "$lib/components/ui/resizable";
     import type { TabData } from "$lib/components/global/tabs/TabData";
     import type { Repository } from '$lib/components/structs/Repo';
-    import { newTab, repository, showToolbar } from '../store';
+    import { newTab, repository, showToolbar, counter } from '../store';
     import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
     import CreateProjectForms from "$lib/components/forms/CreateProjectForms.svelte"
+    import { goto } from '$app/navigation';
+    import { loadRepoInformation, reloadRepository } from '$lib/controllers/Repository';
+    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
 
-    let repo: Repository | null;
+    let repo: Repository | null = $repository;
     let newProjectDialog = false;
 
     function openNewProjectDialog() {
         newProjectDialog = true;
     }
 
+    function reload() {
+        goto("/home");
+    }
+
     onMount(() => {
         $showToolbar = true;
-        repo = $repository;
+        repo = loadRepoInformation();
         let homeTab: TabData = {
             path: "/home",
             icon: "gravity-ui:house",
@@ -30,17 +37,17 @@
 </script>
 
 <div class="bg-slate-50 h-full py-1">
-    <CreateProjectForms bind:openDialog={newProjectDialog} />
+    <CreateProjectForms bind:openDialog={newProjectDialog} on:create={reload}/>
     <Resizable.PaneGroup direction="horizontal">
         <Resizable.Pane defaultSize={20} minSize={5}>
-            <Tree treeItems={repo?.structure}/>
+            <ScrollArea class="h-full">
+                <Tree treeItems={$repository?.structure}/>
+            </ScrollArea>
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
         <Resizable.Pane minSize={5}>
-            {#if repo?.structure.length > 0}
-                <div>
-                    Projects...
-                </div>
+            {#if $repository?.structure.children.length > 0}
+                <div></div>
             {:else}
                 <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
                     <div class="my-5">

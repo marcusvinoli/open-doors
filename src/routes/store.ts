@@ -9,3 +9,5 @@ export const showToolbar = writable<boolean>(false);
 export const tabs = writable<TabData[]>([]);
 
 export const newTab = writable<TabData | null>(null);
+
+export const counter = writable<number>(0);
