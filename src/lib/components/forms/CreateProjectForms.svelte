@@ -12,7 +12,7 @@
     import type { ProjectManifest, Project } from "$lib/components/structs/Project";
     import type { Repository } from '../structs/Repo';
     import type { TreeItem } from '../structs/Tree';
-    import { counter, repository } from "../../../routes/store";
+    import { repository } from "../../../routes/store";
     import { createProject } from '$lib/controllers/Project';
 
     export let openDialog: boolean = false;

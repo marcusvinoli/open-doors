@@ -8,7 +8,8 @@
     export let treeItems: TreeItem;
 
     function handleClick(event: any) {
-        console.log(event.detail);
+        event.stopPropagation();
+        dispatch('itemSelected', event.detail);
     }
 
 </script>

@@ -16,6 +16,7 @@ fn main() {
 		create_repo,
 		create_project,
 		update_structure_file,
+		read_structure_file,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running OpenDOORs.");
@@ -43,17 +44,36 @@ fn create_project(path: PathBuf, man: ProjectManifest) -> Result<Project, OpenDo
 }
 
 #[tauri::command]
-fn update_structure_file(child: TreeItem, parent: TreeItem) -> Result<TreeItem, OpenDoorsError> {
+fn read_structure_file(path: PathBuf, parent: TreeItem) -> Result<TreeItem, OpenDoorsError> {
+	let parent_update: TreeItem;
+	match parent.item_type {
+		TreeItemType::Repository => {
+			let repo = Repository::read(path)?;
+			parent_update = repo.structure;
+		},
+		TreeItemType::Folder | TreeItemType::Project => {
+			let prj = Project::read(&path.join(parent.path))?;
+			parent_update = prj.tree;
+		},
+		_ => {
+			return Err(OpenDoorsError::GenericError("Indexing error".into()))
+		}
+	}
+	Ok(parent_update)
+}
+
+#[tauri::command]
+fn update_structure_file(path: PathBuf, child: TreeItem, parent: TreeItem) -> Result<TreeItem, OpenDoorsError> {
 	let mut parent_update: TreeItem = parent.clone();
 	match parent.item_type {
 		TreeItemType::Repository => {
-			let mut repo = Repository::read(parent.path)?;
+			let mut repo = Repository::read(path.join(parent.path))?;
 			repo.structure.children.push(child);
 			parent_update = repo.structure.clone();
-			Repository::update_structure(repo.path, repo.structure)?;
+			Repository::update_structure(path, repo.structure)?;
 		},
 		TreeItemType::Folder => {
-			let mut prj = Project::read(&parent.path)?;
+			let mut prj = Project::read(&path.join(parent.path))?;
 			if prj.tree.children.len() == 0 {
 				prj.tree.children.push(child);
 				parent_update = prj.tree;
@@ -84,7 +104,7 @@ fn update_structure_file(child: TreeItem, parent: TreeItem) -> Result<TreeItem, 
 			}
 		},
 		TreeItemType::Project => {
-			let mut prj = Project::read(&parent.path)?;
+			let mut prj = Project::read(&path.join(parent.path))?;
 			prj.tree.children.push(child);
 			parent_update = prj.tree.clone();
 			Project::update_structure(&prj.path, prj.tree)?;

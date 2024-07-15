@@ -11,6 +11,7 @@
     import { goto } from '$app/navigation';
     import { loadRepoInformation, reloadRepository } from '$lib/controllers/Repository';
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
+    import { readStructure } from '$lib/controllers/Tree';
 
     let repo: Repository | null = $repository;
     let newProjectDialog = false;
@@ -21,6 +22,10 @@
 
     function reload() {
         goto("/home");
+    }
+
+    function updateTreeView(event: any) {
+        readStructure(event.detail.item);
     }
 
     onMount(() => {
@@ -41,7 +46,7 @@
     <Resizable.PaneGroup direction="horizontal">
         <Resizable.Pane defaultSize={20} minSize={5}>
             <ScrollArea class="h-full">
-                <Tree treeItems={$repository?.structure}/>
+                <Tree treeItems={$repository?.structure} on:itemSelected={updateTreeView}/>
             </ScrollArea>
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
