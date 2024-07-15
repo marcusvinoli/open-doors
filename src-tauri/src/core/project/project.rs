@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{ffi::OsStr, path::PathBuf};
 
 use serde::{Serialize, Deserialize};
 
@@ -27,7 +27,7 @@ impl Project {
         let tree: TreeItem = TreeItem { 
             item_type: TreeItemType::Project, 
             name: man.name.clone(), 
-            path: path.join(&man.prefix), 
+            path: PathBuf::from(prj_path.file_name().unwrap_or(OsStr::new("./"))), 
             children: Vec::new() 
         };
         mid::create_project_structure(&prj_path,  &tree)?;
