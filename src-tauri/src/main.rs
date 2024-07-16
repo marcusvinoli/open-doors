@@ -17,6 +17,7 @@ fn main() {
 		create_project,
 		update_structure_file,
 		read_structure_file,
+		read_all_structure_files,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running OpenDOORs.");
@@ -30,7 +31,9 @@ fn clone_repo(man: RepositoryManifest, path: PathBuf) -> Result<Repository, Open
 
 #[tauri::command]
 fn read_repo(path: PathBuf) -> Result<Repository, OpenDoorsError> {
-	Ok(Repository::read(path)?)
+	let mut repo = Repository::read(path.clone())?;
+	repo.structure = read_all_structure_files(path)?;
+	Ok(repo)
 }
 
 #[tauri::command]
@@ -60,6 +63,28 @@ fn read_structure_file(path: PathBuf, parent: TreeItem) -> Result<TreeItem, Open
 		}
 	}
 	Ok(parent_update)
+}
+
+fn read_all_structures(path: &PathBuf, parent: &TreeItem) -> Result<Vec<TreeItem>, OpenDoorsError> {
+	let mut ret_vec: Vec<TreeItem> = Vec::new();
+	if TreeItemType::Project == parent.item_type ||
+		TreeItemType::Folder == parent.item_type {
+		let mut prj = Project::read(&path.join(&parent.path))?;
+		for child in &mut prj.tree.children {
+			child.children.append(&mut read_all_structures(&path, &child)?)
+		}
+		ret_vec = prj.tree.children;
+	}
+	Ok(ret_vec)
+}
+
+#[tauri::command]
+fn read_all_structure_files(path: PathBuf) -> Result<TreeItem, OpenDoorsError> {
+	let mut repo = Repository::read(path.clone())?;
+	for child in &mut repo.structure.children {
+		child.children.append(&mut read_all_structures(&path, &child)?)
+	}
+	Ok(repo.structure)
 }
 
 #[tauri::command]

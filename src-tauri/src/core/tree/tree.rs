@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all="lowercase")]
 pub enum TreeItemType {
     Repository,
