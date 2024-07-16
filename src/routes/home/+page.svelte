@@ -4,16 +4,14 @@
     import Tree from "$lib/components/global/treeview/TreeView.svelte";
     import * as Resizable from "$lib/components/ui/resizable";
     import type { TabData } from "$lib/components/global/tabs/TabData";
-    import type { Repository } from '$lib/components/structs/Repo';
     import { newTab, repository, showToolbar, counter } from '../store';
     import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
     import CreateProjectForms from "$lib/components/forms/CreateProjectForms.svelte"
     import { goto } from '$app/navigation';
-    import { loadRepoInformation, reloadRepository } from '$lib/controllers/Repository';
+    import { reloadRepository } from '$lib/controllers/Repository';
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import { readStructure } from '$lib/controllers/Tree';
 
-    let repo: Repository | null = $repository;
     let newProjectDialog = false;
 
     function openNewProjectDialog() {
@@ -29,8 +27,8 @@
     }
 
     onMount(() => {
+        reloadRepository();
         $showToolbar = true;
-        repo = loadRepoInformation();
         let homeTab: TabData = {
             path: "/home",
             icon: "gravity-ui:house",

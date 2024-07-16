@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
+    import { beforeUpdate, createEventDispatcher, onMount } from 'svelte';
     import Tree from "./Tree.svelte";
     import type { TreeItem } from '$lib/components/structs/Tree';
 
