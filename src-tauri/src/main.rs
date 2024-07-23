@@ -65,26 +65,29 @@ fn read_structure_file(path: PathBuf, parent: TreeItem) -> Result<TreeItem, Open
 	Ok(parent_update)
 }
 
-fn read_all_structures(path: &PathBuf, parent: &TreeItem) -> Result<Vec<TreeItem>, OpenDoorsError> {
-	let mut ret_vec: Vec<TreeItem> = Vec::new();
-	if TreeItemType::Project == parent.item_type ||
-		TreeItemType::Folder == parent.item_type {
-		let mut prj = Project::read(&path.join(&parent.path))?;
-		for child in &mut prj.tree.children {
-			child.children.append(&mut read_all_structures(&path, &child)?)
+fn read_all_structures(path: &PathBuf, parent: &mut TreeItem) -> Result<(), OpenDoorsError> {
+	if TreeItemType::Project == parent.item_type {
+		let mut prj: Project = Project::read(&path.join(&parent.path))?;
+		for mut child in &mut prj.tree.children {
+			read_all_structures(&path, &mut child)?;
+			parent.children.push(child.clone());
 		}
-		ret_vec = prj.tree.children;
 	}
-	Ok(ret_vec)
+	if TreeItemType::Folder == parent.item_type {
+		for mut child in &mut parent.children {
+			read_all_structures(&path, &mut child)?;
+		}
+	}
+	Ok(())
 }
 
 #[tauri::command]
 fn read_all_structure_files(path: PathBuf) -> Result<TreeItem, OpenDoorsError> {
 	let mut repo = Repository::read(path.clone())?;
-	for child in &mut repo.structure.children {
-		child.children.append(&mut read_all_structures(&path, &child)?)
+	for mut child in &mut repo.structure.children {
+		read_all_structures(&path, &mut child)?;
 	}
-	Ok(repo.structure)
+	Ok(repo.structure.clone())
 }
 
 #[tauri::command]
