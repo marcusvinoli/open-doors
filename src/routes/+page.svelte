@@ -5,11 +5,11 @@
     import OpenRepositoryForm from "$lib/components/forms/OpenRepositoryForm.svelte";
     import CreateRepositoryForms from "$lib/components/forms/CreateRepositoryForms.svelte";
     import CloneRepositoryForms from "$lib/components/forms/CloneRepositoryForms.svelte";
-    import type { Repository, RepositoryManifest } from "$lib/components/structs/Repo";
+    import type { RepositoryManifest } from "$lib/components/structs/Repo";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
-    import { showToolbar } from './store';
     import { cloneRepository, createRepository, loadRepoInformation, openRepository } from '$lib/controllers/Repository';
+    import { clearToolbar } from '$lib/stores/Toolbar';
     
     let openRepositoryFlag: boolean = false;
     let createRepositoryFlag: boolean = false;
@@ -61,15 +61,15 @@
     }
 
     onMount(() => {
+        clearToolbar();
         if(loadRepoInformation()) {
             //redirectHome();
         }
-        $showToolbar = false;
     })
 
 </script>
 
-<div class="flex flex-col items-center text-zinc-60 py-20">
+<div class="flex flex-col items-center text-zinc-60 py-10">
     <OpenRepositoryForm bind:openDialog={openRepositoryFlag} on:open={handleOpenRepository}/>
     <CreateRepositoryForms bind:openDialog={createRepositoryFlag} on:create={handleCreateRepository}/>
     <CloneRepositoryForms bind:openDialog={cloneRepositoryFlag} on:clone={handleCloneRepository} />
