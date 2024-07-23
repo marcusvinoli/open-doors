@@ -18,7 +18,6 @@
         event.stopPropagation();
         dispatch('click', {item: item});
         toggleItem();
-        console.log(item);
     }
 </script>
 
