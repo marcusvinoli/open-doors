@@ -1,17 +1,19 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+    import Icon from '@iconify/svelte';
     import Check from "lucide-svelte/icons/check";
     import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
-    import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
+    import { cn } from "$lib/utils.js";
+    import { tick } from "svelte";
+    import { Button } from "$lib/components/ui/button/index.js";
+    import { getIconFromTreeItemType } from '$lib/utils/getIconFromTreeItemType';
+    import { onMount } from 'svelte';
+    import ScrollArea from '../ui/scroll-area/scroll-area.svelte';
     import * as Command from "$lib/components/ui/command/index.js";
     import * as Popover from "$lib/components/ui/popover/index.js";
-    import { cn } from "$lib/utils.js";
     import type { TreeItem } from '../structs/Tree';
-    import { getIconFromTreeItemType } from '$lib/utils/getIconFromTreeItemType';
-    import Icon from '@iconify/svelte';
 
-    export let baseRecipient: TreeItem;
-    export let recipients: TreeItem[];
+    export let recipients: TreeItem[] = [];
+    export let selectedItem: TreeItem | null = null;
     
     let openCombobox: boolean = false;
     // We want to refocus the trigger button when the user selects
@@ -23,36 +25,46 @@
       document.getElementById(triggerId)?.focus();
       });
     }
+
+    function handleClick(item: TreeItem) {
+      selectedItem = item;
+    }
+
+    onMount(() => {
+      if(!selectedItem && recipients.length > 1) {
+        selectedItem = recipients[0];
+      }
+    })
+
 </script>
 
-{#if baseRecipient}
+{#if recipients.length > 0 }
   <Popover.Root bind:open={openCombobox} let:ids>
     <Popover.Trigger asChild let:builder>
       <Button builders={[builder]} variant="outline" role="combobox" aria-expanded={openCombobox} class="justify-between w-full">
-        {baseRecipient.name}
+        {selectedItem?.name}
         <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </Button>
     </Popover.Trigger>
-    <Popover.Content class="p-0">
+    <Popover.Content class="p-0 w-full">
       <Command.Root>
-        <Command.Input placeholder="Search a repo, project or folder..." />
+        <Command.Input placeholder="Search for a repo, project or folder..." />
         <Command.Empty>No Folder, Project or Repo found.</Command.Empty>
-        <Command.Group>
-          {#each recipients as recip}
-            <Command.Item value={recip.name} onSelect={(currentValue) => { 
-              baseRecipient.name = currentValue; 
-              baseRecipient.path = recip.path; 
-              baseRecipient.itemType = recip.itemType;
-              baseRecipient.children = [] 
-              closeAndFocusTrigger(ids.trigger); }
-              }>
-              <Check class={cn("mr-2 h-4 w-4", baseRecipient.name !== recip.name && "text-transparent" )}/> 
-              <Icon icon={getIconFromTreeItemType(recip)} />
-              <span class="pl-2">{recip.name}</span>
-              <!-- <span class="pl-2 text-xs text-slate-600">{recip.path}</span> -->
-            </Command.Item>
-          {/each}
-        </Command.Group>
+        <ScrollArea class="h-[150px] p-1">
+          <Command.Group class="">
+            {#each recipients as recip}
+              <Command.Item value={recip.name} onSelect={() => {
+                handleClick(recip);
+                closeAndFocusTrigger(ids.trigger); }
+                }>
+                <Check class={cn("mr-2 h-4 w-4", selectedItem?.name !== recip.name && "text-transparent" )}/> 
+                <Icon icon={getIconFromTreeItemType(recip)} width="15px"/>
+                <span class="pl-2">{recip.name}</span>
+                <span class="pl-2 text-xs font-light text-slate-600 truncate">{recip.path}</span>
+              </Command.Item>
+            {/each}
+          </Command.Group>
+        </ScrollArea>
       </Command.Root>
     </Popover.Content>
   </Popover.Root>

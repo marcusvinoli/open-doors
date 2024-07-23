@@ -1,26 +1,22 @@
 <script lang="ts">
     import Loading from '../ui/loading/Loading.svelte';
     import ComboboxAllRecipientsOnRepository from './ComboboxAllRecipientsOnRepository.svelte';
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
-    import { createEventDispatcher, onMount } from 'svelte';
-    import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
-    import { loadRepoInformation, reloadRepository } from "$lib/controllers/Repository";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
-    import { goto } from "$app/navigation";
-    import type { ProjectManifest, Project } from "$lib/components/structs/Project";
-    import type { Repository } from '../structs/Repo';
-    import type { TreeItem } from '../structs/Tree';
+    import { Button } from "$lib/components/ui/button/index.js";
     import { repository } from "../../../routes/store";
     import { createProject } from '$lib/controllers/Project';
+    import { reloadRepository } from "$lib/controllers/Repository";
+    import { createEventDispatcher } from 'svelte';
+    import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import type { TreeItem } from '../structs/Tree';
+    import type { ProjectManifest, Project } from "$lib/components/structs/Project";
 
     export let openDialog: boolean = false;
 
-    let repo: Repository | null;
     let loading: boolean = false;
-    let recipients: TreeItem[];
-    let treeParent: TreeItem;
+    let selectedParent: TreeItem;
     let projectManifest: ProjectManifest = {
         name:"",
         separator: "-",
@@ -36,29 +32,20 @@
 
     function handleCreateProject(event: any) {
         loading = true;
-        createProject(projectManifest, treeParent).then(() => {
+        createProject(projectManifest, selectedParent).then(() => {
             reloadRepository();
             closeDialog();
         })
-        event.stopPropagation();
-        dispatch('create', {manifest: projectManifest, parent: treeParent});
+        dispatch('create', {manifest: projectManifest, parent: selectedParent});
     }
-
-    onMount(() => {
-        repo = $repository;
-        if (repo) {
-            recipients = listAllRecipientItemsFromRepository(repo);
-            treeParent = recipients[0];
-        }
-    })
 </script>
 
-<Dialog.Root bind:open={openDialog} closeOnEscape={true}>
+<Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>
     <Dialog.Content class="sm:max-w-[480px]">
         <Dialog.Header>
             <Dialog.Title>Create a New Project</Dialog.Title>
             <Dialog.Description>
-                Let's create a new project.
+                Let's create a new project!
             </Dialog.Description>
         </Dialog.Header>
         <div class="grid gap-4 py-4 min-h-42">
@@ -71,7 +58,9 @@
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Create Here</Label>
                 <div class="col-span-3">
-                    <ComboboxAllRecipientsOnRepository recipients={recipients} baseRecipient={treeParent} />
+                {#if $repository}
+                <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={selectedParent} />
+                {/if}
                 </div>
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
