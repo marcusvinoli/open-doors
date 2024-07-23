@@ -32,6 +32,7 @@
 
     function handleCreateFolder(event: any) {
         loading = true;
+        folder.path = selectedParent.path;
         createFolder(folder, selectedParent).then(() => {
             reloadRepository();
             closeDialog();
@@ -64,7 +65,7 @@
                 </div>
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
-                <Label for="name" class="text-right col-span-1">Project Name</Label>
+                <Label for="name" class="text-right col-span-1">Folder Name</Label>
                 <Input id="name" placeholder="Folder Name" bind:value={folder.name}  class="col-span-3" />
             </div>
             {/if}
