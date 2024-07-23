@@ -16,11 +16,17 @@
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
     import ToolbarDropdown from '$lib/components/global/toolbar/ToolbarDropdown.svelte';
     import ToolBar from '$lib/components/global/toolbar/Toolbar.svelte';
+    import CreateFolderForms from '$lib/components/forms/CreateFolderForms.svelte';
 
     let newProjectDialog = false;
+    let newFolderDialog = false;
 
     function openNewProjectDialog() {
         newProjectDialog = true;
+    }
+
+    function openNewFolderDialog() {
+        newFolderDialog = true;
     }
 
     function goHome() {
@@ -64,7 +70,7 @@
             tooltip: "New Folder",
             icon: "gravity-ui:folder-open",
             action: () => {
-                console.log("Create a new folder")
+                openNewFolderDialog()
             },
         }
 
@@ -121,6 +127,7 @@
 
 <div class="bg-slate-50 h-full py-1">
     <CreateProjectForms bind:openDialog={newProjectDialog} on:create={goHome}/>
+    <CreateFolderForms bind:openDialog={newFolderDialog} on:create={goHome}/>
     <Resizable.PaneGroup direction="horizontal">
         <Resizable.Pane defaultSize={20} minSize={5}>
             <ScrollArea class="h-full">
