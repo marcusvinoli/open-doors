@@ -36,6 +36,7 @@
     if (itemsHist.length > 0) {
       currentItem = itemsHist[itemsHist.length - 1];
     }
+    console.log(currentItem);
   })
 
 </script>
@@ -58,17 +59,20 @@
       </Breadcrumb.List>
     </Breadcrumb.Root>
   </div>
-  <div class="h-full text-sm grow w-full">
-    {#if currentItem}
-    <ScrollArea>
-      {#each currentItem.children as child}
-      <button class="flex items-center py-2 hover:bg-slate-200 px-4" on:click={() => updateTreeView(child)}>
-        <Icon icon={getIconFromTreeItemType(child)} width="20px"/>
-        <span class="px-2">{child.name}</span>
-      </button>
-      {/each}
-    </ScrollArea>
-    {/if}
+  {#if currentItem.children.length > 0}
+  <ScrollArea class="grow">
+    {#each currentItem.children as child}
+    <button class="flex items-center py-2 hover:bg-slate-200 px-4 w-full" on:click={() => updateTreeView(child)}>
+      <Icon icon={getIconFromTreeItemType(child)} width="20px"/>
+      <span class="px-2">{child.name}</span>
+    </button>
+    {/each}
+  </ScrollArea>
+  {:else}
+  <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] bg-slate-200 rounded-lg">
+    <Icon icon="gravity-ui:folder-open" width="50px"/>
+    <h1 class="text-xl font-semibold my-1">EMPTY {currentItem.itemType?.toUpperCase()}</h1>
   </div>
+  {/if}
   {/if}
 </div>

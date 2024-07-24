@@ -22,7 +22,6 @@
 
     function openNewProjectDialog() {
         newProjectDialog = true;
-        console.log("GOtcha")
     }
 
     function openNewFolderDialog() {
@@ -56,6 +55,14 @@
         }
     }
 
+    function goBack() {
+        if(selectHist.length > 1) {
+            selectHist.pop();
+            let tempHist = selectHist;
+            selectHist = tempHist;
+        }
+    }
+
     function loadHomeToolbar() {
         clearToolbar();
 
@@ -65,6 +72,15 @@
             icon: "gravity-ui:house",
             action: () => {
                 goHome()
+            },
+        }
+
+        let backButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Back",
+            icon: "gravity-ui:arrow-left",
+            action: () => {
+                goBack()
             },
         }
 
@@ -118,7 +134,7 @@
         }
 
         let navigationGroup: ToolbarGroupType = {
-            items: [homeButton],
+            items: [homeButton, backButton],
             type: "buttonsGroup"
         }
 
@@ -156,7 +172,9 @@
         <Resizable.Handle withHandle/>
         <Resizable.Pane minSize={5}>
             {#if $repository?.structure.children.length > 0}
-                <PanelView itemsHist={selectHist} />
+            <div class="flex flex-col h-full">
+                <PanelView bind:itemsHist={selectHist} />
+            </div>
             {:else}
                 <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
                     <div class="my-5">
