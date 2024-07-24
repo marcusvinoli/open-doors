@@ -69,7 +69,7 @@
     {/each}
   </ScrollArea>
   {:else}
-  <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] bg-slate-200 rounded-lg">
+  <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
     <Icon icon="gravity-ui:folder-open" width="50px"/>
     <h1 class="text-xl font-semibold my-1">EMPTY {currentItem.itemType?.toUpperCase()}</h1>
   </div>
