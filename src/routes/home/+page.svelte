@@ -11,18 +11,18 @@
     import { reloadRepository } from '$lib/controllers/Repository';
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import PanelView from '$lib/components/global/panelview/PanelView.svelte';
-    import ToolbarButton from '$lib/components/global/toolbar/ToolbarButton.svelte';
-    import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType, ToolbarItemInterface } from '$lib/components/global/toolbar/Toolbar';
+    import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType } from '$lib/components/global/toolbar/Toolbar';
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-    import ToolbarDropdown from '$lib/components/global/toolbar/ToolbarDropdown.svelte';
-    import ToolBar from '$lib/components/global/toolbar/Toolbar.svelte';
     import CreateFolderForms from '$lib/components/forms/CreateFolderForms.svelte';
+    import type { TreeItem } from '$lib/components/structs/Tree';
 
-    let newProjectDialog = false;
-    let newFolderDialog = false;
+    let newProjectDialog: boolean = false;
+    let newFolderDialog: boolean = false;
+    let selectHist: TreeItem[] = [];
 
     function openNewProjectDialog() {
         newProjectDialog = true;
+        console.log("GOtcha")
     }
 
     function openNewFolderDialog() {
@@ -34,7 +34,26 @@
     }
 
     function updateTreeView(event: any) {
-        //readStructure(event.detail.item);
+        let currentSelection = event.detail.item as TreeItem;
+    
+        if (selectHist.length === 0) {
+            selectHist.push(currentSelection);
+            selectHist = selectHist;
+            return;
+        }
+        
+        if (selectHist.includes(currentSelection) ) {
+            while (selectHist.pop() !== currentSelection) {}
+            selectHist = selectHist;
+            return;
+        }
+        
+        let lastIndex = selectHist.length - 1;
+        if (selectHist.at(lastIndex)?.children.includes(currentSelection)) {
+            selectHist.push(currentSelection);
+            selectHist = selectHist;
+            return
+        }
     }
 
     function loadHomeToolbar() {
@@ -137,7 +156,7 @@
         <Resizable.Handle withHandle/>
         <Resizable.Pane minSize={5}>
             {#if $repository?.structure.children.length > 0}
-                <div>Test</div>
+                <PanelView itemsHist={selectHist} />
             {:else}
                 <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
                     <div class="my-5">
