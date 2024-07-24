@@ -1,16 +1,24 @@
 import type { TreeItem } from "$lib/components/structs/Tree";
 
-export function getIconFromTreeItemType(item: TreeItem): string {
+export function getIconFromTreeItemType(item: TreeItem, open = false): string {
     let icon = "gravity-ui:file";
     switch (item.itemType) {
         case "repository": 
         icon = "gravity-ui:database";
         break;
-        case "project": 
-        icon = "gravity-ui:folder-fill";
+        case "project":
+            if(open) {
+                icon = "gravity-ui:folder-open-fill";
+            } else {
+                icon = "gravity-ui:folder-fill";
+            }
         break;
         case "folder": 
-        icon = "gravity-ui:folder";
+            if(open) {
+                icon = "gravity-ui:folder-open";
+            } else {
+                icon = "gravity-ui:folder";
+            }
         break;
         case "module": 
         icon = "gravity-ui:layout-header-cells-large-fill";

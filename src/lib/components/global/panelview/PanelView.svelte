@@ -43,8 +43,8 @@
 
 <div class="h-full px-1 flex flex-col">
   {#if itemsHist.length > 0 && currentItem}
-  <div class="p-3">
-    <Breadcrumb.Root>
+  <div class="py-1 px-2 text-sm">
+    <Breadcrumb.Root class="py-1">
       <Breadcrumb.List>
       {#each itemsHist as hist, index}
         <Breadcrumb.Item>
@@ -58,9 +58,14 @@
       {/each}
       </Breadcrumb.List>
     </Breadcrumb.Root>
+    <div class="flex flex-row items-center border-b-[1px]">
+      <Icon icon={getIconFromTreeItemType(currentItem, true)} width="20px"/>
+      <h1 class="text-lg font-bold py-1 pl-2">{currentItem.name}</h1>
+      <p class="text-sm pl-2 font-light">/{currentItem.itemType}</p>
+    </div>
   </div>
   {#if currentItem.children.length > 0}
-  <ScrollArea class="grow">
+  <ScrollArea class="grow pl-2">
     {#each currentItem.children as child}
     <button class="flex items-center py-2 hover:bg-slate-200 px-4 w-full" on:click={() => updateTreeView(child)}>
       <Icon icon={getIconFromTreeItemType(child)} width="20px"/>
@@ -70,7 +75,7 @@
   </ScrollArea>
   {:else}
   <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
-    <Icon icon="gravity-ui:folder-open" width="50px"/>
+    <Icon icon={getIconFromTreeItemType(currentItem, true)} width="50px"/>
     <h1 class="text-xl font-semibold my-1">EMPTY {currentItem.itemType?.toUpperCase()}</h1>
   </div>
   {/if}
