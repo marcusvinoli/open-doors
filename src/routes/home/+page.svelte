@@ -172,7 +172,7 @@
         <Resizable.Handle withHandle/>
         <Resizable.Pane minSize={5}>
             {#if $repository?.structure.children.length > 0}
-            <div class="flex flex-col h-full">
+            <div class="flex flex-col h-full text-sm">
                 <PanelView bind:itemsHist={selectHist} />
             </div>
             {:else}
