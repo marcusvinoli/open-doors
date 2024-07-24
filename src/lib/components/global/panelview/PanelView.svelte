@@ -1,36 +1,37 @@
 <script lang="ts">
   import Icon from "@iconify/svelte";
-  import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js"; 
+  import Button from "$lib/components/ui/button/button.svelte";
+  import { createEventDispatcher } from "svelte";
   import { getIconFromTreeItemType } from "$lib/utils/getIconFromTreeItemType";
   import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
-  import type { TreeItem } from "$lib/components/structs/Tree"; 
   import { beforeUpdate } from "svelte";
-  
+  import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js"; 
+  import type { TreeItem } from "$lib/components/structs/Tree"; 
+
   export let itemsHist: TreeItem[] = [];
   let currentItem: TreeItem;
 
   function updateTreeView(currentSelection: TreeItem) {
-
-  if (itemsHist.length === 0) {
-    itemsHist.push(currentSelection);
-    itemsHist = itemsHist;
-    return;
+    if (itemsHist.length === 0) {
+      itemsHist.push(currentSelection);
+      itemsHist = itemsHist;
+      return;
+    }
+    
+    if (itemsHist.includes(currentSelection) ) {
+      while (itemsHist.pop() !== currentSelection) {}
+      itemsHist.push(currentSelection);
+      itemsHist = itemsHist;
+      return;
+    }
+    
+    let lastIndex = itemsHist.length - 1;
+    if (itemsHist.at(lastIndex)?.children.includes(currentSelection)) {
+      itemsHist.push(currentSelection);
+      itemsHist = itemsHist;
+      return
+    }
   }
-  
-  if (itemsHist.includes(currentSelection) ) {
-    while (itemsHist.pop() !== currentSelection) {}
-    itemsHist.push(currentSelection);
-    itemsHist = itemsHist;
-    return;
-  }
-  
-  let lastIndex = itemsHist.length - 1;
-  if (itemsHist.at(lastIndex)?.children.includes(currentSelection)) {
-    itemsHist.push(currentSelection);
-    itemsHist = itemsHist;
-    return
-  }
-}
 
   beforeUpdate(() => {
     if (itemsHist.length > 0) {
@@ -62,6 +63,14 @@
       <Icon icon={getIconFromTreeItemType(currentItem, true)} width="20px"/>
       <h1 class="text-lg font-bold py-1 pl-2">{currentItem.name}</h1>
       <p class="text-sm pl-2 font-light">/{currentItem.itemType}</p>
+      <div class="grow flex flex-row-reverse p-1 gap-1">
+        <Button variant="secondary" size="sm">
+          <Icon icon="gravity-ui:circle-plus" width="20px"/>
+        </Button>
+        <Button variant="secondary" size="sm">
+          <Icon icon="gravity-ui:pencil-to-line" width="20px"/>
+        </Button>
+      </div>
     </div>
   </div>
   {#if currentItem.children.length > 0}
