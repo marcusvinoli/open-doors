@@ -12,6 +12,29 @@ function listSubItems(item: TreeItem): TreeItem[] {
     return list;
 }
 
+function isTypeMatch(item: TreeItem, type: TreeItemType | TreeItemType[]): boolean {
+    if (Array.isArray(type)) {
+        return type.includes(item.itemType);
+    }
+    return (item.itemType === type);
+}
+
+function searchOnSubItems(item: TreeItem, type: TreeItemType | TreeItemType[]): TreeItem[] {
+    let list: TreeItem[] = [];
+    item.children.forEach((subitem) => {
+        if(isTypeMatch(item, type)) {
+            list.push(subitem);
+            Array.prototype.push.apply(list, searchOnSubItems(subitem, type));
+        }
+    });
+    return list;
+}
+
+function subtractArraysByProperty<T, K extends keyof T>(array1: T[], array2: T[], key: K): T[] {
+    const set = new Set(array2.map(item => item[key]));
+    return array1.filter(item => !set.has(item[key]));
+}
+
 export function listRelatives(tree: TreeItem, parent: TreeItem, child: TreeItem): TreeItem[] {
     let relatives: TreeItem[] = [];
     let pathFound = false;
@@ -39,33 +62,12 @@ export function listRelatives(tree: TreeItem, parent: TreeItem, child: TreeItem)
     return relatives;
 }
 
-function isTypeMatch(item: TreeItem, type: TreeItemType | TreeItemType[]): boolean {
-    if (Array.isArray(type)) {
-        return type.includes(item.itemType);
+export function listAllRecipients(parent: TreeItem, inclusive: boolean = false): TreeItem[] {
+    let list: TreeItem[] = [];
+    if(inclusive) {
+        list.push(parent);
     }
-    return (item.itemType === type);
-}
-
-function searchOnSubItems(item: TreeItem, type: TreeItemType | TreeItemType[]): TreeItem[] {
-    let list: TreeItem[] = [];
-    item.children.forEach((subitem) => {
-        if(isTypeMatch(item, type)) {
-            list.push(subitem);
-            Array.prototype.push.apply(list, searchOnSubItems(subitem, type));
-        }
-    });
-    return list;
-}
-
-export function listAllRecipients(repo: Repository): TreeItem[] {
-    let list: TreeItem[] = [];
-    list.push({
-        name: repo.manifest.name,
-        itemType: "repository",
-        path: repo.path,
-        children: []
-    });
-    repo.structure.children.forEach((child: TreeItem) => {
+    parent.children.forEach((child: TreeItem) => {
         list.push(child)
         Array.prototype.push.apply(list, listSubItems(child))
     });
@@ -79,6 +81,12 @@ export function listChildren(parent: TreeItem, type: TreeItemType | TreeItemType
         Array.prototype.push.apply(list, searchOnSubItems(child, type));
     })
     return list;
+}
+
+export function listAllRecipientsExceptChildren(parent: TreeItem, children: TreeItem) {
+    let allChilds = listAllRecipients(children, true);
+    let allRecips = listAllRecipients(parent, true);
+    return subtractArraysByProperty(allRecips, allChilds, 'name');
 }
 
 export function listAllProjects(parent: TreeItem): TreeItem[] {

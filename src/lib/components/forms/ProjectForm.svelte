@@ -7,11 +7,12 @@
     import { Button } from "$lib/components/ui/button/index.js";
     import { repository } from "../../../routes/store";
     import { afterUpdate, beforeUpdate, createEventDispatcher, onMount } from 'svelte';
-    import { listAllRecipients, listRelatives } from "$lib/utils/lists";
+    import { listAllRecipients, listAllRecipientsExceptChildren, listChildren, listRelatives } from "$lib/utils/lists";
     import { readProject } from "$lib/controllers/Project";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import type { Project } from "$lib/components/structs/Project";
     import type { TreeItem } from "../structs/Tree";
+    import { Child } from "@tauri-apps/api/shell";
 
     export let openDialog: boolean = true;
     export let project: TreeItem;
@@ -36,9 +37,9 @@
         readProject($repository!, project)
             .then((retProject) => {
                     prj = retProject as Project;
-                    possibleParents = listAllRecipients($repository!);
+                    possibleParents = listAllRecipientsExceptChildren($repository?.structure, prj.tree);
                     parent = listRelatives($repository?.structure, $repository?.structure, prj?.tree).pop()??$repository?.structure;
-                    console.log("Parent: ", parent);
+                    console.log("Parent: ", possibleParents);
                 })
                 .catch((err) => {
                     console.log(err)
