@@ -12,6 +12,7 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import type { TreeItem } from "$lib/components/structs/Tree";
   import { goIn } from "$lib/stores/PanelView";
+    import FolderForm from "$lib/components/forms/FolderForm.svelte";
   
   export let currentItem: TreeItem;
   export let treeHistory: TreeItem[];
@@ -19,7 +20,7 @@
   let projectFormDialog: boolean = false;
   let folderFormDialog: boolean = false;
   
-  let editProjectDialog: boolean = false;
+  let editDialog: boolean = false;
     
   beforeUpdate(() => {
   })
@@ -31,9 +32,9 @@
   {#if currentItem.itemType === "repository"}
     <div></div>
   {:else if currentItem.itemType === "project"}
-    <ProjectForm bind:openDialog={editProjectDialog} project={currentItem}/>
+    <ProjectForm bind:openDialog={editDialog} project={currentItem}/>
   {:else if currentItem.itemType === "folder"}
-    <div></div>
+    <FolderForm bind:openDialog={editDialog} folder={currentItem}/>
   {/if}
     <div class="py-1 px-2 text-sm">
       <Breadcrumb.Root class="py-1">
@@ -89,7 +90,7 @@
           </DropdownMenu.Root>
           <Tooltip.Root openDelay={200}>
             <Tooltip.Trigger>
-              <Button variant="secondary" size="sm" on:click={() => {editProjectDialog = true}}>
+              <Button variant="secondary" size="sm" on:click={() => {editDialog = true}}>
                 <Icon icon="gravity-ui:pencil-to-line" width="20px"/>
               </Button>
             </Tooltip.Trigger>
