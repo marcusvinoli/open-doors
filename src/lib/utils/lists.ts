@@ -12,6 +12,33 @@ function listSubItems(item: TreeItem): TreeItem[] {
     return list;
 }
 
+export function listRelatives(tree: TreeItem, parent: TreeItem, child: TreeItem): TreeItem[] {
+    let relatives: TreeItem[] = [];
+    let pathFound = false;
+
+    const visit = (node: TreeItem, currentPath: TreeItem[]) => {
+        if (!pathFound && node.name === parent.name && node.path === parent.path) {
+            pathFound = true;
+        }
+
+        if (pathFound) {
+            currentPath.push(node);
+            if (node.name === child.name && node.path === child.path) {
+                relatives = currentPath.slice(0, -1);
+                pathFound = false;
+            }
+        }
+
+        for (let childNode of node.children) {
+            visit(childNode, [...currentPath]);
+        }
+    };
+
+    visit(tree, []);
+
+    return relatives;
+}
+
 function isTypeMatch(item: TreeItem, type: TreeItemType | TreeItemType[]): boolean {
     if (Array.isArray(type)) {
         return type.includes(item.itemType);
@@ -60,7 +87,4 @@ export function listAllProjects(parent: TreeItem): TreeItem[] {
 
 export function listAllFolders(parent: TreeItem): TreeItem[] {
     return listChildren(parent, "folder")
-    let list: TreeItem[] = [];
-    
-    return list;
 }

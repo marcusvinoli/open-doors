@@ -7,7 +7,7 @@
     import { repository } from "../../../routes/store";
     import { createProject } from '$lib/controllers/Project';
     import { reloadRepository } from "$lib/controllers/Repository";
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
     import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import type { TreeItem } from '../structs/Tree';
@@ -16,7 +16,7 @@
     export let openDialog: boolean = false;
 
     let loading: boolean = false;
-    let selectedParent: TreeItem;
+    export let selectedParent: TreeItem;
     let projectManifest: ProjectManifest = {
         name:"",
         separator: "-",
@@ -32,12 +32,22 @@
 
     function handleCreateProject(event: any) {
         loading = true;
-        createProject(projectManifest, selectedParent).then(() => {
+        createProject(projectManifest, selectedParent!).then(() => {
             reloadRepository();
             closeDialog();
         })
         dispatch('create', {manifest: projectManifest, parent: selectedParent});
     }
+
+    $: {
+
+    }
+
+    onMount(() => {
+        if (!selectedParent! && $repository) {
+            selectedParent = listAllRecipientItemsFromRepository($repository)[0];
+        }
+    })
 </script>
 
 <Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>

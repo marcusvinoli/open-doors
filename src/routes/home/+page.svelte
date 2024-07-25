@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { beforeUpdate, onMount } from 'svelte';
     import Icon from '@iconify/svelte';
     import Tree from "$lib/components/global/treeview/TreeView.svelte";
     import * as Resizable from "$lib/components/ui/resizable";
@@ -15,6 +15,7 @@
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
     import CreateFolderForms from '$lib/components/forms/CreateFolderForms.svelte';
     import type { TreeItem } from '$lib/components/structs/Tree';
+    import { treeHistory, goBack, goIn, currentItem } from '$lib/stores/PanelView';
 
     let newProjectDialog: boolean = false;
     let newFolderDialog: boolean = false;
@@ -34,33 +35,7 @@
 
     function updateTreeView(event: any) {
         let currentSelection = event.detail.item as TreeItem;
-    
-        if (selectHist.length === 0) {
-            selectHist.push(currentSelection);
-            selectHist = selectHist;
-            return;
-        }
-        
-        if (selectHist.includes(currentSelection) ) {
-            while (selectHist.pop() !== currentSelection) {}
-            selectHist = selectHist;
-            return;
-        }
-        
-        let lastIndex = selectHist.length - 1;
-        if (selectHist.at(lastIndex)?.children.includes(currentSelection)) {
-            selectHist.push(currentSelection);
-            selectHist = selectHist;
-            return
-        }
-    }
-
-    function goBack() {
-        if(selectHist.length > 1) {
-            selectHist.pop();
-            let tempHist = selectHist;
-            selectHist = tempHist;
-        }
+        goIn(currentSelection);
     }
 
     function loadHomeToolbar() {
@@ -161,8 +136,8 @@
 </script>
 
 <div class="bg-slate-50 h-full py-1">
-    <CreateProjectForms bind:openDialog={newProjectDialog} on:create={goHome}/>
-    <CreateFolderForms bind:openDialog={newFolderDialog} on:create={goHome}/>
+    <CreateProjectForms bind:openDialog={newProjectDialog} on:create={goHome} selectedParent={$repository?.structure}/>
+    <CreateFolderForms bind:openDialog={newFolderDialog} on:create={goHome} selectedParent={$repository?.structure}/>
     <Resizable.PaneGroup direction="horizontal">
         <Resizable.Pane defaultSize={20} minSize={5}>
             <ScrollArea class="h-full">
@@ -173,7 +148,9 @@
         <Resizable.Pane minSize={5}>
             {#if $repository?.structure.children.length > 0}
             <div class="flex flex-col h-full text-sm">
-                <PanelView bind:itemsHist={selectHist} />
+                {#if $currentItem}
+                    <PanelView currentItem={$currentItem} treeHistory={$treeHistory}/>
+                {/if}
             </div>
             {:else}
                 <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">

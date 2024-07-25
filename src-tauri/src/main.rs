@@ -13,6 +13,7 @@ fn main() {
 		.invoke_handler(tauri::generate_handler![
 		clone_repo,
 		read_repo,
+		read_project,
 		create_repo,
 		create_project,
 		update_structure_file,
@@ -44,6 +45,11 @@ fn create_repo(man: RepositoryManifest, path: PathBuf) -> Result<Repository, Ope
 #[tauri::command]
 fn create_project(path: PathBuf, man: ProjectManifest) -> Result<Project, OpenDoorsError> {
 	Ok(Project::create(&path, &man)?)
+}
+
+#[tauri::command]
+fn read_project(path: PathBuf, item: TreeItem) -> Result<Project, OpenDoorsError> {
+  Ok(Project::read(&path.join(item.path))?)
 }
 
 #[tauri::command]

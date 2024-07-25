@@ -7,7 +7,7 @@
     import { repository } from "../../../routes/store";
     import { createFolder } from '$lib/controllers/Folder';
     import { reloadRepository } from "$lib/controllers/Repository";
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
     import { listChildren } from '$lib/utils/lists';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import type { TreeItem } from '../structs/Tree';
@@ -15,7 +15,7 @@
     export let openDialog: boolean = false;
 
     let loading: boolean = false;
-    let selectedParent: TreeItem;
+    export let selectedParent: TreeItem;
     let folder: TreeItem = {
         name: "",
         itemType: "folder",
@@ -39,6 +39,12 @@
         })
         dispatch('create', {folder: folder, parent: selectedParent});
     }
+
+    onMount(() => {
+        if (!selectedParent && $repository) {
+            selectedParent = listChildren($repository.structure, ["folder", "project"])[0];
+        }
+    })
 </script>
 
 <Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>

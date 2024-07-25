@@ -3,6 +3,7 @@ import { loadRepoInformation } from "./Repository";
 import type { Project, ProjectManifest } from "$lib/components/structs/Project";
 import type { TreeItem } from "$lib/components/structs/Tree";
 import { repository } from "../../routes/store";
+import type { Repository } from "$lib/components/structs/Repo";
 
 function updateRepoTree(newTree: TreeItem) {
     let repo = loadRepoInformation();
@@ -52,4 +53,8 @@ export async function createProject(manifest: ProjectManifest, parent: TreeItem)
         .catch((err) => {
             console.log(err);
         })
+}
+
+export async function readProject(repo: Repository, project: TreeItem) {
+    return invoke('read_project', {path: repo.path, item: project})
 }
