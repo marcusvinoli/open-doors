@@ -16,10 +16,11 @@
     import CreateFolderForms from '$lib/components/forms/CreateFolderForms.svelte';
     import type { TreeItem } from '$lib/components/structs/Tree';
     import { treeHistory, goBack, goIn, currentItem } from '$lib/stores/PanelView';
+    import CreateModuleForms from '$lib/components/forms/CreateModuleForms.svelte';
 
     let newProjectDialog: boolean = false;
     let newFolderDialog: boolean = false;
-    let selectHist: TreeItem[] = [];
+    let newModuleDialog: boolean = false;
 
     function openNewProjectDialog() {
         newProjectDialog = true;
@@ -27,6 +28,10 @@
 
     function openNewFolderDialog() {
         newFolderDialog = true;
+    }
+
+    function openNewModuleDialog() {
+        newModuleDialog = true;
     }
 
     function goHome() {
@@ -63,34 +68,28 @@
             type: "button",
             tooltip: "New...",
             icon: "gravity-ui:circle-plus",
-            action: () => {},
+            action: openNewModuleDialog,
         }
 
         let newProjectButton: ToolbarButtonType = {
             type: "button",
             tooltip: "New Project",
             icon: "gravity-ui:folder-open-fill",
-            action: () => {
-                openNewProjectDialog()
-            },
+            action: () => {},
         }
 
         let newFolderButton: ToolbarButtonType = {
             type: "button",
             tooltip: "New Folder",
             icon: "gravity-ui:folder-open",
-            action: () => {
-                openNewFolderDialog()
-            },
+            action: openNewFolderDialog,
         }
 
         let newModuleButton: ToolbarButtonType = {
             type: "button",
             tooltip: "New Module",
             icon: "gravity-ui:layout-header-cells-large-fill",
-            action: () => {
-                console.log("Create a new module")
-            },
+            action: openNewModuleDialog,
         }
 
         let creationGroup: ToolbarDropdownType = {
@@ -138,6 +137,7 @@
 <div class="bg-slate-50 h-full py-1">
     <CreateProjectForms bind:openDialog={newProjectDialog} on:create={goHome} selectedParent={$repository?.structure}/>
     <CreateFolderForms bind:openDialog={newFolderDialog} on:create={goHome} selectedParent={$repository?.structure}/>
+    <CreateModuleForms bind:openDialog={newModuleDialog} on:create={goHome} selectedParent={$repository?.structure}/>
     <Resizable.PaneGroup direction="horizontal">
         <Resizable.Pane defaultSize={20} minSize={5}>
             <ScrollArea class="h-full">

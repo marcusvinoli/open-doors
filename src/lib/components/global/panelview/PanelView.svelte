@@ -2,8 +2,9 @@
   import Icon from "@iconify/svelte";
   import Button from "$lib/components/ui/button/button.svelte";
   import CreateFolderForms from "$lib/components/forms/CreateFolderForms.svelte";
-  import ProjectForm from "$lib/components/forms/ProjectForm.svelte";
   import CreateProjectForms from "$lib/components/forms/CreateProjectForms.svelte";
+  import CreateModuleForms from "$lib/components/forms/CreateModuleForms.svelte";
+  import ProjectForm from "$lib/components/forms/ProjectForm.svelte";
   import { getIconFromTreeItemType } from "$lib/utils/getIconFromTreeItemType";
   import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
   import { afterUpdate, beforeUpdate, onMount } from "svelte";
@@ -12,13 +13,14 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import type { TreeItem } from "$lib/components/structs/Tree";
   import { goIn } from "$lib/stores/PanelView";
-    import FolderForm from "$lib/components/forms/FolderForm.svelte";
+  import FolderForm from "$lib/components/forms/FolderForm.svelte";
   
   export let currentItem: TreeItem;
   export let treeHistory: TreeItem[];
 
   let projectFormDialog: boolean = false;
   let folderFormDialog: boolean = false;
+  let moduleFormDialog: boolean = false;
   
   let editDialog: boolean = false;
     
@@ -80,7 +82,7 @@
                   <Icon icon="gravity-ui:folder" width="15px"/>
                   <p class="pl-3">New Folder</p>
                 </DropdownMenu.Item>
-                <DropdownMenu.Item on:click={() => {}} class="min-w-[150px]">
+                <DropdownMenu.Item on:click={() => {moduleFormDialog = true}} class="min-w-[150px]">
                   <Icon icon="gravity-ui:layout-header-cells-large-fill" width="15px"/>
                   <p class="pl-3">New Module</p>
                 </DropdownMenu.Item>
@@ -101,6 +103,7 @@
         </div>
         <CreateProjectForms bind:openDialog={projectFormDialog} selectedParent={currentItem}/>
         <CreateFolderForms bind:openDialog={folderFormDialog} selectedParent={currentItem}/>
+        <CreateModuleForms bind:openDialog={moduleFormDialog} selectedParent={currentItem}/>
       </div>
     </div>
       {#if currentItem.children.length > 0}

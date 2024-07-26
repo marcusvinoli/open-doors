@@ -2,7 +2,11 @@ export interface ModuleManifest {
     name: string,
     prefix: string,
     separator: string,
-    baselines: string[],
+    description: string,
+}
+
+export interface ModuleTemplate {
+
 }
 
 export type LinkType = "output" | "input";
