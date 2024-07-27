@@ -5,6 +5,6 @@ export interface RepositoryManifest {
 }
 
 export interface Repository {
-    structure: TreeItem;
-    tree: RepositoryManifest;
+    tree: TreeItem;
+    manifest: RepositoryManifest;
 }
