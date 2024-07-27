@@ -1,11 +1,11 @@
 export interface ModuleManifest {
-    name: string,
+    title: string,
     prefix: string,
     separator: string,
     description: string,
 }
 
-export interface ModuleTemplate {
+export interface Template {
 
 }
 

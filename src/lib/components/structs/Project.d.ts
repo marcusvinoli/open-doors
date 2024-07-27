@@ -9,5 +9,4 @@ export interface ProjectManifest {
 export interface Project {
     manifest: ProjectManifest,
     tree: TreeItem,
-    path: string,
 }
