@@ -1,4 +1,5 @@
 use thiserror::Error;
+use crate::core::middleware::error::MiddlewareError;
 
 #[derive(Debug, Error)]
 pub enum OpenDoorsError {
@@ -24,10 +25,8 @@ impl serde::Serialize for OpenDoorsError {
 
 #[derive(Debug, Error)]
 pub enum RepositoryError {
-    #[error("Generic IO error!")]
-    GenericIOError(#[from] std::io::Error),
-    #[error("Parsing failure. {0}")]
-    SerDeGenericFailure(#[from] serde_yaml::Error),
+    #[error("Generic middleare error!{0}")]
+    MiddlewareError(#[from] MiddlewareError),
     #[error("Not a git repository.")]
     InvalidRepository,
     #[error("The repository could not be created.")]
@@ -42,10 +41,8 @@ pub enum RepositoryError {
 
 #[derive(Debug, Error)]
 pub enum ProjectError {
-    #[error("Generic IO error!")]
-    GenericIOError(#[from] std::io::Error),
-    #[error("Parsing failure. {0}")]
-    SerDeGenericFailure(#[from] serde_yaml::Error),
+    #[error("Generic middleware error! {0}")]
+    MiddlewareError(#[from] MiddlewareError),
     #[error("The Directory is not a Project")]
     InvalidProjectDirectory,
     #[error("Fail creating project {0}: {1}")]
@@ -58,10 +55,8 @@ pub enum ProjectError {
 
 #[derive(Debug, Error)]
 pub enum ModuleError {
-    #[error("Generic IO error!")]
-    GenericIOError(#[from] std::io::Error),
-    #[error("Parsing failure. {0}")]
-    SerDeGenericFailure(#[from] serde_yaml::Error),
+    #[error("Generic middleware error! {0}")]
+    MiddlewareError(#[from] MiddlewareError),
     #[error("The Directory is not a Module")]
     InvalidModuleDirectory,
     #[error("Unknown Error!")]
