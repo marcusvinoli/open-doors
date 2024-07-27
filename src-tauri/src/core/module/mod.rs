@@ -1,5 +1,5 @@
 pub mod definitions;
-pub mod middleware;
 pub mod baseline;
+pub mod template;
 pub mod module;
 pub mod object;
