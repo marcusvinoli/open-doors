@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Serialize, Deserialize};
 
-use crate::core::{error::ProjectError, middleware as mid, TreeItem};
+use crate::core::{error::ProjectError, middleware as mid, tree::TreeItem};
 use super::definitions as defs;
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]

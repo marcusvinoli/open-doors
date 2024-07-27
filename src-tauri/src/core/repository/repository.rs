@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Serialize, Deserialize};
 
-use crate::core::{middleware as mid, error::RepositoryError, TreeItem, TreeItemType};
+use crate::core::{middleware as mid, error::RepositoryError, tree::{TreeItem, TreeItemType}};
 use crate::git::{self, GitError};
 use super::definitions as defs;
 

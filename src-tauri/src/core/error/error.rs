@@ -11,6 +11,8 @@ pub enum OpenDoorsError {
     ProjectError(#[from] ProjectError),
     #[error("MODULE ERROR: {0}")]
     ModuleError(#[from] ModuleError),
+    #[error("MIDDLEWARE ERROR: {0}")]
+    TreeError(#[from] TreeError),
     #[error("{0}")]
     GenericError(String)
 }
@@ -61,4 +63,10 @@ pub enum ModuleError {
     InvalidModuleDirectory,
     #[error("Unknown Error!")]
     UnknownError,
+}
+
+#[derive(Debug, Error)] 
+pub enum TreeError {
+    #[error("Generic middleware error! {0}")]
+    MiddlewareError(#[from] MiddlewareError),
 }

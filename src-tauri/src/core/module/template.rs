@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 
 #[derive( Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all="camelCase")]
 pub enum DataType {
     #[default]
     Empty,
@@ -25,6 +26,7 @@ pub enum DataType {
 }
 
 #[derive( Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all="camelCase")]
 pub struct Template {
     pub fields: HashMap<String,DataType>
 }

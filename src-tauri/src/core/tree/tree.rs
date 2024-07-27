@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use crate::core::middleware::error::MiddlewareError;
 use crate::core::project;
 use crate::core::module;
-use crate::core::repo;
+use crate::core::repository;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all="lowercase")]
@@ -31,7 +31,7 @@ pub struct TreeItem {
 impl TreeItem {
     pub fn from_path(path: &PathBuf) -> Result<TreeItem, MiddlewareError> {
         fn determine_item_type(path: &PathBuf) -> TreeItemType {
-            if path.join(repo::definitions::OD_REPO_MANIFEST_FILE_NAME).exists() {
+            if path.join(repository::definitions::OD_REPO_MANIFEST_FILE_NAME).exists() {
                 TreeItemType::Repository
             } else if path.join(module::definitions::OD_MODULE_MANIFEST_FILE_NAME).exists() {
                 TreeItemType::Module
