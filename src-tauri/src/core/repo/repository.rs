@@ -19,60 +19,61 @@ pub struct Repository{
     pub tree: TreeItem,
 }
 
-pub fn create(path: &PathBuf, name: &String, remote: &Option<String>) -> Result<Repository, RepositoryError> {         
-    let repo_path = mid::create_folder(&path, name)?;
-    if git::is_git_repository(path.display().to_string())? {
-        return Err(RepositoryError::GitError(GitError::RepositoryNotEmpty));
-    }
-
-    let man: RepositoryManifest = RepositoryManifest {
-        name: name.clone(),
-    };
+impl Repository {
+    pub fn create(path: &PathBuf, name: &String, remote: &Option<String>) -> Result<Repository, RepositoryError> {         
+        let repo_path = mid::create_folder(&path, name)?;
+        if git::is_git_repository(path.display().to_string())? {
+            return Err(RepositoryError::GitError(GitError::RepositoryNotEmpty));
+        }
     
-    let tree: TreeItem = TreeItem {
-        name: name.clone(),
-        path: repo_path.clone(),
-        item_type: TreeItemType::Repository,
-        children: Vec::new(),
-    };
-
-    mid::create_yml_file(&path, defs::OD_REPO_MANIFEST_FILE_NAME , &man)?;
-
-    git::init(&path.display().to_string())?;
-    git::add_all(&path.display().to_string())?;
-    git::commit(&path.display().to_string(), "OpenDOORs repository initiated.")?;
+        let man: RepositoryManifest = RepositoryManifest {
+            name: name.clone(),
+        };
+        
+        let tree: TreeItem = TreeItem {
+            name: name.clone(),
+            path: repo_path.clone(),
+            item_type: TreeItemType::Repository,
+            children: Vec::new(),
+        };
     
-    Ok(Repository {
-        manifest: man, 
-        tree
-    })
-}
-
-pub fn read(path: &PathBuf) -> Result<Repository, RepositoryError> {
-    if !(git::is_git_repository(path.display().to_string())?) {
-        return Err(RepositoryError::GitError(GitError::RepositoryNotEmpty));
+        mid::create_yml_file(&path, defs::OD_REPO_MANIFEST_FILE_NAME , &man)?;
+    
+        git::init(&path.display().to_string())?;
+        git::add_all(&path.display().to_string())?;
+        git::commit(&path.display().to_string(), "OpenDOORs repository initiated.")?;
+        
+        Ok(Repository {
+            manifest: man, 
+            tree
+        })
     }
-
-    let man: RepositoryManifest = mid::read_yml_file(&path, defs::OD_REPO_MANIFEST_FILE_NAME)?;
-    let tree: TreeItem = TreeItem::from_path(&path)?;
-
-    Ok(Repository { 
-        manifest: man,
-        tree,
-    })
-}
-
-pub fn update(path: &PathBuf, man: RepositoryManifest) -> Result<(), RepositoryError> {
-    if !(git::is_git_repository(&path.display().to_string())?) {
-        return Err(RepositoryError::GitError(GitError::RepositoryNotEmpty));
+    
+    pub fn read(path: &PathBuf) -> Result<Repository, RepositoryError> {
+        if !(git::is_git_repository(path.display().to_string())?) {
+            return Err(RepositoryError::GitError(GitError::RepositoryNotEmpty));
+        }
+    
+        let man: RepositoryManifest = mid::read_yml_file(&path, defs::OD_REPO_MANIFEST_FILE_NAME)?;
+        let tree: TreeItem = TreeItem::from_path(&path)?;
+    
+        Ok(Repository { 
+            manifest: man,
+            tree,
+        })
     }
-
-    mid::update_yml_folder(&path, defs::OD_REPO_MANIFEST_FILE_NAME, &man)?;
-
-    return Ok(());
+    
+    pub fn update(path: &PathBuf, man: RepositoryManifest) -> Result<(), RepositoryError> {
+        if !(git::is_git_repository(&path.display().to_string())?) {
+            return Err(RepositoryError::GitError(GitError::RepositoryNotEmpty));
+        }
+    
+        mid::update_yml_folder(&path, defs::OD_REPO_MANIFEST_FILE_NAME, &man)?;
+    
+        return Ok(());
+    }
+    
+    pub fn delete(path: &PathBuf) -> Result<(), RepositoryError> {
+        Ok(mid::delete_folder(&path)?)
+    }
 }
-
-pub fn delete(path: &PathBuf) -> Result<(), RepositoryError> {
-    Ok(mid::delete_folder(&path)?)
-}
-
