@@ -11,7 +11,7 @@ pub struct ModuleManifest {
     pub title: String,
     pub prefix: String,
     pub separator: String,
-    pub descriptions: String,
+    pub description: String,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
