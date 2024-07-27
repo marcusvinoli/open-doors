@@ -21,10 +21,11 @@ pub struct Repository{
 
 impl Repository {
     pub fn create(path: &PathBuf, name: &String, remote: &Option<String>) -> Result<Repository, RepositoryError> {         
-        let repo_path = mid::create_folder(&path, name)?;
         if git::is_git_repository(path.display().to_string())? {
             return Err(RepositoryError::GitError(GitError::RepositoryNotEmpty));
         }
+        
+        let repo_path = mid::create_folder(&path, name)?;
     
         let man: RepositoryManifest = RepositoryManifest {
             name: name.clone(),
@@ -37,11 +38,11 @@ impl Repository {
             children: Vec::new(),
         };
     
-        mid::create_yml_file(&path, defs::OD_REPO_MANIFEST_FILE_NAME , &man)?;
+        mid::create_yml_file(&repo_path, defs::OD_REPO_MANIFEST_FILE_NAME , &man)?;
     
-        git::init(&path.display().to_string())?;
-        git::add_all(&path.display().to_string())?;
-        git::commit(&path.display().to_string(), "OpenDOORs repository initiated.")?;
+        git::init(&repo_path.display().to_string())?;
+        git::add_all(&repo_path.display().to_string())?;
+        git::commit(&repo_path.display().to_string(), "OpenDOORs repository initiated.")?;
         
         Ok(Repository {
             manifest: man, 

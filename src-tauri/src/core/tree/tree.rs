@@ -52,7 +52,7 @@ impl TreeItem {
             for entry in fs::read_dir(path)? {
                 let entry = entry?;
                 let entry_path = entry.path();
-                if entry_path.is_dir() {
+                if entry_path.is_dir() && !entry_path.ends_with(".git") {
                     children.push(TreeItem::from_path(&entry_path)?);
                 }
             }
