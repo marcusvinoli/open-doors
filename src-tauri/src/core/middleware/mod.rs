@@ -35,7 +35,7 @@ pub fn read_yml_file<T: for<'a> Deserialize<'a>, S: AsRef<Path>>(path: &PathBuf,
 }
 
 pub fn delete_yml_file<S: AsRef<Path>>(path: &PathBuf, file_name: S) -> Result<(), MiddlewareError> {
-    Ok(fs::remove_file(path)?)
+    Ok(fs::remove_file(path.join(file_name))?)
 }
 
 pub fn file_exists(path: &PathBuf) -> Result<bool, MiddlewareError> {
