@@ -1,3 +1,2 @@
 pub mod repository;
-mod middleware;
-mod definitions;
+pub mod definitions;

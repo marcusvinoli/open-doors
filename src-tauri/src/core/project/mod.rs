@@ -1,3 +1,3 @@
 pub mod project;
-mod definitions;
+pub mod definitions;
 mod middleware;
