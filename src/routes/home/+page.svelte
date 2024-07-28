@@ -1,23 +1,24 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
     import Icon from '@iconify/svelte';
     import Tree from "$lib/components/global/treeview/TreeView.svelte";
-    import * as Resizable from "$lib/components/ui/resizable";
-    import type { TabData } from "$lib/components/global/tabs/TabData";
-    import { newTab } from '../store';
-    import { repository } from '$lib/stores/Repository';
-    import { Button } from "$lib/components/ui/button/index.js";
+    import PanelView from '$lib/components/global/panelview/PanelView.svelte';
+    import CreateFolderForms from '$lib/components/forms/folder/CreateFolderForms.svelte';
     import CreateProjectForms from "$lib/components/forms/project/CreateProjectForms.svelte"
     import { goto } from '$app/navigation';
-    import { reloadRepository } from '$lib/controllers/Repository';
+    import { newTab } from '../store';
+    import { Button } from "$lib/components/ui/button/index.js";
+    import { onMount } from 'svelte';
+    import { repository } from '$lib/stores/Repository';
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
-    import PanelView from '$lib/components/global/panelview/PanelView.svelte';
-    import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType } from '$lib/components/global/toolbar/Toolbar';
+    import { reloadRepository } from '$lib/controllers/Repository';
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-    import CreateFolderForms from '$lib/components/forms/folder/CreateFolderForms.svelte';
-    import type { TreeItem } from '$lib/components/structs/Tree';
     import { treeHistory, goBack, goIn, currentItem } from '$lib/stores/PanelView';
+    import * as Resizable from "$lib/components/ui/resizable";
+    import type { TabData } from "$lib/components/global/tabs/TabData";
+    import type { TreeItem } from '$lib/components/structs/Tree';
+    import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType } from '$lib/components/global/toolbar/Toolbar';
     import CreateModuleForms from '$lib/components/forms/module/CreateModuleForms.svelte';
+
 
     let newProjectDialog: boolean = false;
     let newFolderDialog: boolean = false;

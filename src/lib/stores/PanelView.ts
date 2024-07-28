@@ -33,6 +33,11 @@ function updateTreeHistory(newRepository: TreeItem, treeHistory: TreeItem[]): Tr
 repository.subscribe(repo => {
     if (repo) {
         let currentHistory = get(treeHistory);
+
+        if(currentHistory) {
+          return;
+        }
+
         let newHistory: TreeItem[];
         newHistory = updateTreeHistory(repo.tree, currentHistory);
         treeHistory.set(newHistory);
@@ -40,11 +45,15 @@ repository.subscribe(repo => {
 })
 
 treeHistory.subscribe(th => {
-    if(th.length > 1) {
+    if(!th) {
+      currentItem.set(null);
+      return;
+    }
+  
+    if(th.length >= 1) {
         currentItem.set(th.at(th.length - 1)!);
         return;
     }
-    currentItem.set(th[0]);
 })
 
 export const goBack = () => {

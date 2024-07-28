@@ -15,7 +15,7 @@
     import type { ModuleManifest } from "$lib/components/structs/Module";
 
     export let openDialog: boolean = false;
-    export let parent: TreeItem;
+    export let selectedParent: TreeItem;
 
     let loading: boolean = false;
 
@@ -35,13 +35,14 @@
 
     function handleCreateModule() {
         loading = true;
-        createModule(moduleManifest, parent).then(() => {
-            reloadRepository();
-            dispatch('create', {manifest: moduleManifest});
-        })
-        .finally(() => {
-            closeDialog();
-        })
+        createModule(moduleManifest, selectedParent)
+            .then((mod) => {
+                console.log(mod);
+                dispatch('create', {manifest: moduleManifest});
+            })
+            .finally(() => {
+                closeDialog();
+            })
     }
 </script>
 
@@ -64,7 +65,7 @@
                 <Label for="name" class="text-right col-span-1">Create Here</Label>
                 <div class="col-span-3">
                 {#if $repository}
-                    <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={parent} />
+                    <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={selectedParent} />
                 {/if}
                 </div>
             </div>

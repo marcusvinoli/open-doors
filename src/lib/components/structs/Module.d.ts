@@ -32,3 +32,16 @@ export interface Object {
 export interface Collection {
 
 }
+
+export interface Baseline {
+    version: string,
+    description: string,
+    commit: string | null,
+}
+
+export interface Module {
+    path: string,
+    manifest: ModuleManifest,
+    template: any,
+    baselines: Baseline[],
+}

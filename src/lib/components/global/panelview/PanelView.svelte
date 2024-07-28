@@ -13,6 +13,8 @@
   import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js"; 
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import type { TreeItem } from "$lib/components/structs/Tree";
+    import ModulePanelView from "./ModulePanelView.svelte";
+    import ModuleForm from "$lib/components/forms/module/ModuleForm.svelte";
   
   export let currentItem: TreeItem;
   export let treeHistory: TreeItem[];
@@ -27,8 +29,8 @@
 
 <div class="h-full px-1 flex flex-col">
 {#if currentItem}  
-  {#if currentItem.itemType === "repository"}
-    <div></div>
+  {#if currentItem.itemType === "module"}
+    <ModuleForm bind:openDialog={editDialog} module={currentItem} on:deleted on:updated/>
   {:else if currentItem.itemType === "project"}
     <ProjectForm bind:openDialog={editDialog} project={currentItem} on:deleted on:updated/>
   {:else if currentItem.itemType === "folder"}
@@ -83,6 +85,11 @@
                   <p class="pl-3">New Module</p>
                 </DropdownMenu.Item>
                 {/if}
+              {:else}
+                <DropdownMenu.Item on:click={() => {}} class="min-w-[150px]">
+                  <Icon icon="gravity-ui:tag" width="15px"/>
+                  <p class="pl-3">New Baseline</p>
+                </DropdownMenu.Item>
               {/if}
             </DropdownMenu.Content>
           </DropdownMenu.Root>
@@ -111,13 +118,15 @@
         </button>
         {/each}
       </ScrollArea>
-      {:else}
+      {:else if currentItem.itemType !== "module"}
         {#if currentItem}
           <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
             <Icon icon={getIconFromTreeItemType(currentItem, true)} width="50px"/>
             <h1 class="text-xl font-semibold my-1">EMPTY {currentItem.itemType?.toUpperCase()??""}</h1>
           </div>
         {/if}
+      {:else}
+        <ModulePanelView moduleTree={currentItem} />
       {/if}
   {/if}
 </div>
