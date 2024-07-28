@@ -11,15 +11,14 @@
     import { createEventDispatcher, onMount } from 'svelte';
     import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import type { Project } from "$lib/components/structs/Project";
     import type { TreeItem } from '../../structs/Tree';
     import type { ModuleManifest } from "$lib/components/structs/Module";
 
     export let openDialog: boolean = false;
-    export let selectedParent: TreeItem;
+    export let parent: TreeItem;
 
     let loading: boolean = false;
-    let parentProject: Project;
+
     let moduleManifest: ModuleManifest = {
         title:"",
         prefix:"",
@@ -36,28 +35,14 @@
 
     function handleCreateModule() {
         loading = true;
-        createModule(moduleManifest, selectedParent!).then(() => {
+        createModule(moduleManifest, parent).then(() => {
             reloadRepository();
+            dispatch('create', {manifest: moduleManifest});
+        })
+        .finally(() => {
             closeDialog();
         })
-        dispatch('create', {manifest: moduleManifest, parent: selectedParent});
     }
-
-    $: {
-        if (selectedParent && selectedParent.itemType === "project") {
-            readProject(selectedParent)
-                .then((prj) => {
-                    parentProject = prj as Project;
-                })
-                .catch((err) => {
-                    console.log(err);
-                })
-                .finally(() => {
-                    loading = false;
-                })
-        }
-    }
-
 </script>
 
 <Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>
@@ -79,7 +64,7 @@
                 <Label for="name" class="text-right col-span-1">Create Here</Label>
                 <div class="col-span-3">
                 {#if $repository}
-                <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={selectedParent} />
+                    <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={parent} />
                 {/if}
                 </div>
             </div>
@@ -98,8 +83,8 @@
                 <Input id="name" placeholder="-" bind:value={moduleManifest.separator} class="col-span-1"/>
             </div>
             <Dialog.Description>
-                {#if (moduleManifest.title !== "") && (moduleManifest.prefix !== "") && (parentProject)}
-                Your module will be displayed as <strong>{parentProject.manifest.prefix}{parentProject.manifest.separator}{moduleManifest?.prefix} {moduleManifest?.separator} {moduleManifest?.title}</strong>.
+                {#if (moduleManifest.title !== "") && (moduleManifest.prefix !== "") && (parent)}
+                Your module will be displayed as <strong>{moduleManifest?.prefix} {moduleManifest?.separator} {moduleManifest?.title}</strong>.
                 {/if}
             </Dialog.Description>
             {/if}
