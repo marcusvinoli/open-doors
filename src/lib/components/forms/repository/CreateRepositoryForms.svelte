@@ -1,21 +1,18 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-    import { open } from '@tauri-apps/api/dialog';
-    import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
     import Icon from '@iconify/svelte';
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import Loading from '../../ui/loading/Loading.svelte';
+    import { open } from '@tauri-apps/api/dialog';
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
-    import type { RepositoryManifest } from "$lib/components/structs/Repo";
-    import Loading from '../ui/loading/Loading.svelte';
+    import { Button } from "$lib/components/ui/button/index.js";
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import { createEventDispatcher } from 'svelte';
     
     export let openDialog: boolean = false;
     export let loading: boolean = false;
     let path: string | string[] = "";
-    let manifest: RepositoryManifest = {
-        name: "",
-        remote: null,
-    }
+    let name: string;
+    let remote: string | null = null;
 
     function closeDialog() {
         loading = false;
@@ -37,8 +34,9 @@
     function handleCreate(event: any) {
         loading = true;
         event.stopPropagation();
-        dispatch('create', {manifest: manifest, path: path});
+        dispatch('create', {path: path, name: name, remote: remote})
     }
+
 </script>
 
 <Dialog.Root bind:open={openDialog} closeOnEscape={true}>
@@ -67,11 +65,11 @@
             </div>
             <div class="grid grid-cols-5 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Name</Label>
-                <Input id="name" bind:value={manifest.name} class="col-span-4" />
+                <Input id="name" bind:value={name} class="col-span-4" />
             </div>
             <div class="grid grid-cols-5 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Remote URL</Label>
-                <Input id="name" bind:value={manifest.remote} class="col-span-4" placeholder="*Optional"/>
+                <Input id="name" bind:value={remote} class="col-span-4" placeholder="*Optional"/>
             </div>
             {/if}
         </div>

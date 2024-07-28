@@ -1,13 +1,12 @@
 <script lang="ts">
     import Icon from '@iconify/svelte';
-    import Loading from '../ui/loading/Loading.svelte';
+    import Loading from '../../ui/loading/Loading.svelte';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import { open } from '@tauri-apps/api/dialog';
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
-    import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
+    import { Button } from "$lib/components/ui/button/index.js";
     import { createEventDispatcher } from 'svelte';
-    import type { RepositoryManifest } from "$lib/components/structs/Repo";
     
     export let openDialog: boolean = false;
     export let loading: boolean = false;

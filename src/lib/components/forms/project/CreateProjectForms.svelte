@@ -1,22 +1,22 @@
 <script lang="ts">
-    import Loading from '../ui/loading/Loading.svelte';
-    import ComboboxAllRecipientsOnRepository from './ComboboxAllRecipientsOnRepository.svelte';
+    import Loading from '../../ui/loading/Loading.svelte';
+    import ComboboxAllRecipientsOnRepository from '../utils/ComboboxAllRecipientsOnRepository.svelte';
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
-    import { repository } from "../../../routes/store";
+    import { repository } from "$lib/stores/Repository";
     import { createProject } from '$lib/controllers/Project';
     import { reloadRepository } from "$lib/controllers/Repository";
     import { createEventDispatcher, onMount } from 'svelte';
     import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import type { TreeItem } from '../structs/Tree';
-    import type { ProjectManifest, Project } from "$lib/components/structs/Project";
+    import type { TreeItem } from '../../structs/Tree';
+    import type { ProjectManifest } from "$lib/components/structs/Project";
 
     export let openDialog: boolean = false;
+    export let selectedParent: TreeItem;
 
     let loading: boolean = false;
-    export let selectedParent: TreeItem;
     let projectManifest: ProjectManifest = {
         name:"",
         separator: "-",
@@ -30,17 +30,13 @@
 
     const dispatch = createEventDispatcher();
 
-    function handleCreateProject(event: any) {
+    function handleCreateProject() {
         loading = true;
         createProject(projectManifest, selectedParent!).then(() => {
             reloadRepository();
             closeDialog();
+            dispatch('created', {manifest: projectManifest, parent: selectedParent});
         })
-        dispatch('create', {manifest: projectManifest, parent: selectedParent});
-    }
-
-    $: {
-
     }
 
     onMount(() => {
@@ -69,7 +65,7 @@
                 <Label for="name" class="text-right col-span-1">Create Here</Label>
                 <div class="col-span-3">
                 {#if $repository}
-                <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={selectedParent} />
+                    <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={selectedParent} />
                 {/if}
                 </div>
             </div>

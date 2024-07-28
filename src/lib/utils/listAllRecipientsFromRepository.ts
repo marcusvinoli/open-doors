@@ -17,10 +17,10 @@ export function listAllRecipientItemsFromRepository(repo: Repository): TreeItem[
     list.push({
         name: repo.manifest.name,
         itemType: "repository",
-        path: repo.path,
+        path: repo.tree.path,
         children: []
     });
-    repo.structure.children.forEach((child: TreeItem) => {
+    repo.tree.children.forEach((child: TreeItem) => {
         list.push(child)
         Array.prototype.push.apply(list, listSubItems(child))
     });

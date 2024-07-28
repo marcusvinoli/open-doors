@@ -1,4 +1,3 @@
-import type { Repository } from "$lib/components/structs/Repo";
 import type { TreeItem, TreeItemType } from "$lib/components/structs/Tree";
 
 function listSubItems(item: TreeItem): TreeItem[] {

@@ -3,6 +3,6 @@ export type TreeItemType = "repository" | "folder" | "project" | "object" | "mod
 export interface TreeItem {
     itemType: TreeItemType;
     name: string;
-    path: string | null;
+    path: string;
     children: TreeItem[];
 }

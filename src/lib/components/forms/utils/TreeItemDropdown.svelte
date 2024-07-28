@@ -7,10 +7,10 @@
     import { Button } from "$lib/components/ui/button/index.js";
     import { getIconFromTreeItemType } from '$lib/utils/getIconFromTreeItemType';
     import { onMount } from 'svelte';
-    import ScrollArea from '../ui/scroll-area/scroll-area.svelte';
+    import ScrollArea from '../../ui/scroll-area/scroll-area.svelte';
     import * as Command from "$lib/components/ui/command/index.js";
     import * as Popover from "$lib/components/ui/popover/index.js";
-    import type { TreeItem } from '../structs/Tree';
+    import type { TreeItem } from '../../structs/Tree';
 
     export let recipients: TreeItem[] = [];
     export let selected: TreeItem | null = null;

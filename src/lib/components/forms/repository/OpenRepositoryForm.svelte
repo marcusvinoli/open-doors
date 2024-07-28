@@ -1,8 +1,8 @@
 <script lang="ts">
     import Icon from '@iconify/svelte';
-    import Loading from '../ui/loading/Loading.svelte';
+    import Loading from '../../ui/loading/Loading.svelte';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
+    import { Button } from "$lib/components/ui/button/index.js";
     import { createEventDispatcher } from 'svelte';
     import { Label } from "$lib/components/ui/label/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
@@ -41,7 +41,7 @@
         <Dialog.Header>
         <Dialog.Title>Open a local Repository</Dialog.Title>
         <Dialog.Description>
-            Select a Git repository to start.
+            Select a OpenDOORS repository to start.
         </Dialog.Description>
         </Dialog.Header>
         <div class="grid gap-4 py-4 min-h-42">

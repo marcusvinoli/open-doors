@@ -1,48 +1,43 @@
 <script lang="ts">
-    import Loading from '../ui/loading/Loading.svelte';
-    import ComboboxAllRecipientsOnRepository from './ComboboxAllRecipientsOnRepository.svelte';
+    import Loading from '../../ui/loading/Loading.svelte';
+    import ComboboxAllRecipientsOnRepository from '../utils/ComboboxAllRecipientsOnRepository.svelte';
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
-    import { repository } from "../../../routes/store";
+    import { repository } from "$lib/stores/Repository";
     import { createFolder } from '$lib/controllers/Folder';
+    import { listChildren } from '$lib/utils/lists';
     import { reloadRepository } from "$lib/controllers/Repository";
     import { createEventDispatcher, onMount } from 'svelte';
-    import { listChildren } from '$lib/utils/lists';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import type { TreeItem } from '../structs/Tree';
+    import type { TreeItem } from '../../structs/Tree';
+
+    const dispatch = createEventDispatcher();
 
     export let openDialog: boolean = false;
 
     let loading: boolean = false;
     export let selectedParent: TreeItem;
-    let folder: TreeItem = {
-        name: "",
-        itemType: "folder",
-        path: "",
-        children: [],
-    };
+    let folderName: string;
 
     function closeDialog() {
         loading = false;
         openDialog = false;
     }
 
-    const dispatch = createEventDispatcher();
-
     function handleCreateFolder(event: any) {
         loading = true;
-        folder.path = selectedParent.path;
-        createFolder(folder, selectedParent).then(() => {
-            reloadRepository();
-            closeDialog();
-        })
-        dispatch('create', {folder: folder, parent: selectedParent});
+        createFolder(folderName, selectedParent)
+            .then((folder) => {
+                reloadRepository();
+                closeDialog();
+                dispatch('created', {folder: folder}) ;
+            })
     }
 
     onMount(() => {
         if (!selectedParent && $repository) {
-            selectedParent = listChildren($repository.structure, ["folder", "project"])[0];
+            selectedParent = listChildren($repository.tree, ["folder", "project"])[0];
         }
     })
 </script>
@@ -66,13 +61,13 @@
                 <Label for="name" class="text-right col-span-1">Create Here</Label>
                 <div class="col-span-3">
                 {#if $repository}
-                <ComboboxAllRecipientsOnRepository recipients={listChildren($repository.structure, ["folder", "project"])} bind:selectedItem={selectedParent} />
+                    <ComboboxAllRecipientsOnRepository recipients={listChildren($repository.tree, ["folder", "project"])} bind:selectedItem={selectedParent} />
                 {/if}
                 </div>
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Folder Name</Label>
-                <Input id="name" placeholder="Folder Name" bind:value={folder.name}  class="col-span-3" />
+                <Input id="name" placeholder="Folder Name" bind:value={folderName}  class="col-span-3" />
             </div>
             {/if}
         </div>

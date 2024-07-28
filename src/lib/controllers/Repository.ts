@@ -42,7 +42,7 @@ export async function createRepository(path: string, name: string, remote: strin
 }
 
 export async function reloadRepository() {
-    invoke('read_repo', {path: loadRepository()})
+    invoke('read_repo', {path: loadRepository().tree.path})
         .then((repo) => {
             saveRepository(repo as Repository)
         })

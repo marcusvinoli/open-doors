@@ -14,6 +14,31 @@ pub fn read_folder(path: &PathBuf) -> Result<ReadDir, MiddlewareError> {
     Ok(fs::read_dir(path)?)
 }
 
+pub fn update_folder(origin: &PathBuf, destination: &PathBuf) -> Result<PathBuf, MiddlewareError> {
+    fn copy_and_delete(src: &Path, dest: &Path) -> std::io::Result<()> {
+        if src.is_dir() {
+            fs::create_dir_all(dest)?;
+            for entry in fs::read_dir(src)? {
+                let entry = entry?;
+                let entry_path = entry.path();
+                let dest_path = dest.join(entry.file_name());
+                copy_and_delete(&entry_path, &dest_path)?;
+            }
+        } else {
+            fs::copy(src, dest)?;
+        }
+        fs::remove_dir_all(src)?;
+        Ok(())
+    }
+
+    if fs::rename(origin, destination).is_err() {
+        // If rename fails, try to copy and delete
+        copy_and_delete(&origin, &destination)?;
+    }
+    
+    Ok(destination.clone())
+}
+
 pub fn delete_folder(path: &PathBuf) -> Result<(), MiddlewareError> {
     Ok(fs::remove_dir_all(path)?)
 }

@@ -1,19 +1,18 @@
 <script lang="ts">
   import Icon from "@iconify/svelte";
   import Button from "$lib/components/ui/button/button.svelte";
-  import CreateFolderForms from "$lib/components/forms/CreateFolderForms.svelte";
-  import CreateProjectForms from "$lib/components/forms/CreateProjectForms.svelte";
-  import CreateModuleForms from "$lib/components/forms/CreateModuleForms.svelte";
-  import ProjectForm from "$lib/components/forms/ProjectForm.svelte";
-  import { getIconFromTreeItemType } from "$lib/utils/getIconFromTreeItemType";
+  import CreateFolderForms from "$lib/components/forms/folder/CreateFolderForms.svelte";
+  import CreateProjectForms from "$lib/components/forms/project/CreateProjectForms.svelte";
+  import CreateModuleForms from "$lib/components/forms/module/CreateModuleForms.svelte";
+  import ProjectForm from "$lib/components/forms/project/ProjectForm.svelte";
+  import FolderForm from "$lib/components/forms/folder/FolderForm.svelte";
+  import { goIn } from "$lib/stores/PanelView";
   import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
-  import { afterUpdate, beforeUpdate, onMount } from "svelte";
-  import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js"; 
+  import { getIconFromTreeItemType } from "$lib/utils/getIconFromTreeItemType";
   import * as Tooltip from "$lib/components/ui/tooltip";
+  import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js"; 
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import type { TreeItem } from "$lib/components/structs/Tree";
-  import { goIn } from "$lib/stores/PanelView";
-  import FolderForm from "$lib/components/forms/FolderForm.svelte";
   
   export let currentItem: TreeItem;
   export let treeHistory: TreeItem[];
@@ -23,10 +22,7 @@
   let moduleFormDialog: boolean = false;
   
   let editDialog: boolean = false;
-    
-  beforeUpdate(() => {
-  })
-
+  
 </script>
 
 <div class="h-full px-1 flex flex-col">
@@ -34,9 +30,9 @@
   {#if currentItem.itemType === "repository"}
     <div></div>
   {:else if currentItem.itemType === "project"}
-    <ProjectForm bind:openDialog={editDialog} project={currentItem}/>
+    <ProjectForm bind:openDialog={editDialog} project={currentItem} on:deleted on:updated/>
   {:else if currentItem.itemType === "folder"}
-    <FolderForm bind:openDialog={editDialog} folder={currentItem}/>
+    <FolderForm bind:openDialog={editDialog} folder={currentItem} on:deleted on:updated/>
   {/if}
     <div class="py-1 px-2 text-sm">
       <Breadcrumb.Root class="py-1">
@@ -119,7 +115,7 @@
         {#if currentItem}
           <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
             <Icon icon={getIconFromTreeItemType(currentItem, true)} width="50px"/>
-            <h1 class="text-xl font-semibold my-1">EMPTY {currentItem.itemType??"".toUpperCase()}</h1>
+            <h1 class="text-xl font-semibold my-1">EMPTY {currentItem.itemType?.toUpperCase()??""}</h1>
           </div>
         {/if}
       {/if}

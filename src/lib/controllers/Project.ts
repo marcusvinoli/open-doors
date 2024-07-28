@@ -13,4 +13,15 @@ export async function createProject(manifest: ProjectManifest, parent: TreeItem)
 
 export async function readProject(project: TreeItem) {
     return invoke('read_project', {path: project.path})
+        .then((prj) => {
+            return prj as Project;
+        })
+}
+
+export async function updateProject(project: TreeItem, man: ProjectManifest) {
+    return invoke('update_project', {path: project.path, man: man})
+}
+
+export async function deleteProject(project: TreeItem) {
+    return invoke('delete_project', {path: project.path})
 }

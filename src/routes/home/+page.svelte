@@ -1,22 +1,23 @@
 <script lang="ts">
-    import { beforeUpdate, onMount } from 'svelte';
+    import { onMount } from 'svelte';
     import Icon from '@iconify/svelte';
     import Tree from "$lib/components/global/treeview/TreeView.svelte";
     import * as Resizable from "$lib/components/ui/resizable";
     import type { TabData } from "$lib/components/global/tabs/TabData";
-    import { newTab, repository } from '../store';
-    import { Button, buttonVariants } from "$lib/components/ui/button/index.js";
-    import CreateProjectForms from "$lib/components/forms/CreateProjectForms.svelte"
+    import { newTab } from '../store';
+    import { repository } from '$lib/stores/Repository';
+    import { Button } from "$lib/components/ui/button/index.js";
+    import CreateProjectForms from "$lib/components/forms/project/CreateProjectForms.svelte"
     import { goto } from '$app/navigation';
     import { reloadRepository } from '$lib/controllers/Repository';
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import PanelView from '$lib/components/global/panelview/PanelView.svelte';
     import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType } from '$lib/components/global/toolbar/Toolbar';
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-    import CreateFolderForms from '$lib/components/forms/CreateFolderForms.svelte';
+    import CreateFolderForms from '$lib/components/forms/folder/CreateFolderForms.svelte';
     import type { TreeItem } from '$lib/components/structs/Tree';
     import { treeHistory, goBack, goIn, currentItem } from '$lib/stores/PanelView';
-    import CreateModuleForms from '$lib/components/forms/CreateModuleForms.svelte';
+    import CreateModuleForms from '$lib/components/forms/module/CreateModuleForms.svelte';
 
     let newProjectDialog: boolean = false;
     let newFolderDialog: boolean = false;
@@ -135,21 +136,21 @@
 </script>
 
 <div class="bg-slate-50 h-full py-1">
-    <CreateProjectForms bind:openDialog={newProjectDialog} on:create={goHome} selectedParent={$repository?.structure}/>
-    <CreateFolderForms bind:openDialog={newFolderDialog} on:create={goHome} selectedParent={$repository?.structure}/>
-    <CreateModuleForms bind:openDialog={newModuleDialog} on:create={goHome} selectedParent={$repository?.structure}/>
+    <CreateProjectForms bind:openDialog={newProjectDialog} on:create={goHome} selectedParent={$repository?.tree}/>
+    <CreateFolderForms bind:openDialog={newFolderDialog} on:create={goHome} selectedParent={$repository?.tree}/>
+    <CreateModuleForms bind:openDialog={newModuleDialog} on:create={goHome} selectedParent={$repository?.tree}/>
     <Resizable.PaneGroup direction="horizontal">
         <Resizable.Pane defaultSize={20} minSize={5}>
             <ScrollArea class="h-full">
-                <Tree treeItems={$repository?.structure} on:itemSelected={updateTreeView}/>
+                <Tree treeItems={$repository?.tree} on:itemSelected={updateTreeView}/>
             </ScrollArea>
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
         <Resizable.Pane minSize={5}>
-            {#if $repository?.structure.children.length > 0}
+            {#if $repository?.tree.children.length > 0}
             <div class="flex flex-col h-full text-sm">
                 {#if $currentItem}
-                    <PanelView currentItem={$currentItem} treeHistory={$treeHistory}/>
+                    <PanelView currentItem={$currentItem} treeHistory={$treeHistory} on:deleted={goBack}/>
                 {/if}
             </div>
             {:else}

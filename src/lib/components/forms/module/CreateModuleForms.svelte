@@ -1,27 +1,27 @@
 <script lang="ts">
-    import Loading from '../ui/loading/Loading.svelte';
-    import ComboboxAllRecipientsOnRepository from './ComboboxAllRecipientsOnRepository.svelte';
+    import Loading from '../../ui/loading/Loading.svelte';
+    import ComboboxAllRecipientsOnRepository from '../utils/ComboboxAllRecipientsOnRepository.svelte';
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
-    import { repository } from "../../../routes/store";
-    import { createProject, readProject } from '$lib/controllers/Project';
+    import { repository } from "$lib/stores/Repository";
+    import { createModule } from '$lib/controllers/Module';
     import { reloadRepository } from "$lib/controllers/Repository";
+    import { createProject, readProject } from '$lib/controllers/Project';
     import { createEventDispatcher, onMount } from 'svelte';
     import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import type { TreeItem } from '../structs/Tree';
-    import { createModule } from '$lib/controllers/Module';
-    import type { ModuleManifest } from "$lib/components/structs/Module";
     import type { Project } from "$lib/components/structs/Project";
+    import type { TreeItem } from '../../structs/Tree';
+    import type { ModuleManifest } from "$lib/components/structs/Module";
 
     export let openDialog: boolean = false;
+    export let selectedParent: TreeItem;
 
     let loading: boolean = false;
-    export let selectedParent: TreeItem;
     let parentProject: Project;
     let moduleManifest: ModuleManifest = {
-        name:"",
+        title:"",
         prefix:"",
         separator: "-",
         description: "",
@@ -44,16 +44,18 @@
     }
 
     $: {
-        readProject($repository!, selectedParent)
-            .then((prj) => {
-                parentProject = prj as Project;
-            })
-            .catch((err) => {
-                console.log(err);
-            })
-            .finally(() => {
-                loading = false;
-            })
+        if (selectedParent && selectedParent.itemType === "project") {
+            readProject(selectedParent)
+                .then((prj) => {
+                    parentProject = prj as Project;
+                })
+                .catch((err) => {
+                    console.log(err);
+                })
+                .finally(() => {
+                    loading = false;
+                })
+        }
     }
 
 </script>
@@ -83,7 +85,7 @@
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Module name</Label>
-                <Input id="name" placeholder="My Awesome Project" bind:value={moduleManifest.name}  class="col-span-3" />
+                <Input id="name" placeholder="Module" bind:value={moduleManifest.title}  class="col-span-3" />
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="desc" class="text-right col-span-1">Module description</Label>
@@ -96,8 +98,8 @@
                 <Input id="name" placeholder="-" bind:value={moduleManifest.separator} class="col-span-1"/>
             </div>
             <Dialog.Description>
-                {#if (moduleManifest.name !== "") && (moduleManifest.prefix !== "") && (parentProject)}
-                Your module will be displayed as <strong>{parentProject.manifest.prefix}{parentProject.manifest.separator}{moduleManifest?.prefix} {moduleManifest?.separator} {moduleManifest?.name}</strong>.
+                {#if (moduleManifest.title !== "") && (moduleManifest.prefix !== "") && (parentProject)}
+                Your module will be displayed as <strong>{parentProject.manifest.prefix}{parentProject.manifest.separator}{moduleManifest?.prefix} {moduleManifest?.separator} {moduleManifest?.title}</strong>.
                 {/if}
             </Dialog.Description>
             {/if}

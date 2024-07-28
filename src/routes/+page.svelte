@@ -2,13 +2,13 @@
     import Icon from '@iconify/svelte';
     import Button from "$lib/components/ui/button/button.svelte";
     import OpenDoorsLogo from "$lib/assets/open-doors-logo-111725.svg";
-    import OpenRepositoryForm from "$lib/components/forms/OpenRepositoryForm.svelte";
-    import CreateRepositoryForms from "$lib/components/forms/CreateRepositoryForms.svelte";
-    import CloneRepositoryForms from "$lib/components/forms/CloneRepositoryForms.svelte";
+    import OpenRepositoryForm from "$lib/components/forms/repository/OpenRepositoryForm.svelte";
+    import CreateRepositoryForms from "$lib/components/forms/repository/CreateRepositoryForms.svelte";
+    import CloneRepositoryForms from "$lib/components/forms/repository/CloneRepositoryForms.svelte";
     import type { RepositoryManifest } from "$lib/components/structs/Repo";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
-    import { cloneRepository, createRepository, loadRepoInformation, openRepository } from '$lib/controllers/Repository';
+    import { cloneRepository, createRepository, loadRepository, openRepository } from '$lib/controllers/Repository';
     import { clearToolbar } from '$lib/stores/Toolbar';
     
     let openRepositoryFlag: boolean = false;
@@ -52,8 +52,9 @@
 
     async function handleCreateRepository(event: any) {
         let path = event.detail.path as string;
-        let manifest = event.detail.manifest as RepositoryManifest;
-        createRepository(path, manifest)
+        let name = event.detail.name as string;
+        let remote = event.detail.remote as string | null;
+        createRepository(path, name, remote)
             .then(() => {
                 redirectHome();
                 createRepositoryFlag = false;
@@ -62,7 +63,7 @@
 
     onMount(() => {
         clearToolbar();
-        if(loadRepoInformation()) {
+        if(loadRepository()) {
             //redirectHome();
         }
     })

@@ -13,6 +13,8 @@ pub enum OpenDoorsError {
     ModuleError(#[from] ModuleError),
     #[error("MIDDLEWARE ERROR: {0}")]
     TreeError(#[from] TreeError),
+    #[error("Generic middleware error! {0}")]
+    MiddlewareError(#[from] MiddlewareError),
     #[error("{0}")]
     GenericError(String)
 }

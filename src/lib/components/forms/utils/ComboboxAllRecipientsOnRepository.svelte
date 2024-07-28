@@ -2,15 +2,16 @@
     import Icon from '@iconify/svelte';
     import Check from "lucide-svelte/icons/check";
     import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
+    import ScrollArea from '../../ui/scroll-area/scroll-area.svelte';
     import { cn } from "$lib/utils.js";
     import { tick } from "svelte";
     import { Button } from "$lib/components/ui/button/index.js";
-    import { getIconFromTreeItemType } from '$lib/utils/getIconFromTreeItemType';
     import { onMount } from 'svelte';
-    import ScrollArea from '../ui/scroll-area/scroll-area.svelte';
+    import { getIconFromTreeItemType } from '$lib/utils/getIconFromTreeItemType';
     import * as Command from "$lib/components/ui/command/index.js";
     import * as Popover from "$lib/components/ui/popover/index.js";
-    import type { TreeItem } from '../structs/Tree';
+    import type { TreeItem } from '../../structs/Tree';
+    import { repository } from '$lib/stores/Repository';
 
     export let recipients: TreeItem[] = [];
     export let selectedItem: TreeItem | null = null;
@@ -60,7 +61,7 @@
                 <Check class={cn("mr-2 h-4 w-4", selectedItem?.name !== recip.name && "text-transparent" )}/> 
                 <Icon icon={getIconFromTreeItemType(recip)} width="15px"/>
                 <span class="pl-2">{recip.name}</span>
-                <span class="pl-2 text-xs font-light text-slate-600 truncate">{recip.path}</span>
+                <span class="pl-2 text-xs font-light text-slate-600 truncate">{recip.path?.substring($repository?.tree.path.length)}</span>
               </Command.Item>
             {/each}
           </Command.Group>
