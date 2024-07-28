@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, vec};
 
 use serde::{Serialize, Deserialize};
 
@@ -25,10 +25,12 @@ pub struct Module{
 impl Module {
     pub fn create(path: &PathBuf, man: &ModuleManifest) -> Result<Module, ModuleError> {
         let module_path = mid::create_folder(&path, &man.prefix)?;
+        let baselines: Vec<Baseline> = vec![Baseline::default()];
+        let template: Template = Template::default();
         
         mid::create_yml_file(&module_path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
-        mid::create_yml_file(&module_path, defs::OD_BASELINE_FILE_NAME, &())?;
-        mid::create_yml_file(&module_path, defs::OD_TEMPLATE_FILE_NAME, &())?;
+        mid::create_yml_file(&module_path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
+        mid::create_yml_file(&module_path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
         mid::create_yml_file(&module_path, defs::OD_LINKS_FILE_NAME, &())?;
 
         mid::create_folder(&module_path, defs::OD_OBJS_FOLDER_NAME)?;
@@ -38,8 +40,8 @@ impl Module {
         Ok(Module { 
             path: module_path, 
             manifest: man.clone(), 
-            template: Template::default(), 
-            baselines: Vec::new(), 
+            template,
+            baselines,
         })
     }
     
