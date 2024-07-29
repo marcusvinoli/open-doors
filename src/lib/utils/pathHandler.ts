@@ -13,3 +13,11 @@ export function relativePath(fullPath: string): string {
 export function absolutePath(basePath: string, relativePath: string): string {
     return path.resolve(basePath, relativePath);
 }
+
+export function encodePath(path: string): string {
+    return encodeURIComponent(path);
+}
+
+export function decodePath(path: string): string {
+    return decodeURIComponent(path);
+}

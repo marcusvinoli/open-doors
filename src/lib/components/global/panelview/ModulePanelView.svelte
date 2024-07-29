@@ -7,6 +7,8 @@
     import * as Table from "$lib/components/ui/table/index.js";
     import * as Tooltip from "$lib/components/ui/tooltip";
     import { Button } from "$lib/components/ui/button";
+    import { goto } from "$app/navigation";
+    import { encodePath } from "$lib/utils/pathHandler";
 
     export let moduleTree: TreeItem;
 
@@ -26,7 +28,6 @@
     }
 
 </script>
-
 
 {#if module}
 <Table.Root>
@@ -63,7 +64,7 @@
                 <div class="flex flex-row-reverse gap-2">
                     <Tooltip.Root openDelay={300}>
                         <Tooltip.Trigger>
-                            <Button variant="ghost">
+                            <Button variant="ghost" on:click={() => {goto("/module/" + encodePath(module.path) + "/baseline/" + baseline.version )}}>
                                 <Icon icon="gravity-ui:arrow-up-right-from-square" width="20px" color=""/>
                             </Button>
                         </Tooltip.Trigger>

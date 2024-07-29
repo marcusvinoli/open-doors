@@ -5,11 +5,11 @@
     import OpenRepositoryForm from "$lib/components/forms/repository/OpenRepositoryForm.svelte";
     import CreateRepositoryForms from "$lib/components/forms/repository/CreateRepositoryForms.svelte";
     import CloneRepositoryForms from "$lib/components/forms/repository/CloneRepositoryForms.svelte";
-    import type { RepositoryManifest } from "$lib/components/structs/Repo";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
     import { cloneRepository, createRepository, loadRepository, openRepository } from '$lib/controllers/Repository';
     import { clearToolbar } from '$lib/stores/Toolbar';
+    import { clearTabs } from '$lib/stores/Tabs';
     
     let openRepositoryFlag: boolean = false;
     let createRepositoryFlag: boolean = false;
@@ -28,15 +28,20 @@
     }
 
     function redirectHome() {
+        clearTabs();
         goto("/home")
     }
 
     async function handleOpenRepository(event: any) {
         let path = event.detail.path as string;
+        console.log("Opening repository located at " + path);
         openRepository(path)
             .then(() => {
                 redirectHome();
                 openRepositoryFlag = false;
+            })
+            .catch((err) => {
+                console.log(err);
             })
     }
 

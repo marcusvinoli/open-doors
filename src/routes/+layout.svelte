@@ -1,17 +1,16 @@
 <script lang="ts">
     import "../app.pcss";
-    import Toolbar from "$lib/components/global/toolbar/Toolbar.svelte";
+    import ToolBar from "$lib/components/global/toolbar/ToolBar.svelte";
     import StatusBar from "$lib/components/global/status_bar/StatusBar.svelte";
     import TabHeader from "$lib/components/global/tabs/TabHeader.svelte";
-    import { tabs } from "./store";
     import { page } from "$app/stores";
-
+    import { activeTab } from "$lib/stores/Tabs";
 </script>
 
 <div class="flex flex-col h-full bg-slate-200">
     <div class="">
-        <Toolbar/>
-        <TabHeader tabs={$tabs} active={$page.url.pathname}/>
+        <ToolBar/>
+        <TabHeader/>
     </div>
     <div class="grow overflow-auto">
         <slot />

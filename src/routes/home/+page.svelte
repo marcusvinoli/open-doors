@@ -5,7 +5,6 @@
     import CreateFolderForms from '$lib/components/forms/folder/CreateFolderForms.svelte';
     import CreateProjectForms from "$lib/components/forms/project/CreateProjectForms.svelte"
     import { goto } from '$app/navigation';
-    import { newTab } from '../store';
     import { Button } from "$lib/components/ui/button/index.js";
     import { onMount } from 'svelte';
     import { repository } from '$lib/stores/Repository';
@@ -18,6 +17,7 @@
     import type { TreeItem } from '$lib/components/structs/Tree';
     import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType } from '$lib/components/global/toolbar/Toolbar';
     import CreateModuleForms from '$lib/components/forms/module/CreateModuleForms.svelte';
+    import { addTab } from '$lib/stores/Tabs';
 
 
     let newProjectDialog: boolean = false;
@@ -126,12 +126,7 @@
     onMount(() => {
         reloadRepository();
         loadHomeToolbar();
-        let homeTab: TabData = {
-            path: "/home",
-            icon: "gravity-ui:house",
-            title: "Home",
-        };
-        $newTab = homeTab;
+        addTab("Home", "gravity-ui:house", "/home");
     })
 
 </script>
@@ -148,25 +143,26 @@
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
         <Resizable.Pane minSize={5}>
-            {#if $repository?.tree.children.length > 0}
+        {#if $repository?.tree.children.length > 0}
             <div class="flex flex-col h-full text-sm">
                 {#if $currentItem}
                     <PanelView currentItem={$currentItem} treeHistory={$treeHistory} on:deleted={goBack}/>
                 {/if}
             </div>
-            {:else}
-                <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
-                    <div class="my-5">
-                        <Icon icon="gravity-ui:folder-exclamation" width="50px"/>
-                    </div>
-                    <h1 class="font-semibold ">It seems that there is no project on this Repository...</h1>
-                    <h2 class="font-regular pb-3">Let's create the first one!</h2>
-                    <Button on:click={openNewProjectDialog}>
-                        <Icon icon="gravity-ui:folder-plus" width="20px"/>
-                        <p class="pl-2">New Project</p>
-                    </Button>
-                </div>
-            {/if}
+        {:else}
+            <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
+            <div class="my-5">
+                <Icon icon="gravity-ui:folder-exclamation" width="50px"/>
+            </div>
+            <h1 class="font-semibold ">It seems that there is no project on this Repository...</h1>
+            <h2 class="font-regular pb-3">Let's create the first one!</h2>
+            <Button on:click={openNewProjectDialog}>
+                <Icon icon="gravity-ui:folder-plus" width="20px"/>
+                <p class="pl-2">New Project</p>
+            </Button>
+            </div>
+        {/if}
         </Resizable.Pane>
     </Resizable.PaneGroup> 
 </div>
+                        
