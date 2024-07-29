@@ -1,7 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+@layer no-tailwindcss {
+  /* This layer is disabled */
+  @layer components {
+    .no-tailwindcss {
+      all: unset;
+    }
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

@@ -1,0 +1,51 @@
+.preview {
+    /*box-sizing: border-box;*/
+    background-color: #eef1f336;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.txtarea {
+    font-family: monospace, Roboto;
+    height: 25%;
+    border: none;
+    margin: 0;
+    padding: 1rem;
+}
+
+.preview {
+    height: 100%;
+    padding: 0.5rem 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.preview h1 {
+    margin: 0px;
+    padding: 0.5rem 0;
+    font-size: 1.2rem;
+    font-weight: bolder;
+}
+
+.preview h2 {
+    margin: 0px;
+    padding: 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.preview h3 {
+    margin: 0px;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.preview ul {
+    list-style: inside;
+    padding-left: 25px;
+}
+
+.preview ol li{
+    list-style-type: decimal;
+}

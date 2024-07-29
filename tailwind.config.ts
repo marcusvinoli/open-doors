@@ -5,6 +5,14 @@ const config: Config = {
 	darkMode: ["class"],
 	content: ["./src/**/*.{html,js,svelte,ts}"],
 	safelist: ["dark"],
+	layers: {
+		'no-tailwindcss': {
+		  // Add any styles you want to disable here
+		  '.no-tailwindcss': {
+			all: 'unset',
+		  },
+		},
+	},
 	theme: {
 		container: {
 			center: true,
@@ -59,6 +67,9 @@ const config: Config = {
 			}
 		}
 	},
+	plugins: [
+		require('@tailwindcss/typography'),
+	]
 };
 
 export default config;

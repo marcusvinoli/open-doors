@@ -11,6 +11,7 @@
     import * as Resizable from "$lib/components/ui/resizable";
     import ObjectEditor from "$lib/components/global/object_editor/ObjectEditor.svelte";
     import type { Object } from "$lib/components/structs/Object";
+    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
 
     let selectedObject: Object;
 
@@ -107,9 +108,10 @@
             <div>Test</div>
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
-        <Resizable.Pane class="w-full">
-            <ObjectEditor bind:object={selectedObject} />
+        <Resizable.Pane class="h-full">
+            <ScrollArea class="h-full">
+                <ObjectEditor bind:object={selectedObject} />
+            </ScrollArea>
         </Resizable.Pane>
     </Resizable.PaneGroup>
-
 </div>
