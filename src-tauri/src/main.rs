@@ -12,6 +12,7 @@ fn main() {
 		od_handlers::repository::create_repo,
 		od_handlers::repository::clone_repo,
 		od_handlers::repository::read_repo,
+		od_handlers::user::get_user,
 		od_handlers::tree::read_tree,
 		od_handlers::project::create_project,
 		od_handlers::project::read_project,

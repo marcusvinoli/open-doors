@@ -29,22 +29,22 @@ pub fn add<T: AsRef<str> + Display, U: AsRef<str> + Display>(path: T, doc: U) ->
 }
 
 pub fn get_user_name<T: AsRef<str> + Display>(path: T) -> Result<String, GitError> {
-    let res = git_run_cmd(["-C", &path.to_string(), "user.name"])?;
-    return Ok(String::from_utf8(res.stdout).unwrap_or_default());
+    let res = git_run_cmd(["-C", &path.to_string(), "config", "user.name"])?;
+    return Ok(String::from_utf8(res.stdout)?);
 }
 
 pub fn get_user_email<T: AsRef<str> + Display>(path: T) -> Result<String, GitError> {
-    let res = git_run_cmd(["-C", &path.to_string(), "user.email"])?;
-    return Ok(String::from_utf8(res.stdout).unwrap_or_default());
+    let res = git_run_cmd(["-C", &path.to_string(), "config", "user.email"])?;
+    return Ok(String::from_utf8(res.stdout)?);
 }
 
 pub fn set_user_name<T: AsRef<str> + Display, U: AsRef<str> + Display>(path: T, name: U) -> Result<String, GitError> {
-    git_run_cmd(["-C", &path.to_string(), "user.name", &name.to_string()])?;
+    git_run_cmd(["-C", &path.to_string(), "config", "user.name", &name.to_string()])?;
     get_user_name(path)
 }
 
 pub fn set_user_email<T: AsRef<str> + Display, U: AsRef<str> + Display>(path: T, email: U) -> Result<String, GitError> {
-    git_run_cmd(["-C", &path.to_string(), "user.email", &email.to_string()])?;
+    git_run_cmd(["-C", &path.to_string(), "config", "user.email", &email.to_string()])?;
     get_user_email(path)
 }
 

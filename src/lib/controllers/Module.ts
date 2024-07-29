@@ -31,3 +31,15 @@ export function updateModuleManifest(module: TreeItem, manifest: ModuleManifest)
 export function deleteModule(module: TreeItem) {
     return invoke('delete_module', {path: module.path})
 }
+
+export function readAddObjects(module: TreeItem) {
+
+}
+
+export function createDraftObject(module: TreeItem, objects: Object | Object[]) {
+
+}
+
+export function createObjects(module: TreeItem, object: Object | Object[]) {
+
+}

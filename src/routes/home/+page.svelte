@@ -18,6 +18,7 @@
     import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType } from '$lib/components/global/toolbar/Toolbar';
     import CreateModuleForms from '$lib/components/forms/module/CreateModuleForms.svelte';
     import { addTab } from '$lib/stores/Tabs';
+    import { loadAuthorInformation } from '$lib/controllers/User';
 
 
     let newProjectDialog: boolean = false;
@@ -126,6 +127,7 @@
     onMount(() => {
         reloadRepository();
         loadHomeToolbar();
+        loadAuthorInformation();
         addTab("Home", "gravity-ui:house", "/home");
     })
 

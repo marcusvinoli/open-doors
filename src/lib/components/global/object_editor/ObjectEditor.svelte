@@ -25,7 +25,7 @@
             number: "0",
             header: "",
             content: "",
-            author: $author,
+            author: $author!,
             isActive: false,
             isRequirement: false,
             createdAt: new Date(),
