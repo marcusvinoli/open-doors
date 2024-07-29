@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType } from "$lib/components/global/toolbar/Toolbar";
-    import { goBack, goHome } from "$lib/stores/PanelView";
+    import PanelView from '$lib/components/global/panelview/PanelView.svelte';
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
@@ -8,7 +8,11 @@
     import { get } from "svelte/store";
     import { page } from "$app/stores";
     import { repository } from "$lib/stores/Repository";
-    import { encodePath } from "$lib/utils/pathHandler";
+    import * as Resizable from "$lib/components/ui/resizable";
+    import ObjectEditor from "$lib/components/global/object_editor/ObjectEditor.svelte";
+    import type { Object } from "$lib/components/structs/Object";
+
+    let selectedObject: Object;
 
     function loadHomeToolbar() {
         clearToolbar();
@@ -21,16 +25,7 @@
                 goto("/home")
             },
         }
-    
-        let backButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Back",
-            icon: "gravity-ui:arrow-left",
-            action: () => {
-                goto("/home")
-            },
-        }
-    
+        
         let newButton: ToolbarButtonType = {
             type: "button",
             tooltip: "New...",
@@ -38,17 +33,17 @@
             action: () => {},
         }
     
-        let newProjectButton: ToolbarButtonType = {
+        let newBaselineButton: ToolbarButtonType = {
             type: "button",
-            tooltip: "New Project",
-            icon: "gravity-ui:folder-open-fill",
+            tooltip: "New Baseline",
+            icon: "gravity-ui:tag",
             action: () => {},
         }
     
-        let newFolderButton: ToolbarButtonType = {
+        let newObjectButton: ToolbarButtonType = {
             type: "button",
-            tooltip: "New Folder",
-            icon: "gravity-ui:folder-open",
+            tooltip: "New Object",
+            icon: "gravity-ui:square-chart-bar",
             action: () => {},
         }
     
@@ -64,9 +59,13 @@
             items: [
                 {
                     items: [
-                        newProjectButton, 
-                        newFolderButton, 
-                        newModuleButton
+                        newObjectButton,
+                    ],
+                    type: "buttonsGroup",
+                },
+                {
+                    items: [
+                        newBaselineButton,
                     ],
                     type: "buttonsGroup",
                 }
@@ -75,7 +74,7 @@
         }
     
         let navigationGroup: ToolbarGroupType = {
-            items: [homeButton, backButton],
+            items: [homeButton],
             type: "buttonsGroup"
         }
     
@@ -98,6 +97,19 @@
     })
 </script>
 
-<div>
-    This is module "MOD" with specific baseline
+<div class="bg-slate-50 h-full py-1">
+    <Resizable.PaneGroup direction="horizontal">
+        <Resizable.Pane defaultSize={20} minSize={5} collapsible>
+            <div>Items Tree</div>
+        </Resizable.Pane>
+        <Resizable.Handle withHandle/>
+        <Resizable.Pane>
+            <div>Test</div>
+        </Resizable.Pane>
+        <Resizable.Handle withHandle/>
+        <Resizable.Pane class="w-full">
+            <ObjectEditor bind:object={selectedObject} />
+        </Resizable.Pane>
+    </Resizable.PaneGroup>
+
 </div>
