@@ -24,6 +24,16 @@ fn main() {
 		od_handlers::folder::delete_folder,
 		od_handlers::module::create_module,
 		od_handlers::module::read_module,
+		od_handlers::module::create_object,
+		od_handlers::module::create_draft_object,
+		od_handlers::module::read_object,
+		od_handlers::module::read_draft_object,
+		od_handlers::module::update_object,
+		od_handlers::module::update_draft_object,
+		od_handlers::module::delete_object,
+		od_handlers::module::create_template,
+		od_handlers::module::read_template,
+		od_handlers::module::update_template,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running OpenDOORs.");

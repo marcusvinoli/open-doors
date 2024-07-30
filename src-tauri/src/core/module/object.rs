@@ -1,21 +1,32 @@
 use std::collections::HashMap;
-
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[serde(rename_all="camelCase")]
 pub struct Object {
     id: usize,
-    level: String,
-    header: String,
-    content: String,
-    author: String,
-    is_active: bool,
-    is_normative: bool,
-    created_at: DateTime<Utc>,
-    updated_at: DateTime<Utc>,
+    pub header: String,
+    pub content: String,
+    pub author: String,
+    pub is_active: bool,
+    pub is_normative: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
     #[serde(skip_serializing_if="Option::is_none")]
-    deleted_at: Option<DateTime<Utc>>,
+    pub deleted_at: Option<DateTime<Utc>>,
     #[serde(skip_serializing_if="Option::is_none")]
-    custom_fields: Option<HashMap<String, String>>,
+    pub custom_fields: Option<HashMap<String, String>>,
+}
+
+impl Object {
+    pub fn assign_id(&mut self, id: usize) {
+        if self.id == 0 {
+            self.id = id;
+        }
+    }
+
+    pub fn id(&self) -> usize {
+        self.id
+    }
 }

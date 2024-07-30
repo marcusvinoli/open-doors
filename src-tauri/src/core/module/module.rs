@@ -1,10 +1,11 @@
-use std::{path::PathBuf, vec};
+use std::{cmp::max, path::PathBuf, vec};
 
+use chrono::Utc;
 use serde::{Serialize, Deserialize};
 
 use crate::core::{error::ModuleError, middleware as mid};
 
-use super::{baseline::Baseline, object::Object, template::Template, definitions as defs};
+use super::{baseline::Baseline, definitions as defs, object::Object, template::Template};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {
@@ -72,20 +73,113 @@ impl Module {
         Ok(mid::delete_folder(&path)?)
     }
 
-    pub fn create_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
-        todo!()
+    pub fn read_object(&self, id: usize) -> Result<Object, ModuleError> {
+        Ok(Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id)?)
     }
 
-    pub fn read_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
-        todo!()
+    pub fn read_draft_object(&self, id: usize) -> Result<Object, ModuleError> {
+        Ok(Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id)?)
+    }
+
+    pub fn find_object(&self, id: usize) -> Result<Object, ModuleError> {
+        match Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id) {
+            Ok(obj) => {
+                return Ok(obj)
+            },
+            Err(_) => {
+                return Module::open_object(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), id)
+            }
+        };
     }
     
-    pub fn update_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
-        todo!()
+    pub fn create_object(&mut self, obj: &mut Object) -> Result<(), ModuleError> {
+        Ok(self.save_object(defs::OD_OBJS_FOLDER_NAME, obj)?)
     }
     
-    pub fn delete_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
-        todo!()
+    pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<(), ModuleError> {
+        Ok(self.save_object(defs::OD_OBJS_FOLDER_NAME, obj)?)
+    }
+
+    pub fn create_objects(&mut self, objs: &Vec<Object>) -> Result<(), ModuleError> {
+        for obj in objs {
+            let mut obj = obj.clone();
+            self.create_object(&mut obj)?
+        }
+        Ok(())
+    }
+
+    pub fn create_draft_objects(&mut self, objs: &Vec<Object>) -> Result<(), ModuleError> {
+        for obj in objs {
+            let mut obj = obj.clone();
+            self.create_draft_object(&mut obj)?
+        }
+        Ok(())
+    }
+    
+    pub fn read_objects(&mut self) -> Result<Vec<Object>, ModuleError> {
+        let mut objs: Vec<Object> = Vec::new();
+
+        for entry in mid::read_folder(&self.path.join(defs::OD_OBJS_FOLDER_NAME))? {
+            if let Ok(entry) = entry {
+                let file_name = entry.file_name();
+                let file_name_str = file_name.to_str().unwrap_or("");
+        
+                if !file_name_str.ends_with(".yml") {
+                    continue;
+                }
+    
+                if let Some(number_str) = file_name_str.strip_suffix(".yml") {
+                    if let Ok(number) = number_str.parse::<usize>() {
+                        objs.push(self.find_object(number)?)
+                    }
+                }
+                
+            } else {
+                continue;
+            }
+        }
+
+        Ok(objs)
+    }
+
+    pub fn read_draft_objects(&mut self) -> Result<Vec<Object>, ModuleError> {
+        let mut objs: Vec<Object> = Vec::new();
+
+        for entry in mid::read_folder(&self.path.join(defs::OD_OBJS_FOLDER_NAME))? {
+            if let Ok(entry) = entry {
+                let file_name = entry.file_name();
+                let file_name_str = file_name.to_str().unwrap_or("");
+        
+                if !file_name_str.ends_with(".yml") {
+                    continue;
+                }
+    
+                if let Some(number_str) = file_name_str.strip_suffix(".yml") {
+                    if let Ok(number) = number_str.parse::<usize>() {
+                        objs.push(self.find_object(number)?)
+                    }
+                }
+
+            } else {
+                continue;
+            }
+        }
+
+        Ok(objs)
+    }
+    
+    pub fn update_object(&mut self, obj: &mut Object) -> Result<(), ModuleError> {
+        self.create_object(obj)
+    }
+    
+    pub fn update_draft_object(&mut self, obj: &mut Object) -> Result<(), ModuleError> {
+        self.create_draft_object(obj)
+    }
+
+    pub fn delete_object(&mut self, id: usize) -> Result<(), ModuleError> {
+        let mut obj = self.find_object(id)?;
+        obj.deleted_at = Some(Utc::now());
+        Ok(self.update_object(&mut obj)?)
     }
 
     pub fn create_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
@@ -103,15 +197,7 @@ impl Module {
     pub fn delete_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
         todo!()
     }
-    
-    pub fn create_draft_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
-        todo!()
-    }
-
-    pub fn read_draft_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
-        todo!()
-    }
-    
+        
     pub fn update_draft_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
         todo!()
     }
@@ -120,29 +206,18 @@ impl Module {
         todo!()
     }
 
-    pub fn create_template(path: &PathBuf, template: Template) -> Result<(), ModuleError> {
-        todo!()
+    pub fn create_template(&self, template: Template) -> Result<Template, ModuleError> {
+        mid::create_yml_file(&self.path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
+        Ok(self.read_template()?)
     }
     
-    pub fn read_template(path: &PathBuf) -> Result<Template, ModuleError> {
-        todo!()
+    pub fn read_template(&self) -> Result<Template, ModuleError> {
+        Ok(mid::read_yml_file::<Template,_>(&self.path, defs::OD_TEMPLATE_FILE_NAME)?)
     }
     
-    pub fn update_template(path: &PathBuf, template: Template) -> Result<Template, ModuleError> {
-        todo!()
+    pub fn update_template(&self, template: Template) -> Result<Template, ModuleError> {
+        Ok(self.create_template(template)?)
     }
-
-    pub fn delete_template(path: &PathBuf) -> Result<(), ModuleError> {
-        todo!()
-    }
-
-    /* pub fn add_link(path: &PathBuf, link: Link) -> Result<(), ModuleError> {
-        todo!()
-    } */
-
-    /* pub fn remove_link(path: &PathBuf, link: Link) -> Result<(), ModuleError> {
-        todo!()
-    } */
 
     pub fn create_baseline(path: &PathBuf) -> Result<Vec<Baseline>, ModuleError> {
         todo!()
@@ -162,4 +237,45 @@ impl Module {
         }
         Ok(())
     }
+
+    fn get_next_available_id(&self) -> Result<usize, ModuleError> {
+        let obj_next: usize = Module::next_file_number(&self.path.join(defs::OD_OBJS_FOLDER_NAME))?;
+        let draft_next: usize = Module::next_file_number(&self.path.join(defs::OD_DRAFT_FOLDER_NAME))?;
+        let max: usize = max(obj_next, draft_next);
+        Ok(max)
+    }
+
+    fn next_file_number(dir: &PathBuf) -> Result<usize, ModuleError> {
+        let mut max_number = 0;
+    
+        for entry in mid::read_folder(dir)? {
+            let entry = entry;
+            if entry.is_err() {
+                return Err(ModuleError::UnknownError);
+            } 
+            let entry = entry.ok().unwrap();
+            let file_name = entry.file_name();
+            let file_name_str = file_name.to_str().unwrap_or("");
+    
+            if file_name_str.ends_with(".yml") {
+                if let Some(number_str) = file_name_str.strip_suffix(".yml") {
+                    if let Ok(number) = number_str.parse::<usize>() {
+                        max_number = max(max_number, number);
+                    }
+                }
+            }
+        }
+    
+        Ok(max_number + 1)
+    }
+
+    fn save_object(&self, folder: &str, obj: &mut Object) -> Result<(), ModuleError> {
+        obj.assign_id(self.get_next_available_id()?);
+        Ok(mid::create_yml_file(&self.path.join(folder), format!("{}.yml", obj.id()), &obj)?)
+    }
+
+    fn open_object(path: &PathBuf, id: usize) -> Result<Object, ModuleError> {
+        Ok(mid::read_yml_file::<Object, _>(path, format!("{id}.yaml"))?)
+    }
+
 }
