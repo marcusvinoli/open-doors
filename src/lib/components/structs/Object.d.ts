@@ -1,4 +1,5 @@
 import type { Author } from "./Author";
+import type { User } from "./User";
 
 export interface Link {
     module: string,
@@ -6,24 +7,30 @@ export interface Link {
 }
 
 export interface Links {
-    input: Link[],
-    output: Link[],
+    inbound: Link[],
+    outbound: Link[],
 }
 
 export interface CustomFields extends IHash {}
 
 export interface Object {
-    id: bigint,
-    number: string,
+    id: number,
+    level: string,
     header: string,
     content: string,
-    author: Author, 
+    author: User | string, 
     isActive: boolean,
+    isNormative: boolean,
     isRequirement: boolean,
     createdAt: Date,
     updatedAt: Date,
     deletedAt: Date | null,
     customFiels: CustomFields | null,
-    links: Links,
-    isDraft: boolean,
+}
+
+export interface ObjectView {
+    object: Object,
+    links: Link[] = [],
+    isDraft: boolean = false,
+    hasChanges: boolean = false,
 }

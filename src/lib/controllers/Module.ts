@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api";
 import { reloadRepository } from "./Repository";
 import type { TreeItem } from "$lib/components/structs/Tree"
 import type { ModuleManifest, Module } from "$lib/components/structs/Module"
+import type { ObjectView, Object } from "$lib/components/structs/Object";
 
 export function createModule(manifesf: ModuleManifest, parent: TreeItem) {
     return invoke('create_module', {man: manifesf, parent: parent})
@@ -15,10 +16,7 @@ export function createModule(manifesf: ModuleManifest, parent: TreeItem) {
 }
 
 export function readModule(module: TreeItem) {
-    return invoke('read_module', {path: module.path})
-        .then((mod) => {
-            return mod as Module;
-        })
+    return readModuleFromPath(module.path)
 }
 
 export function updateModuleManifest(module: TreeItem, manifest: ModuleManifest) {
@@ -32,14 +30,45 @@ export function deleteModule(module: TreeItem) {
     return invoke('delete_module', {path: module.path})
 }
 
-export function readAddObjects(module: TreeItem) {
+export function readAllObjects(module: TreeItem) {
 
 }
 
-export function createDraftObject(module: TreeItem, objects: Object | Object[]) {
-
+export function readModuleFromPath(path: string) {
+    return invoke('read_module', {path: path})
+        .then((mod) => {
+            return mod as Module;
+        })
 }
 
-export function createObjects(module: TreeItem, object: Object | Object[]) {
+export function createObject(modulePath: String, object: Object | ObjectView) {
+    return invoke('create_object', {path: modulePath, object: object})
+        .then((mod) => {
+            return mod as Object;
+        })
+}
+
+export function createDraftObject(modulePath: String, object: Object | ObjectView) {
+    return invoke('create_draft_object', {path: modulePath, object: object as Object})
+        .then((mod) => {
+            return mod as Object;
+        })
+}
+
+export function readObjects(modulePath: String) {
+    return invoke('read_objects', {path: modulePath})
+        .then((mods) => {
+            return mods as Object[];
+        })
+}
+
+export function readDraftObjects(modulePath: String) {
+    return invoke('read_draft_objects', {path: modulePath})
+        .then((mods) => {
+            return mods as Object[];
+        })
+}
+
+export function createObjects(module: TreeItem, object: Object[] | Object[]) {
 
 }

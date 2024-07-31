@@ -1,17 +1,16 @@
-import type { Author } from "$lib/components/structs/Author";
-import { author } from "$lib/stores/Author";
+import type Author from "$lib/components/structs/Author";
+import { User } from "$lib/components/structs/User";
+import { user } from "$lib/stores/User";
 import { repository } from "$lib/stores/Repository";
 import { invoke } from "@tauri-apps/api";
 import { get } from "svelte/store";
 
 export function loadAuthorInformation() {
     let repo = get(repository);
-    console.log("repo", repo);
     if(repo) {
         invoke('get_user', {path: repo.tree.path})
             .then(usr => {
-                console.log("Urs", usr);
-                author.set(usr as Author);
+                user.set(User.fromString(usr as string));
             })
             .catch(err => {
                 console.log(err);

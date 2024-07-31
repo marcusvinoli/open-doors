@@ -5,8 +5,9 @@
     import type { ToolbarItemInterface, ToolbarButtonType } from "./Toolbar";
 
     export let item: ToolbarItemInterface;
-    let button = item as ToolbarButtonType;
+    let button: ToolbarButtonType;
 
+    $: {button = item as ToolbarButtonType};
 </script>
 
 <div class="flex flex-row items-center gap-1">

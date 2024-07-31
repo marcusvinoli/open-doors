@@ -1,3 +1,5 @@
+import type { ObjectView } from "./Object";
+
 export interface ModuleManifest {
     title: string,
     prefix: string,
@@ -5,32 +7,12 @@ export interface ModuleManifest {
     description: string,
 }
 
-export interface Template {
-
-}
-
-export type LinkType = "output" | "input";
+export type LinkType = "outbound" | "inbound";
 
 export type Link = {
     to: string,
     from: string,
     type: LinkType,
-}
-
-export type ObjectType = "requirement" | "text" | "title" | "header";
-
-export interface Object {
-    id: bigint,
-    index: string,
-    header: string,
-    text: string,
-    type: ObjectType,
-    attributes: IHash = {},
-    links: Link[],
-}
-
-export interface Collection {
-
 }
 
 export interface Baseline {
@@ -44,4 +26,9 @@ export interface Module {
     manifest: ModuleManifest,
     template: any,
     baselines: Baseline[],
+}
+
+export interface ModuleView extends Module {
+    objects: ObjectView[] = [], 
+    links: Link[] = [],
 }

@@ -30,12 +30,14 @@ pub fn add<T: AsRef<str> + Display, U: AsRef<str> + Display>(path: T, doc: U) ->
 
 pub fn get_user_name<T: AsRef<str> + Display>(path: T) -> Result<String, GitError> {
     let res = git_run_cmd(["-C", &path.to_string(), "config", "user.name"])?;
-    return Ok(String::from_utf8(res.stdout)?);
+    let ret = String::from_utf8(res.stdout)?.replace("\n", "").replace("\r", "");
+    return Ok(ret);
 }
 
 pub fn get_user_email<T: AsRef<str> + Display>(path: T) -> Result<String, GitError> {
     let res = git_run_cmd(["-C", &path.to_string(), "config", "user.email"])?;
-    return Ok(String::from_utf8(res.stdout)?);
+    let ret = String::from_utf8(res.stdout)?.replace("\n", "").replace("\r", "");
+    return Ok(ret);
 }
 
 pub fn set_user_name<T: AsRef<str> + Display, U: AsRef<str> + Display>(path: T, name: U) -> Result<String, GitError> {

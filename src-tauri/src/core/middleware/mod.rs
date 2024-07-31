@@ -3,6 +3,7 @@ pub mod error;
 use std::{fs::{self, File, ReadDir}, io::{Read, Write}, path::{Path, PathBuf}};
 use error::MiddlewareError;
 use serde::{Deserialize, Serialize};
+use tauri::api::file;
 
 pub fn create_folder<S: AsRef<Path>>(base_path: &PathBuf, folder_name: S) -> Result<PathBuf, MiddlewareError> {
     let path = base_path.join(folder_name);
@@ -37,6 +38,11 @@ pub fn update_folder(origin: &PathBuf, destination: &PathBuf) -> Result<PathBuf,
     }
     
     Ok(destination.clone())
+}
+
+pub fn move_file(origin: &PathBuf, destination: &PathBuf, filename: &String) -> Result<(), MiddlewareError> {
+    update_folder(&origin.join(&filename), &destination.join(&filename))?;
+    Ok(())
 }
 
 pub fn delete_folder(path: &PathBuf) -> Result<(), MiddlewareError> {

@@ -14,19 +14,17 @@ pub fn read_module(path: PathBuf) -> Result<Module, OpenDoorsError> {
 }
 
 #[command]
-pub fn create_object(path: PathBuf, object: Object) -> Result<(), OpenDoorsError> {
+pub fn create_object(path: PathBuf, object: Object) -> Result<Object, OpenDoorsError> {
     let mut module = Module::read(&path)?;
     let mut obj = object.clone();
-    module.create_object(&mut obj)?;
-    Ok(())
+    Ok(module.create_object(&mut obj)?)
 }
 
 #[command]
-pub fn create_draft_object(path: PathBuf, object: Object) -> Result<(), OpenDoorsError> {
+pub fn create_draft_object(path: PathBuf, object: Object) -> Result<Object, OpenDoorsError> {
     let mut module = Module::read(&path)?;
     let mut obj = object.clone();
-    module.create_draft_object(&mut obj)?;
-    Ok(())
+    Ok(module.create_draft_object(&mut obj)?)
 }
 
 #[command]
@@ -41,22 +39,34 @@ pub fn read_draft_object(path: PathBuf, id: usize) -> Result<Object, OpenDoorsEr
     Ok(module.read_draft_object(id)?)
 }
 
-#[command] 
-pub fn update_object(path: PathBuf, object: Object) -> Result<(), OpenDoorsError> {
+#[command]
+pub fn read_objects(path: PathBuf) -> Result<Vec<Object>, OpenDoorsError> {
     let mut module = Module::read(&path)?;
-    let mut obj = object.clone();
-    Ok(module.update_object(&mut obj)?)
+    Ok(module.read_objects()?)
+}
+
+#[command]
+pub fn read_draft_objects(path: PathBuf) -> Result<Vec<Object>, OpenDoorsError> {
+    let mut module = Module::read(&path)?;
+    Ok(module.read_draft_objects()?)
 }
 
 #[command] 
-pub fn update_draft_object(path: PathBuf, object: Object) -> Result<(), OpenDoorsError> {
+pub fn update_object(path: PathBuf, object: Object) -> Result<Object, OpenDoorsError> {
+    let mut module = Module::read(&path)?;
+    let mut obj = object.clone();
+    Ok(module.update_object(&mut obj)?) 
+}
+
+#[command] 
+pub fn update_draft_object(path: PathBuf, object: Object) -> Result<Object, OpenDoorsError> {
     let mut module = Module::read(&path)?;
     let mut obj = object.clone();
     Ok(module.update_draft_object(&mut obj)?)
 }
 
 #[command] 
-pub fn delete_object(path: PathBuf, id: usize) -> Result<(), OpenDoorsError> {
+pub fn delete_object(path: PathBuf, id: usize) -> Result<Object, OpenDoorsError> {
     let mut module = Module::read(&path)?;
     Ok(module.delete_object(id)?)
 }

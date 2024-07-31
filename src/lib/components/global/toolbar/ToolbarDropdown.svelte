@@ -7,7 +7,9 @@
     import ToolbarDropdownItem from './ToolbarDropdownItem.svelte';
     
     export let dropdown: ToolbarItemInterface;
-    let dd: ToolbarDropdownType =  dropdown as ToolbarDropdownType;
+    let dd: ToolbarDropdownType;
+
+    $: {dd = dropdown as ToolbarDropdownType}
 
 </script>
 

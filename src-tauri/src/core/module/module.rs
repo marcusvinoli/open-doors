@@ -92,28 +92,33 @@ impl Module {
         };
     }
     
-    pub fn create_object(&mut self, obj: &mut Object) -> Result<(), ModuleError> {
-        Ok(self.save_object(defs::OD_OBJS_FOLDER_NAME, obj)?)
+    pub fn create_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
+        let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
+        mid::move_file(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), &self.path.join(defs::OD_OBJS_FOLDER_NAME), &format!("{id}.yml"))?;
+        Ok(self.find_object(id)?)
     }
     
-    pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<(), ModuleError> {
-        Ok(self.save_object(defs::OD_OBJS_FOLDER_NAME, obj)?)
+    pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
+        let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
+        Ok(self.find_object(id)?)
     }
 
-    pub fn create_objects(&mut self, objs: &Vec<Object>) -> Result<(), ModuleError> {
+    pub fn create_objects(&mut self, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
+        let mut res: Vec<Object> = Vec::new();
         for obj in objs {
             let mut obj = obj.clone();
-            self.create_object(&mut obj)?
+            res.push(self.create_object(&mut obj)?);
         }
-        Ok(())
+        Ok(res)
     }
-
-    pub fn create_draft_objects(&mut self, objs: &Vec<Object>) -> Result<(), ModuleError> {
+    
+    pub fn create_draft_objects(&mut self, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
+        let mut res: Vec<Object> = Vec::new();
         for obj in objs {
             let mut obj = obj.clone();
-            self.create_draft_object(&mut obj)?
+            res.push(self.create_draft_object(&mut obj)?);
         }
-        Ok(())
+        Ok(res)
     }
     
     pub fn read_objects(&mut self) -> Result<Vec<Object>, ModuleError> {
@@ -145,7 +150,7 @@ impl Module {
     pub fn read_draft_objects(&mut self) -> Result<Vec<Object>, ModuleError> {
         let mut objs: Vec<Object> = Vec::new();
 
-        for entry in mid::read_folder(&self.path.join(defs::OD_OBJS_FOLDER_NAME))? {
+        for entry in mid::read_folder(&self.path.join(defs::OD_DRAFT_FOLDER_NAME))? {
             if let Ok(entry) = entry {
                 let file_name = entry.file_name();
                 let file_name_str = file_name.to_str().unwrap_or("");
@@ -168,15 +173,15 @@ impl Module {
         Ok(objs)
     }
     
-    pub fn update_object(&mut self, obj: &mut Object) -> Result<(), ModuleError> {
+    pub fn update_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
         self.create_object(obj)
     }
     
-    pub fn update_draft_object(&mut self, obj: &mut Object) -> Result<(), ModuleError> {
+    pub fn update_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
         self.create_draft_object(obj)
     }
 
-    pub fn delete_object(&mut self, id: usize) -> Result<(), ModuleError> {
+    pub fn delete_object(&mut self, id: usize) -> Result<Object, ModuleError> {
         let mut obj = self.find_object(id)?;
         obj.deleted_at = Some(Utc::now());
         Ok(self.update_object(&mut obj)?)
@@ -269,13 +274,14 @@ impl Module {
         Ok(max_number + 1)
     }
 
-    fn save_object(&self, folder: &str, obj: &mut Object) -> Result<(), ModuleError> {
+    fn save_object(&self, folder: &str, obj: &mut Object) -> Result<usize, ModuleError> {
         obj.assign_id(self.get_next_available_id()?);
-        Ok(mid::create_yml_file(&self.path.join(folder), format!("{}.yml", obj.id()), &obj)?)
+        mid::create_yml_file(&self.path.join(folder), format!("{}.yml", obj.id()), &obj)?;
+        Ok(obj.id())
     }
 
     fn open_object(path: &PathBuf, id: usize) -> Result<Object, ModuleError> {
-        Ok(mid::read_yml_file::<Object, _>(path, format!("{id}.yaml"))?)
+        Ok(mid::read_yml_file::<Object, _>(path, format!("{id}.yml"))?)
     }
 
 }
