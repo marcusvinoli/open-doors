@@ -1,9 +1,8 @@
-export interface IndexTreeItem {
-    index: string,
-    header: string,
-    children: [IndexTreeItem],
-}
-
 export interface IndexTree {
-    items: [IndexTreeItem]
+    level: string,
+    header: string,
+    content: string,
+    opened: boolean,
+    path: string
+    children: IndexTree[],
 }

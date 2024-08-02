@@ -12,6 +12,7 @@
     import ObjectEditor from "$lib/components/global/object_editor/ObjectEditor.svelte";
     import type { Object, ObjectView } from "$lib/components/structs/Object";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
+    import IndexTree from "$lib/components/global/indextree/IndexTree.svelte";
     import ObjectExplorer from "$lib/components/global/object_explorer/ObjectExplorer.svelte";
     import { createDraftObject, createObject, readDraftObjects, readModule, readModuleFromPath, readObjects } from "$lib/controllers/Module";
     import type { Module } from "$lib/components/structs/Module";
@@ -162,6 +163,35 @@
         editPanelFlag = true;
     }
 
+
+    function compareLevels(a: string, b: string): number {
+        const parseLevel = (level: string) => level.split(/[\.\-]/).map(part => isNaN(Number(part)) ? part : Number(part));
+        
+        const aParts = parseLevel(a);
+        const bParts = parseLevel(b);
+        
+        const len = Math.max(aParts.length, bParts.length);
+        for (let i = 0; i < len; i++) {
+            if (aParts[i] === undefined) return -1;
+            if (bParts[i] === undefined) return 1;
+            
+            if (typeof aParts[i] === 'number' && typeof bParts[i] === 'number') {
+                if (aParts[i] !== bParts[i]) return (aParts[i] as number) - (bParts[i] as number);
+            } else if (typeof aParts[i] === 'string' && typeof bParts[i] === 'string') {
+                let aP = aParts[i] as string;
+                let bP = bParts[i] as string;
+                if (aParts[i] !== bParts[i]) return aP.localeCompare(bP);
+            } else {
+                return typeof aParts[i] === 'number' ? -1 : 1;
+            }
+        }
+        return 0;
+    }
+
+    function sortItems(items: ObjectView[]): ObjectView[] {
+        return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
+    }
+
     async function loadObjects(modPath: string) {
         let retObjects = await readObjects(modPath);
         let retDraftObjects = await readDraftObjects(modPath);
@@ -192,7 +222,7 @@
                 newObjects[index] = dob;
             }
         });
-        objects = newObjects;
+        objects = sortItems(newObjects);
     }
     
     $: {
@@ -224,7 +254,7 @@
     <Resizable.PaneGroup direction="horizontal">
         {#if treePanelFlag}
         <Resizable.Pane defaultSize={20} collapsible order={1}>
-            <div></div>
+            <IndexTree items={objects}/>
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
         {/if}

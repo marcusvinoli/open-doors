@@ -33,36 +33,8 @@
         return '#'.repeat(hashCount) + " ";
     }
 
-    function compareLevels(a: string, b: string): number {
-        const parseLevel = (level: string) => level.split(/[\.\-]/).map(part => isNaN(Number(part)) ? part : Number(part));
-        
-        const aParts = parseLevel(a);
-        const bParts = parseLevel(b);
-        
-        const len = Math.max(aParts.length, bParts.length);
-        for (let i = 0; i < len; i++) {
-            if (aParts[i] === undefined) return -1;
-            if (bParts[i] === undefined) return 1;
-            
-            if (typeof aParts[i] === 'number' && typeof bParts[i] === 'number') {
-                if (aParts[i] !== bParts[i]) return (aParts[i] as number) - (bParts[i] as number);
-            } else if (typeof aParts[i] === 'string' && typeof bParts[i] === 'string') {
-                let aP = aParts[i] as string;
-                let bP = bParts[i] as string;
-                if (aParts[i] !== bParts[i]) return aP.localeCompare(bP);
-            } else {
-                return typeof aParts[i] === 'number' ? -1 : 1;
-            }
-        }
-        return 0;
-    }
-
-    function sortItems(items: ObjectView[]): ObjectView[] {
-        return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
-    }
-
     $: {       
-        objs = sortItems(objects);
+        objs = objects;
     }
 
     let tableHeaderClass: string = ""
