@@ -38,5 +38,5 @@ fn main() {
 		od_handlers::module::update_template,
 		])
 		.run(tauri::generate_context!())
-		.expect("Error while running OpenDOORs.");
+		.expect("Error while running OpenDOORS.");
 }
