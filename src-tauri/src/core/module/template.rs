@@ -28,6 +28,7 @@ pub enum DataType {
 pub struct Fields {
     attribute: String,
     kind: DataType,
+    key: String,
 }
 
 #[derive( Clone, Debug, Default, Serialize, Deserialize)]

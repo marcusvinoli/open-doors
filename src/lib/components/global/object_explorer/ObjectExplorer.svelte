@@ -1,18 +1,27 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import * as Table from "$lib/components/ui/table";
-    import type { ObjectView, Object } from "$lib/components/structs/Object";
-    import { createEventDispatcher } from "svelte";
+    import type { ObjectView, Object, Template } from "$lib/components/structs/Object";
+    import { createEventDispatcher, onMount } from "svelte";
     import { Button } from "$lib/components/ui/button";
     import { marked } from "marked";
-    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
+    import { view } from "./view";
+    import * as ContextMenu from "$lib/components/ui/context-menu/index.js";
     import "./markdown.css";
     import "./flashing.css";
+    import { defaultView } from "./viewMethods";
+    import CustomFieldCell from "./CustomFieldCell.svelte";
 
     export let objects: ObjectView[] = [];
     export let prefix: String = "";
     export let separator: String = "";
     export let editMode: boolean = true;
+    //export let template: Template;
+    
+    let showRowNumber = true;
+    let showIsActive = true;
+    let showIsNormative = true;
+    let showIsRequirement = true;
 
     let objs: ObjectView[] = [];
 
@@ -34,111 +43,160 @@
         return '#'.repeat(hashCount) + " ";
     }
 
+    function toggleRowNumberView() {
+        showRowNumber = !showRowNumber;
+    }
+    
+    function toggleIsActiveView() {
+        showIsActive = !showIsActive;
+    }
+
+    function toggleIsNormativeView() {
+        showIsNormative = !showIsNormative;
+    }
+
+    function toggleIsRequirementView() {
+        showIsRequirement = !showIsRequirement;
+    }
+
     $: {       
         objs = objects;
     }
 
     let tableHeaderClass: string = ""
     let tableCellClass: string = "text-sm "
+
+    onMount(() => {
+        if ($view.items.length === 0) {
+            $view = defaultView();
+        }
+    })
 </script>
 
 <div class="h-full w-full flex flex-col">
     {#if objects.length > 0}
         <Table.Root class="w-full relative">
-            <Table.Header class="">
+            <Table.Header class="w-full">
                 <Table.Row class="">
+                    {#if showRowNumber}
                     <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                        <div class={tableHeaderClass}>
-                            #
-                        </div>
+                        <ContextMenu.Root>
+                            <ContextMenu.Trigger>
+                                <div class={tableHeaderClass}>
+                                    #
+                                </div>
+                            </ContextMenu.Trigger>
+                            <ContextMenu.Content>
+                              <ContextMenu.Item on:click={toggleRowNumberView}>
+                                {(showRowNumber)? "Hide" : "Show"} Row Number
+                            </ContextMenu.Item>
+                            </ContextMenu.Content>
+                          </ContextMenu.Root>
                     </Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                        <div class={tableHeaderClass}>
-                            ID
-                        </div>
-                    </Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                        <div class={tableHeaderClass}>    
-                            Object Text
-                        </div>
-                    </Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                        <div class={tableHeaderClass}>    
-                            Active?
-                        </div>
-                    </Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                        <div class={tableHeaderClass}>    
-                            Normative?
-                        </div>
-                    </Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                        <div class={tableHeaderClass}>    
-                            Requirement?
-                        </div>
-                    </Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                        <div class={tableHeaderClass}>    
-                            Author
-                        </div>
-                    </Table.Head>
+                    {/if}
+                    {#each $view.items as attributes}
+                        {#if attributes.show}
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
+                            <ContextMenu.Root>
+                                <ContextMenu.Trigger>
+                                    <div class={tableHeaderClass}>
+                                        {attributes.attribute}
+                                    </div>
+                                </ContextMenu.Trigger>
+                                <ContextMenu.Content>
+                                    <ContextMenu.Sub>
+                                        <ContextMenu.SubTrigger>View</ContextMenu.SubTrigger>
+                                        <ContextMenu.SubContent class="w-48">
+                                            {#each $view.items as vw}
+                                            <ContextMenu.CheckboxItem bind:checked={vw.show}>
+                                                {vw.attribute}
+                                            </ContextMenu.CheckboxItem>
+                                            {/each}
+                                        </ContextMenu.SubContent>
+                                    </ContextMenu.Sub>
+                                    <ContextMenu.Separator />
+                                    <ContextMenu.Item on:click={toggleRowNumberView}>
+                                    {(showRowNumber)? "Hide" : "Show"} Row Number
+                                    </ContextMenu.Item>
+                                </ContextMenu.Content>
+                            </ContextMenu.Root>
+                        </Table.Head>
+                        {/if}
+                    {/each}
                     {#if editMode}
                     <Table.Head class="min-w-[50px] sticky top-0 bg-slate-50 shadow-sm">
                     </Table.Head>
                     {/if}
                 </Table.Row>
             </Table.Header>
-            <Table.Body class="">
+            <Table.Body class="w-full">
                 {#each objs as ov, index}
                 <Table.Row class="" id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
-                    <Table.Cell class={tableCellClass}>{index}</Table.Cell>
-                    <Table.Cell class={tableCellClass}>{prefix}{separator}{ov.object.id}</Table.Cell>
-                    <Table.Cell class={tableCellClass + (ov.isDraft ? " border-l-2 border-l-yellow-500" : "")}>
-                        <div class={"markdown min-w-[420px]"}>
-                            {#if ov.object.header !== ""}
-                            {@html marked(generateHashString(ov.object.level) + ov.object.level + " " + ov.object.header)}
+                    {#if showRowNumber}
+                        <Table.Cell class={tableCellClass}>{index}</Table.Cell>
+                    {/if}
+                    {#each $view.items as attr}
+                        {#if attr.show}
+                            {#if attr.key === "id"}
+                                <Table.Cell class={tableCellClass}>{prefix}{separator}{ov.object.id}</Table.Cell>
+                            {:else if attr.key === "content"}
+                                <Table.Cell class={tableCellClass + (ov.isDraft ? " border-l-2 border-l-yellow-500" : "")}>
+                                    <div class={"markdown min-w-[420px]"}>
+                                        {#if ov.object.header !== ""}
+                                        {@html marked(generateHashString(ov.object.level) + ov.object.level + " " + ov.object.header)}
+                                        {/if}
+                                        {@html marked(ov.object.content)}
+                                    </div>
+                                </Table.Cell>
+                            {:else if attr.key === "isActive"}
+                                <Table.Cell class="font-medium w-[20px]">
+                                    {#if ov.object.isActive}
+                                    <div class="text-green-500 flex justify-center items-center">
+                                        <Icon icon="gravity-ui:check" width="15px"/>
+                                    </div>
+                                    {:else}
+                                    <div class="text-red-500 flex justify-center items-center">
+                                        <Icon icon="gravity-ui:xmark" width="15px"/>
+                                    </div>
+                                    {/if}
+                                </Table.Cell>
+                            {:else if attr.key === "isNormative"}
+                                <Table.Cell class="font-medium w-[20px]">
+                                    {#if ov.object.isNormative}
+                                    <div class="text-green-500 flex justify-center items-center">
+                                        <Icon icon="gravity-ui:check" width="15px"/>
+                                    </div>
+                                    {:else}
+                                    <div class="text-red-500 flex justify-center items-center">
+                                        <Icon icon="gravity-ui:xmark" width="15px"/>
+                                    </div>
+                                    {/if}
+                                </Table.Cell>
+                            {:else if attr.key === "isRequirement"}
+                                <Table.Cell class="font-medium w-[20px]">
+                                    {#if ov.object.isRequirement}
+                                    <div class="text-green-500 flex justify-center items-center">
+                                    <Icon icon="gravity-ui:check" width="15px"/>
+                                    </div>
+                                    {:else}
+                                    <div class="text-red-500 flex justify-center items-center">
+                                        <Icon icon="gravity-ui:xmark" width="15px"/>
+                                    </div>
+                                    {/if}
+                                </Table.Cell>
+                            {:else if attr.key === "author"}
+                                <Table.Cell class={tableCellClass}>
+                                    <div class="text-sm italic text-gray-800">
+                                        {ov.object.author}
+                                    </div>
+                                </Table.Cell>
+                            {:else}
+                                <Table.Cell class={tableCellClass}>
+                                    <CustomFieldCell object={ov.object} key={attr.key} cellClass="bg-pink-200" />
+                                </Table.Cell>
                             {/if}
-                            {@html marked(ov.object.content)}
-                        </div>
-                    </Table.Cell>
-                    <Table.Cell class="font-medium w-[20px]">
-                        {#if ov.object.isActive}
-                        <div class="text-green-500 flex justify-center items-center">
-                          <Icon icon="gravity-ui:check" width="15px"/>
-                        </div>
-                        {:else}
-                        <div class="text-red-500 flex justify-center items-center">
-                            <Icon icon="gravity-ui:xmark" width="15px"/>
-                        </div>
                         {/if}
-                    </Table.Cell>
-                    <Table.Cell class="font-medium w-[20px]">
-                        {#if ov.object.isNormative}
-                        <div class="text-green-500 flex justify-center items-center">
-                          <Icon icon="gravity-ui:check" width="15px"/>
-                        </div>
-                        {:else}
-                        <div class="text-red-500 flex justify-center items-center">
-                            <Icon icon="gravity-ui:xmark" width="15px"/>
-                        </div>
-                        {/if}
-                    </Table.Cell>
-                    <Table.Cell class="font-medium w-[20px]">
-                        {#if ov.object.isRequirement}
-                        <div class="text-green-500 flex justify-center items-center">
-                          <Icon icon="gravity-ui:check" width="15px"/>
-                        </div>
-                        {:else}
-                        <div class="text-red-500 flex justify-center items-center">
-                            <Icon icon="gravity-ui:xmark" width="15px"/>
-                        </div>
-                        {/if}
-                    </Table.Cell>
-                    <Table.Cell class={tableCellClass}>
-                        <div class="text-sm italic text-gray-800">
-                            {ov.object.author}
-                        </div>
-                    </Table.Cell>
+                    {/each}
                     {#if editMode}
                     <Table.Head class="w-[50px] text-center">
                         <Table.Cell class="w-[80px]">

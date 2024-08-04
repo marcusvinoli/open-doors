@@ -33,7 +33,7 @@
 	"type": "module",
 	"dependencies": {
 		"@tauri-apps/api": "^1.5.6",
-		"bits-ui": "^0.21.12",
+		"bits-ui": "^0.21.13",
 		"clsx": "^2.1.1",
 		"cmdk-sv": "^0.0.17",
 		"formsnap": "^1.0.1",
