@@ -1,0 +1,8 @@
+.flash {
+    animation: flash-animation 0.8s ease-in-out;
+}
+
+@keyframes flash-animation {
+    0% { background-color: rgb(251, 251, 206); }
+    100% { background-color: transparent; }
+}

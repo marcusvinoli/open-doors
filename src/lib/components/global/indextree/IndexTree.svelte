@@ -39,7 +39,7 @@
                         level: level,
                         header: i === levels.length - 1 ? obj.object.header : ellipsisText(obj.object.content),
                         content: obj.object.header === "" ? ellipsisText(obj.object.content) : "",
-                        path: '',
+                        path: obj.object.id.toString(),
                         children: [],
                         opened: true,
                     };
@@ -66,7 +66,6 @@
 
     $: {
         trees = buildTreeIndex(items);
-        console.log("tree", trees);
     }
 
 </script>

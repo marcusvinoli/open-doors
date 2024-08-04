@@ -16,7 +16,7 @@
 
     function handleClick(event: any) {
         event.stopPropagation();
-        dispatch('click', {item: item});
+        dispatch('click', {path: item.path});
         toggleItem();
     }
 </script>

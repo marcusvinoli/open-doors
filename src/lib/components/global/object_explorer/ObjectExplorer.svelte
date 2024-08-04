@@ -7,6 +7,7 @@
     import { marked } from "marked";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import "./markdown.css";
+    import "./flashing.css";
 
     export let objects: ObjectView[] = [];
     export let prefix: String = "";
@@ -45,51 +46,51 @@
     {#if objects.length > 0}
         <Table.Root class="w-full relative">
             <Table.Header class="">
-            <Table.Row class="">
-                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                    <div class={tableHeaderClass}>
-                        #
-                    </div>
-                </Table.Head>
-                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                    <div class={tableHeaderClass}>
-                        ID
-                    </div>
-                </Table.Head>
-                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                    <div class={tableHeaderClass}>    
-                        Object Text
-                    </div>
-                </Table.Head>
-                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                    <div class={tableHeaderClass}>    
-                        Active?
-                    </div>
-                </Table.Head>
-                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                    <div class={tableHeaderClass}>    
-                        Normative?
-                    </div>
-                </Table.Head>
-                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                    <div class={tableHeaderClass}>    
-                        Requirement?
-                    </div>
-                </Table.Head>
-                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-                    <div class={tableHeaderClass}>    
-                        Author
-                    </div>
-                </Table.Head>
-                {#if editMode}
-                <Table.Head class="min-w-[50px] sticky top-0 bg-slate-50 shadow-sm">
-                </Table.Head>
-                {/if}
-            </Table.Row>
+                <Table.Row class="">
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
+                        <div class={tableHeaderClass}>
+                            #
+                        </div>
+                    </Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
+                        <div class={tableHeaderClass}>
+                            ID
+                        </div>
+                    </Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
+                        <div class={tableHeaderClass}>    
+                            Object Text
+                        </div>
+                    </Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
+                        <div class={tableHeaderClass}>    
+                            Active?
+                        </div>
+                    </Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
+                        <div class={tableHeaderClass}>    
+                            Normative?
+                        </div>
+                    </Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
+                        <div class={tableHeaderClass}>    
+                            Requirement?
+                        </div>
+                    </Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
+                        <div class={tableHeaderClass}>    
+                            Author
+                        </div>
+                    </Table.Head>
+                    {#if editMode}
+                    <Table.Head class="min-w-[50px] sticky top-0 bg-slate-50 shadow-sm">
+                    </Table.Head>
+                    {/if}
+                </Table.Row>
             </Table.Header>
             <Table.Body class="">
                 {#each objs as ov, index}
-                <Table.Row class="" on:click={() => {handleRowClick(ov)}}>
+                <Table.Row class="" id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
                     <Table.Cell class={tableCellClass}>{index}</Table.Cell>
                     <Table.Cell class={tableCellClass}>{prefix}{separator}{ov.object.id}</Table.Cell>
                     <Table.Cell class={tableCellClass + (ov.isDraft ? " border-l-2 border-l-yellow-500" : "")}>

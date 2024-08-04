@@ -163,6 +163,25 @@
         editPanelFlag = true;
     }
 
+    function scrollIntoView(event: any) {
+        const el = document.getElementById("row-" + event.detail.path);
+	    const ov = document.getElementById("scroll-table");
+		if (!el) return;
+		if (!ov) return;
+
+        const offset = 50; // Ajuste o valor do offset conforme a altura do seu cabeçalho
+
+        ov.scrollTo({
+            top: el.offsetTop - offset,
+            behavior: 'smooth'
+        });
+
+        document.querySelectorAll('.flash').forEach(element => {
+            element.classList.remove('flash');
+        });
+
+        el.classList.add('flash');
+    }
 
     function compareLevels(a: string, b: string): number {
         const parseLevel = (level: string) => level.split(/[\.\-]/).map(part => isNaN(Number(part)) ? part : Number(part));
@@ -254,7 +273,7 @@
     <Resizable.PaneGroup direction="horizontal">
         {#if treePanelFlag}
         <Resizable.Pane defaultSize={20} collapsible order={1}>
-            <IndexTree items={objects}/>
+            <IndexTree items={objects} on:click={scrollIntoView}/>
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
         {/if}
@@ -270,4 +289,5 @@
         </Resizable.Pane>
         {/if}
     </Resizable.PaneGroup>
+    <div class="flash"></div>
 </div>
