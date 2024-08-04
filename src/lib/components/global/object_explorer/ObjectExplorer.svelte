@@ -43,53 +43,52 @@
 
 <div class="h-full w-full flex flex-col">
     {#if objects.length > 0}
-    <Table.Root class="w-full">
-        <ScrollArea orientation="both" class="w-full">
-        <Table.Header class="sticky top-0">
-            <Table.Row>
-                <Table.Head class="">
+        <Table.Root class="w-full relative">
+            <Table.Header class="">
+            <Table.Row class="">
+                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
                     <div class={tableHeaderClass}>
                         #
                     </div>
                 </Table.Head>
-                <Table.Head class="">
+                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
                     <div class={tableHeaderClass}>
                         ID
                     </div>
                 </Table.Head>
-                <Table.Head class="">
+                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
                     <div class={tableHeaderClass}>    
                         Object Text
                     </div>
                 </Table.Head>
-                <Table.Head>
+                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
                     <div class={tableHeaderClass}>    
                         Active?
                     </div>
                 </Table.Head>
-                <Table.Head>
+                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
                     <div class={tableHeaderClass}>    
                         Normative?
                     </div>
                 </Table.Head>
-                <Table.Head>
+                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
                     <div class={tableHeaderClass}>    
                         Requirement?
                     </div>
                 </Table.Head>
-                <Table.Head class="">
+                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
                     <div class={tableHeaderClass}>    
                         Author
                     </div>
                 </Table.Head>
                 {#if editMode}
-                <Table.Head class="min-w-[50px]">
+                <Table.Head class="min-w-[50px] sticky top-0 bg-slate-50 shadow-sm">
                 </Table.Head>
                 {/if}
             </Table.Row>
-        </Table.Header>
-        <Table.Body>
-            {#each objs as ov, index}
+            </Table.Header>
+            <Table.Body class="">
+                {#each objs as ov, index}
                 <Table.Row class="" on:click={() => {handleRowClick(ov)}}>
                     <Table.Cell class={tableCellClass}>{index}</Table.Cell>
                     <Table.Cell class={tableCellClass}>{prefix}{separator}{ov.object.id}</Table.Cell>
@@ -153,12 +152,11 @@
                 </Table.Row>
                 {/each}
             </Table.Body>
-            </ScrollArea>
         </Table.Root>
     {:else}
-    <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
-        <Icon icon="gravity-ui:layout-header-cells-large-fill" width="50px"/>
-        <h1 class="text-xl font-semibold my-1">EMPTY MODULE</h1>
-    </div>
+        <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
+            <Icon icon="gravity-ui:layout-header-cells-large-fill" width="50px"/>
+            <h1 class="text-xl font-semibold my-1">EMPTY MODULE</h1>
+        </div>
     {/if}
 </div>
