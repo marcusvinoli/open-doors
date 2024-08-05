@@ -34,12 +34,3 @@ export interface ObjectView {
     isDraft: boolean = false,
     hasChanges: boolean = false,
 }
-
-export interface Fields {
-    attribute: string,
-    kind: string,
-}
-
-export interface Template {
-    fields: Vec<Fields>
-}

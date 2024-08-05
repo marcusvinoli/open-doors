@@ -16,7 +16,8 @@
     import ObjectExplorer from "$lib/components/global/object_explorer/ObjectExplorer.svelte";
     import { createDraftObject, createObject, readDraftObjects, readModule, readModuleFromPath, readObjects } from "$lib/controllers/Module";
     import type { Module } from "$lib/components/structs/Module";
-
+    import TemplateForm from "$lib/components/forms/module/TemplateForm.svelte";
+    
     let selectedObject: ObjectView | null = null;
     let objects: ObjectView[] = [];
 
@@ -24,6 +25,7 @@
 
     let editPanelFlag: boolean = false;
     let treePanelFlag: boolean = false;
+    let templateFlag: boolean = false;
     let editModeFlag: boolean = true;
 
     let updateModuleFlag: boolean = false;
@@ -56,6 +58,15 @@
             action: () => {
                 editModeFlag = !editModeFlag;
             },
+        }
+
+        let templateManager: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Template",
+            icon: "gravity-ui:layout-columns-3",
+            action: () => {
+                templateFlag = !templateFlag;
+            }
         }
         
         let newButton: ToolbarButtonType = {
@@ -117,10 +128,16 @@
             items: [showTree],
             type: "buttonsGroup"
         }
+
+        let templateButton: ToolbarGroupType = {
+            items: [templateManager],
+            type: "buttonsGroup"
+        }
     
         addToolbarItem(navigationGroup);
         addToolbarItem(newGroup);
         addToolbarItem(treePanelView);
+        addToolbarItem(templateButton);
     }
 
     function handleObjectCreation(event: any) {
@@ -270,6 +287,7 @@
 </script>
 
 <div class="bg-slate-50 h-full py-1">
+    <TemplateForm bind:module={module} bind:openDialog={templateFlag}/>
     <Resizable.PaneGroup direction="horizontal">
         {#if treePanelFlag}
         <Resizable.Pane defaultSize={20} collapsible order={1}>

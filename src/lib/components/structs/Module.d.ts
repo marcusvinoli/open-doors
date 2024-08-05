@@ -1,5 +1,7 @@
 import type { ObjectView } from "./Object";
-
+import type { Template
+    
+ } from "./Template";
 export interface ModuleManifest {
     title: string,
     prefix: string,
@@ -24,7 +26,7 @@ export interface Baseline {
 export interface Module {
     path: string,
     manifest: ModuleManifest,
-    template: any,
+    template: Template,
     baselines: Baseline[],
 }
 
