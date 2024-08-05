@@ -4,7 +4,8 @@
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
-    import { activeTab, addTab } from "$lib/stores/Tabs";
+    import { confirm } from '@tauri-apps/api/dialog';
+    import { addTab } from "$lib/stores/Tabs";
     import { get } from "svelte/store";
     import { page } from "$app/stores";
     import { repository } from "$lib/stores/Repository";
@@ -14,9 +15,11 @@
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import IndexTree from "$lib/components/global/indextree/IndexTree.svelte";
     import ObjectExplorer from "$lib/components/global/object_explorer/ObjectExplorer.svelte";
-    import { createDraftObject, createObject, readDraftObjects, readModule, readModuleFromPath, readObjects } from "$lib/controllers/Module";
+    import { createDraftObject, createObject, deleteObject, readDraftObjects, readModule, readModuleFromPath, readObjects } from "$lib/controllers/Module";
     import type { Module } from "$lib/components/structs/Module";
     import TemplateForm from "$lib/components/forms/module/TemplateForm.svelte";
+    import { loadRepository, reloadRepository } from "$lib/controllers/Repository";
+    import { loadAuthorInformation } from "$lib/controllers/User";
     
     let selectedObject: ObjectView | null = null;
     let objects: ObjectView[] = [];
@@ -154,21 +157,29 @@
         let obj = event.detail.obj.object;
         createDraftObject(module.path, obj)
             .then(() => {
-                selectedObject = null;
                 editPanelFlag = false;
+            })
+            .finally(() => {
+                selectedObject = null;
                 updateModuleFlag = true;
             })
         
     }
     
-    function handleObjectExclusion(event: any) {
-        let obj = event.detail;
-        /* deleteObject(module.path, obj)
+    async function handleObjectExclusion(event: any) {
+        let obj = event.detail.obj.object;
+        const confirmed = await confirm('Do you really want to delete this Object?', 'Deleting object ' + module.manifest.prefix + module.manifest.separator + obj.id );
+        if (!confirmed) {
+            return;
+        }
+        deleteObject(module.path, obj.id)
             .then(() => {
-                selectedObject = null;
                 editPanelFlag = false;
-            }) */
-        
+            })
+            .finally(() => {
+                selectedObject = null;
+                updateModuleFlag = true;
+            })
     }
     
     function handleCloseEditPanel(event: any) {
@@ -244,7 +255,7 @@
         });
         
         retDraftObjects.forEach((dobj) => {
-            let index = objects.findIndex((ob) => {return (ob.object.id === dobj.id)});
+            let index = newObjects.findIndex((ob) => {return (ob.object.id === dobj.id)});
             let dob = {
                 object: dobj,
                 isDraft: true,
@@ -269,6 +280,8 @@
     }
     
     onMount(() => {
+        loadRepository();
+        
         const params = get(page).params;
         const url: string = $page.url.pathname;
         const name: string = params.mod.substring($repository?.tree.path.length);
@@ -303,7 +316,7 @@
         {#if editPanelFlag}
         <Resizable.Handle withHandle/>
         <Resizable.Pane class="h-full" defaultSize={50} order={3}>
-            <ObjectEditor bind:objv={selectedObject} on:close={handleCloseEditPanel} on:saveDraft={handleObjectDraftCreation} on:save={handleObjectCreation} on:delete={handleObjectExclusion}/>
+            <ObjectEditor template={module.template} bind:objv={selectedObject} on:close={handleCloseEditPanel} on:saveDraft={handleObjectDraftCreation} on:save={handleObjectCreation} on:delete={handleObjectExclusion}/>
         </Resizable.Pane>
         {/if}
     </Resizable.PaneGroup>

@@ -9,11 +9,9 @@
     import { goto } from "$app/navigation";
 
     onMount(() => {
-        console.log("Mounted LAYOUT");
-        if (!loadRepository()) {
-            goto("/");
+        if (loadRepository()) {
+            goto("/home");
         }
-        loadAuthorInformation();
     })
 </script>
 

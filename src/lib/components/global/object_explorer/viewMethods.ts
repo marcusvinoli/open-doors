@@ -13,7 +13,7 @@ export const parseTemplate = (template: Template, show: boolean = false) : ViewI
         temp.push(newViewItem);
     })
     return temp;
-} 
+}
 
 export const defaultView = () : View => {
     return {

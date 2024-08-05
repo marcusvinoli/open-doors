@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { CustomFields, Object, Link, ObjectView } from "$lib/components/structs/Object";
+    import type { ObjectView } from "$lib/components/structs/Object";
     import { user } from "$lib/stores/User";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
@@ -13,16 +13,24 @@
     import Icon from "@iconify/svelte";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js"
     import "./markdown.css";
-    import { object } from "zod";
+    import type { Template } from "$lib/components/structs/Template";
+    import * as Table from "$lib/components/ui/table";
     
     export let objv: ObjectView | null;
-    export let template: CustomFields | null = null;
+    export let template: Template;
     export let prefix: string = "";
     export let separator: string = "";
+    
+    interface IHash {
+        [key: string]: string;
+    }
+
+    let isDeletable: boolean = true;
 
     const dispatch = createEventDispatcher();
 
     if(!objv) {
+        isDeletable = false;
         objv = {
             object: {
                 id: 0,
@@ -35,13 +43,29 @@
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 deletedAt: null,
-                customFiels: template,
+                customFields: createCustomFieldHashFromTemplate(template),
                 level: "",
             },
             links: [],
             isDraft: false,
             hasChanges: false,
         }
+    }
+
+    function createCustomFieldHashFromTemplate(template: Template): IHash {
+        const obj: IHash = {};
+        
+        let keys: string[] = [];
+
+        template.fields.forEach((field) => {
+            keys.push(field.key);
+        })
+
+        keys.forEach(key => {
+            obj[key] = "";
+        });
+
+        return obj;
     }
 
     function closeEdit() {
@@ -52,6 +76,7 @@
         if(objv) {
             objv.hasChanges = true;
             objv.object.updatedAt = new Date();
+            objv.object.author = $user.toString();
         }
         dispatch('saveDraft', {obj: objv})
     }
@@ -60,14 +85,23 @@
         if(objv) {
             objv.hasChanges = true;
             objv.object.updatedAt = new Date();
+            objv.object.author = $user.toString();
         }
         dispatch('save', {obj: objv})
     }
     
     function deleteObj() {
+        if(objv) {
+            objv.object.author = $user.toString();
+        }
         dispatch('delete', {obj: objv})
     }
 
+    $: {
+        if (!objv.object.customFields) {
+            objv.object.customFields = createCustomFieldHashFromTemplate(template);
+        }
+    }
 
 </script>
 
@@ -135,85 +169,125 @@
                     <Label for="name" class="text-right col-span-1">Text</Label>
                     <Textarea id="name" bind:value={objv.object.content}  class="col-span-7 font-mono" />
                 </div>
+                <div class="grid grid-cols-8 items-center gap-2 px-1">
+                    <Label for="name" class="text-right col-span-1">Preview</Label>
+                    <div class="col-span-7">
+                        <ScrollArea class=" col-span-1">
+                            <div class="preview rounded-sm">
+                                <!-- {@html marked("# " + objv.object.header)} -->
+                                {@html marked((objv.object.header ? "# " + objv.object.header + "\n" : "") + objv.object.content)}
+                                <!-- {@html marked("# ")} -->
+                            </div>
+                        </ScrollArea>
+                    </div>
+                </div>
                 <Separator/>
             </div>
+            {#if template.fields.length > 0 && objv.object.customFields}
+            <div class="grid wrap gap-2 my-1">
+                <h2 class="font-bold">Custom Attributes</h2 >
+                <div class="">
+                    <Table.Root class="w-full">
+                        <Table.Header class="">
+                            <Table.Row>
+                                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[30%]">Attribute</Table.Head>
+                                <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Value</Table.Head>
+                            </Table.Row>
+                        </Table.Header>
+                        <Table.Body class="">
+                            {#each template.fields as field}
+                                <Table.Row>
+                                    <Table.Cell class="text-right">
+                                        {field.attribute}
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <Input id="name" bind:value={objv.object.customFields[field.key]}/>
+                                    </Table.Cell>
+                                </Table.Row>
+                            {/each}
+                        </Table.Body>
+                    </Table.Root>
+                </div>
+                <Separator/>
+            </div>
+            {/if}
             <div class="grid gap-2 my-1">
                 <h2 class="font-bold my-1">Object Cassification</h2>
                 <div class="grid grid-cols-8 items-center gap-2 min-h[100px]">
-                    <div class="col-span-1"></div>
-                        <div class="flex items-center col-span-2">
-                            <Checkbox id="reqNorm" bind:checked={objv.object.isNormative} aria-labelledby="reqNorm-label" />
-                            <Label
-                            id="reqNorm-label"
-                            for="reqNorm"
-                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
-                            Normative
-                            </Label>
-                        </div>
-                        <div class="flex items-center col-span-2">
-                            <Checkbox id="reqCheck" bind:checked={objv.object.isRequirement} aria-labelledby="reqCheck-label" />
-                            <Label
-                            id="reqCheck-label"
-                            for="reqCheck"
-                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
-                            Requirement
-                            </Label>
-                        </div>
-                        <div class="flex items-center col-span-2">
-                            <Checkbox id="actCheck" bind:checked={objv.object.isActive} aria-labelledby="actCheck-label" />
-                            <Label
-                            id="actCheck-label"
-                            for="actCheck"
-                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
-                            Active
-                            </Label>
-                        </div>
+                    <div class="col-span-1">
                     </div>
-                    <Separator/>
-                </div>
-                <div class="grid gap-2 my-1">
-                    <h2 class="font-bold my-1">Links</h2>
-                    <div class="gap-2 col-span-8 w-full">
-                        <Accordion.Root>
-                            <Accordion.Item value="item-1" class="">
-                                <Accordion.Trigger>
-                                    <div class="flex items-center gap-2 ml-2">
-                                        <Icon icon="ci:arrow-down-left-lg" width="20px"/>
-                                        Inbound Links
-                                    </div>
-                                </Accordion.Trigger>
-                                <Accordion.Content class="">
-                                    This feature is not supported yet.
-                                </Accordion.Content>
-                            </Accordion.Item>
-                            <Accordion.Item value="item-2">
-                                <Accordion.Trigger>
-                                    <div class="flex items-center gap-2 ml-2">
-                                        <Icon icon="ci:arrow-up-right-lg" width="20px"/>
-                                        Outbound Links
-                                    </div>
-                                </Accordion.Trigger>
-                                <Accordion.Content>
-                                    This feature is not supported yet.
-                                </Accordion.Content>
-                            </Accordion.Item>
-                        </Accordion.Root>
+                    <div class="flex items-center col-span-2">
+                        <Checkbox id="reqNorm" bind:checked={objv.object.isNormative} aria-labelledby="reqNorm-label" />
+                        <Label
+                        id="reqNorm-label"
+                        for="reqNorm"
+                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
+                        Normative
+                        </Label>
+                    </div>
+                    <div class="flex items-center col-span-2">
+                        <Checkbox id="reqCheck" bind:checked={objv.object.isRequirement} aria-labelledby="reqCheck-label" />
+                        <Label
+                        id="reqCheck-label"
+                        for="reqCheck"
+                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
+                        Requirement
+                        </Label>
+                    </div>
+                    <div class="flex items-center col-span-2">
+                        <Checkbox id="actCheck" bind:checked={objv.object.isActive} aria-labelledby="actCheck-label" />
+                        <Label
+                        id="actCheck-label"
+                        for="actCheck"
+                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
+                        Active
+                        </Label>
                     </div>
                 </div>
-                <div class="grid wrap gap-2 my-1">
-                    <h2 class="font-bold">Preview</h2 >
-                        <ScrollArea class="min-h-[100px] col-span-1">
-                            <div class="preview rounded-sm">
-                                {@html marked("# " + objv.object.header)}
-                                {@html marked(objv.object.content)}
-                            </div>
-                        </ScrollArea>
+                <Separator/>
+            </div>
+            <div class="grid gap-2 my-1">
+                <h2 class="font-bold my-1">Links</h2>
+                <div class="gap-2 col-span-8 w-full">
+                    <Accordion.Root>
+                        <Accordion.Item value="item-1" class="">
+                            <Accordion.Trigger>
+                                <div class="flex items-center gap-2 ml-2">
+                                    <Icon icon="ci:arrow-down-left-lg" width="20px"/>
+                                    Inbound Links
+                                </div>
+                            </Accordion.Trigger>
+                            <Accordion.Content class="">
+                                This feature is not supported yet.
+                            </Accordion.Content>
+                        </Accordion.Item>
+                        <Accordion.Item value="item-2">
+                            <Accordion.Trigger>
+                                <div class="flex items-center gap-2 ml-2">
+                                    <Icon icon="ci:arrow-up-right-lg" width="20px"/>
+                                    Outbound Links
+                                </div>
+                            </Accordion.Trigger>
+                            <Accordion.Content>
+                                This feature is not supported yet.
+                            </Accordion.Content>
+                        </Accordion.Item>
+                    </Accordion.Root>
                 </div>
+            </div>
+            {#if isDeletable}
+            <div class="grid wrap pag-2 my-1">
+                <Button variant="destructive" class="px-5" on:click={deleteObj}>
+                    <Icon icon="ci:close-square" width="20px"/>
+                    <p class="pl-2">Delete</p>
+                </Button>
+            </div>
+            {/if}
         </ScrollArea>
     </div>
     <Separator/>
     <div class="flex flex-row pb-1 pt-3">
-        <Button variant="destructive" class="px-5" on:click={closeEdit}>
+        <Button variant="secondary" class="px-5" on:click={closeEdit}>
             <Icon icon="ci:add-minus-square" width="20px"/>
             <p class="pl-2">Cancel</p>
         </Button>
@@ -221,7 +295,7 @@
         <div class="flex flex-row gap-3">
             <Button variant="secondary" class="px-5" on:click={saveObj}>
                 <Icon icon="ci:add-to-queue" width="20px"/>
-                <p class="pl-2">Save and Commit</p>
+                <p class="pl-2">Save and Stage</p>
             </Button>
             <Button class="px-5" on:click={saveDrafObj}>
                 <Icon icon="ci:add-plus-square" width="20px"/>

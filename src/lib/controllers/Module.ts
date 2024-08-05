@@ -70,8 +70,8 @@ export function readDraftObjects(modulePath: String) {
         })
 }
 
-export function createObjects(module: TreeItem, object: Object[] | Object[]) {
-
+export function deleteObject(modulePath: String, id: number) {
+    return invoke('delete_object', {path: modulePath, id: id})
 }
 
 export function saveTemplate(modulePath: String, template: Template) {

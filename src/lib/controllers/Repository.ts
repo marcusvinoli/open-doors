@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api";
 import { repository } from "$lib/stores/Repository";
 import type { Repository } from "$lib/components/structs/Repo";
+import { loadAuthorInformation } from "./User";
 
 export function saveRepository(repo: Repository) {
     localStorage.setItem('repository', JSON.stringify(repo));
@@ -8,7 +9,12 @@ export function saveRepository(repo: Repository) {
 }
 
 export function loadRepository(): Repository {
-    return JSON.parse(localStorage.getItem('repository') as string) as Repository;
+    let repo = JSON.parse(localStorage.getItem('repository') as string) as Repository;
+    if (repo) {
+        loadAuthorInformation();
+        saveRepository(repo);
+    }
+    return repo;
 }
 
 export async function openRepository(path: string) {
