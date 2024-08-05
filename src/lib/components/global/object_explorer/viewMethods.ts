@@ -1,4 +1,19 @@
-import type { View } from "./viewStructs"
+import type { Template } from "$lib/components/structs/Template"
+import { show } from "@tauri-apps/api/app";
+import type { View, ViewItem } from "./viewStructs"
+
+export const parseTemplate = (template: Template, show: boolean = false) : ViewItem[] => {
+    let temp: ViewItem[] = [];
+    template.fields.forEach((field) => {
+        let newViewItem: ViewItem = {
+            attribute: field.attribute,
+            show: show,
+            key: field.key
+        }
+        temp.push(newViewItem);
+    })
+    return temp;
+} 
 
 export const defaultView = () : View => {
     return {

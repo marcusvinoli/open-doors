@@ -297,7 +297,7 @@
         {/if}
         <Resizable.Pane order={2}>
             {#if module}
-            <ObjectExplorer prefix={module.manifest.prefix} separator={module.manifest.separator} bind:objects={objects} editMode={editModeFlag} on:click={handleObjectSelect}/>
+            <ObjectExplorer bind:module={module} bind:objects={objects} editMode={editModeFlag} on:click={handleObjectSelect}/>
             {/if}
         </Resizable.Pane>
         {#if editPanelFlag}

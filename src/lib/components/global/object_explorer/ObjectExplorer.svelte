@@ -1,7 +1,7 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import * as Table from "$lib/components/ui/table";
-    import type { ObjectView, Object, Template } from "$lib/components/structs/Object";
+    import type { ObjectView, Object } from "$lib/components/structs/Object";
     import { createEventDispatcher, onMount } from "svelte";
     import { Button } from "$lib/components/ui/button";
     import { marked } from "marked";
@@ -9,14 +9,14 @@
     import * as ContextMenu from "$lib/components/ui/context-menu/index.js";
     import "./markdown.css";
     import "./flashing.css";
-    import { defaultView } from "./viewMethods";
+    import { defaultView, parseTemplate } from "./viewMethods";
     import CustomFieldCell from "./CustomFieldCell.svelte";
+    import type { Module } from "$lib/components/structs/Module";
 
     export let objects: ObjectView[] = [];
-    export let prefix: String = "";
-    export let separator: String = "";
+    export let module: Module;
     export let editMode: boolean = true;
-    //export let template: Template;
+    export let showDeleted: boolean = false;
     
     let showRowNumber = true;
     let showIsActive = true;
@@ -47,20 +47,17 @@
         showRowNumber = !showRowNumber;
     }
     
-    function toggleIsActiveView() {
-        showIsActive = !showIsActive;
-    }
-
-    function toggleIsNormativeView() {
-        showIsNormative = !showIsNormative;
-    }
-
-    function toggleIsRequirementView() {
-        showIsRequirement = !showIsRequirement;
-    }
-
-    $: {       
+    $: {
         objs = objects;
+        let tempView = $view.items;
+        if(tempView.length > 0) {
+            parseTemplate(module.template).forEach((item) => {
+                if (tempView.findIndex((tv) => tv.key === item.key) < 0) {
+                    tempView.push(item);
+                }
+            })
+            $view.items = tempView;
+        }
     }
 
     let tableHeaderClass: string = ""
@@ -71,12 +68,13 @@
             $view = defaultView();
         }
     })
+
 </script>
 
 <div class="h-full w-full flex flex-col">
     {#if objects.length > 0}
-        <Table.Root class="w-full relative">
-            <Table.Header class="w-full">
+        <Table.Root class="w-full relative" id="resizableTable">
+            <Table.Header class="w-full min-w-96">
                 <Table.Row class="">
                     {#if showRowNumber}
                     <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
@@ -129,19 +127,20 @@
                     {/if}
                 </Table.Row>
             </Table.Header>
-            <Table.Body class="w-full">
+            <Table.Body class="w-full min-w-96">
                 {#each objs as ov, index}
-                <Table.Row class="" id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
+                {#if !ov.object.deletedAt && !showDeleted}
+                <Table.Row class={(ov.object.deletedAt ? "bg-rose-200" : "")} id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
                     {#if showRowNumber}
                         <Table.Cell class={tableCellClass}>{index}</Table.Cell>
                     {/if}
                     {#each $view.items as attr}
                         {#if attr.show}
                             {#if attr.key === "id"}
-                                <Table.Cell class={tableCellClass}>{prefix}{separator}{ov.object.id}</Table.Cell>
+                                <Table.Cell class={tableCellClass}>{module.manifest.prefix}{module.manifest.separator}{ov.object.id}</Table.Cell>
                             {:else if attr.key === "content"}
                                 <Table.Cell class={tableCellClass + (ov.isDraft ? " border-l-2 border-l-yellow-500" : "")}>
-                                    <div class={"markdown min-w-[420px]"}>
+                                    <div class={"markdown min-w-[320px]"}>
                                         {#if ov.object.header !== ""}
                                         {@html marked(generateHashString(ov.object.level) + ov.object.level + " " + ov.object.header)}
                                         {/if}
@@ -192,14 +191,14 @@
                                 </Table.Cell>
                             {:else}
                                 <Table.Cell class={tableCellClass}>
-                                    <CustomFieldCell object={ov.object} key={attr.key} cellClass="bg-pink-200" />
+                                    <CustomFieldCell object={ov.object} key={attr.key} />
                                 </Table.Cell>
                             {/if}
                         {/if}
                     {/each}
                     {#if editMode}
-                    <Table.Head class="w-[50px] text-center">
-                        <Table.Cell class="w-[80px]">
+                    <Table.Head class="w-[30px] text-center">
+                        <Table.Cell class="w-[30px]">
                             <Button variant="ghost" on:click={() => onEditClick(ov)}>
                                 <div class="flex justify-center items-center">
                                     <Icon icon="gravity-ui:pencil-to-square" width="20px"/>
@@ -209,6 +208,7 @@
                     </Table.Head>
                     {/if}
                 </Table.Row>
+                {/if}
                 {/each}
             </Table.Body>
         </Table.Root>

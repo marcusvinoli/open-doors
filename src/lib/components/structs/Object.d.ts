@@ -11,8 +11,6 @@ export interface Links {
     outbound: Link[],
 }
 
-export interface CustomFields extends IHash {}
-
 export interface Object {
     id: number,
     level: string,
@@ -25,7 +23,7 @@ export interface Object {
     createdAt: Date,
     updatedAt: Date,
     deletedAt: Date | null,
-    customFiels: CustomFields | null,
+    customFields: IHash | null,
 }
 
 export interface ObjectView {
