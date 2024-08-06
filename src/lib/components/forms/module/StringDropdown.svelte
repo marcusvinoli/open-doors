@@ -6,24 +6,28 @@
     import * as Command from "$lib/components/ui/command/index.js";
     import * as Popover from "$lib/components/ui/popover/index.js";
     import { ChevronDown } from "lucide-svelte";
+    import { createEventDispatcher } from "svelte";
 
     export let options: string[] = [];
     export let selected: string = options[0] ? options[0] : "";
     let selection: string;
+
+    const dispatch = createEventDispatcher();
+
+    function handleSelection(select: string) {
+        selection = select;
+        dispatch('select', {item: selected})
+    }
 
     let openCombobox: boolean = false;
     // We want to refocus the trigger button when the user selects
     // an item from the list so users can continue navigating the
     // rest of the form with the keyboard.
     function closeAndFocusTrigger(triggerId: string) {
-      openCombobox = false;
-      tick().then(() => {
-      document.getElementById(triggerId)?.focus();
-      });
-    }
-
-    $: {
-        selection = selected;
+        openCombobox = false;
+        tick().then(() => {
+        document.getElementById(triggerId)?.focus();
+        });
     }
 </script>
 
@@ -38,7 +42,7 @@
       <Command.Root>
           <Command.Group class="min-w-12">
             {#each options as option}
-              <Command.Item value={option} onSelect={() => { closeAndFocusTrigger(ids.trigger); selected = option;  }}>
+              <Command.Item value={option} onSelect={() => { closeAndFocusTrigger(ids.trigger); handleSelection(option); }}>
                 <Check class={cn("mr-2 h-4 w-4", !(option === selected) && "text-transparent" )}/> 
                 <span class="pl-1">{option}</span>
               </Command.Item>
