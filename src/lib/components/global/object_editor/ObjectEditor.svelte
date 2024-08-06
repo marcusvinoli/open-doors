@@ -15,6 +15,7 @@
     import "./markdown.css";
     import type { Template } from "$lib/components/structs/Template";
     import * as Table from "$lib/components/ui/table";
+    import LinkForm from "$lib/components/forms/module/LinkForm.svelte";
     
     export let objv: ObjectView | null;
     export let template: Template;
@@ -183,9 +184,46 @@
                 </div>
                 <Separator/>
             </div>
+            <div class="grid gap-2 my-1">
+                <h2 class="font-bold my-1">Object Cassification</h2>
+                <div class="grid grid-cols-8 items-center gap-2 min-h[100px]">
+                    <div class="col-span-1">
+                    </div>
+                    <div class="flex flex-col col-span-3 gap-2">
+                        <div class="flex items-center col-span-2">
+                            <Checkbox id="actCheck" bind:checked={objv.object.isActive} aria-labelledby="actCheck-label" />
+                            <Label
+                            id="actCheck-label"
+                            for="actCheck"
+                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
+                            Active
+                            </Label>
+                        </div>
+                        <div class="flex items-center col-span-2">
+                            <Checkbox id="reqCheck" bind:checked={objv.object.isRequirement} aria-labelledby="reqCheck-label" />
+                            <Label
+                            id="reqCheck-label"
+                            for="reqCheck"
+                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
+                            Requirement
+                            </Label>
+                        </div>
+                        <div class="flex items-center col-span-2">
+                            <Checkbox id="reqNorm" bind:checked={objv.object.isNormative} aria-labelledby="reqNorm-label" />
+                            <Label
+                            id="reqNorm-label"
+                            for="reqNorm"
+                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
+                            Normative
+                            </Label>
+                        </div>
+                    </div>
+                </div>
+                <Separator/>
+            </div>
             {#if template.fields.length > 0 && objv.object.customFields}
-            <div class="grid wrap gap-2 my-1">
-                <h2 class="font-bold">Custom Attributes</h2 >
+            <div class="grid gap-2 my-1">
+                <h2 class="font-bold my-1">Custom Attributes</h2 >
                 <div class="">
                     <Table.Root class="w-full">
                         <Table.Header class="">
@@ -211,68 +249,24 @@
                 <Separator/>
             </div>
             {/if}
-            <div class="grid gap-2 my-1">
-                <h2 class="font-bold my-1">Object Cassification</h2>
-                <div class="grid grid-cols-8 items-center gap-2 min-h[100px]">
-                    <div class="col-span-1">
-                    </div>
-                    <div class="flex items-center col-span-2">
-                        <Checkbox id="reqNorm" bind:checked={objv.object.isNormative} aria-labelledby="reqNorm-label" />
-                        <Label
-                        id="reqNorm-label"
-                        for="reqNorm"
-                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
-                        Normative
-                        </Label>
-                    </div>
-                    <div class="flex items-center col-span-2">
-                        <Checkbox id="reqCheck" bind:checked={objv.object.isRequirement} aria-labelledby="reqCheck-label" />
-                        <Label
-                        id="reqCheck-label"
-                        for="reqCheck"
-                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
-                        Requirement
-                        </Label>
-                    </div>
-                    <div class="flex items-center col-span-2">
-                        <Checkbox id="actCheck" bind:checked={objv.object.isActive} aria-labelledby="actCheck-label" />
-                        <Label
-                        id="actCheck-label"
-                        for="actCheck"
-                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pl-3">
-                        Active
-                        </Label>
-                    </div>
-                </div>
-                <Separator/>
-            </div>
-            <div class="grid gap-2 my-1">
+            <div class="grid my-1">
                 <h2 class="font-bold my-1">Links</h2>
-                <div class="gap-2 col-span-8 w-full">
-                    <Accordion.Root>
-                        <Accordion.Item value="item-1" class="">
-                            <Accordion.Trigger>
-                                <div class="flex items-center gap-2 ml-2">
-                                    <Icon icon="ci:arrow-down-left-lg" width="20px"/>
-                                    Inbound Links
-                                </div>
-                            </Accordion.Trigger>
-                            <Accordion.Content class="">
-                                This feature is not supported yet.
-                            </Accordion.Content>
-                        </Accordion.Item>
-                        <Accordion.Item value="item-2">
-                            <Accordion.Trigger>
-                                <div class="flex items-center gap-2 ml-2">
-                                    <Icon icon="ci:arrow-up-right-lg" width="20px"/>
-                                    Outbound Links
-                                </div>
-                            </Accordion.Trigger>
-                            <Accordion.Content>
-                                This feature is not supported yet.
-                            </Accordion.Content>
-                        </Accordion.Item>
-                    </Accordion.Root>
+                <div class="flex my-1">
+                    <div class="gap-2 w-full">
+                        <div class="flex items-center gap-1 ml-2">
+                            <Icon icon="ci:arrow-down-left-lg" width="20px"/>
+                            Inbound Links
+                        </div>
+                        <LinkForm />
+                    </div>
+                    <Separator orientation="vertical"/>
+                    <div class="gap-2 w-full">
+                        <div class="flex items-center gap-1 ml-2">
+                            <Icon icon="ci:arrow-up-right-lg" width="20px"/>
+                            Outbound Links
+                        </div>
+                        <LinkForm />
+                    </div>
                 </div>
             </div>
             {#if isDeletable}
