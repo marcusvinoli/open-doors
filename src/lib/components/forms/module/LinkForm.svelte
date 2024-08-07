@@ -2,54 +2,149 @@
     import Icon from '@iconify/svelte';
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Table from "$lib/components/ui/table";
-    import type { Link } from '$lib/components/structs/Object';
+    import type { Link, ObjectView } from '$lib/components/structs/Object';
     import type { Module } from '$lib/components/structs/Module';
     import type { Object } from '$lib/components/structs/Object';
     import StringDropdown from './StringDropdown.svelte';
     import StringComboBox from './StringComboBox.svelte';
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
+    import { listAllModules } from '$lib/utils/lists';
+    import { repository } from '$lib/stores/Repository';
+    import type { TreeItem } from '$lib/components/structs/Tree';
+    import { readObjects } from '$lib/controllers/Module';
 
     export let links: Link[] = [];
+    
+    export let modPlaceholder = "Select a module...";
+    export let objsPlaceholder = "Select a module first...";
 
     let modules: string[];
     let objects: string[];
 
-    let selectedModule: string;
-    let selectedObject: string;
+    let selectedModule: string = "";
+    let selectedObject: string = "";
+
+    let moduleTrees: TreeItem[];
+    let moduleObjects: Object[] = [];
+    
+    let readToLink: boolean = false;
 
     const dispatch = createEventDispatcher();
 
     function handleModuleSelection(event: any) {
-        let selectedModule = event.detail.item;
+        if (event.detail.item === modPlaceholder) {
+            return;
+        }
+        readToLink = false;
+        objects = [objsPlaceholder];
+        selectedModule = event.detail.item;
+        let index = moduleTrees.findIndex((mod) => {return (mod.name === selectedModule)});
+        if (index < 0) {
+            return;
+        }
+        let modTree = moduleTrees[index]
+        readObjects(modTree.path)
+            .then((objs) => {
+                moduleObjects = objs as Object[];
+                console.log(objs);
+                listAllObjects(modTree.name, "-")
+            })
+            .catch((err) => {
+                console.log(err);
+            })
         dispatch('selectModule', {item: selectedModule})
     }
 
     function handleObjectSelection(event: any) {
+        if (event.detail.item === objsPlaceholder) {
+            return;
+        }
+        readToLink = true;
         let selectedObj = event.detail.item;
         dispatch('selectObject', {item: selectedObj})
     }
     
     function handleAddLink() {
-        dispatch('selectObject', {mod: selectedModule, obj: selectedObject})
+        if (!readToLink) {
+            return;
+        }
+
+        let index = moduleTrees.findIndex((mod) => {return (mod.name === selectedModule)})
+
+        dispatch('createLink', {modulePath: moduleTrees[index].path, objectId: selectedObject.split("-").pop()})
+
+        readToLink = false;
+        selectedModule = "";
+        selectedObject = "";
+    }
+    
+    function handleRemoveLink(link: Link) {
+        dispatch('removeLink', {link: link})
     }
 
-    function handleRemoveLink(link: Link) {
-        
+    function handleVisitLink(link: Link) {
+        dispatch('visitLink', {link: link})
     }
+
+    function getAllModules() {
+        let allModules: string[] = [];
+        moduleTrees = listAllModules($repository?.tree);
+        moduleTrees.forEach((mod) => {
+            allModules.push(mod.name);
+        })
+        modules = allModules;
+    }
+
+    function listAllObjects(prefix: string, separator: string) {
+        let allObjs: string[] = [];
+        moduleObjects.forEach((obj) => {
+            allObjs.push(`${prefix}${separator}${obj.id}`)
+        })
+        if (allObjs.length === 0) {
+            objsPlaceholder = "No object found on this module."
+            objects = [objsPlaceholder];
+            return;
+        }
+        objsPlaceholder = "Select a object..."
+        objects = allObjs;
+    }
+
+    $: {
+
+    }
+
+    onMount(() => {
+        getAllModules();
+    })
 
 </script>
 
 <Table.Root class="w-full">
-    <Table.Body class="">
+    <Table.Header>
         <Table.Row>
-            <Table.Cell class="px-1">
-                <StringDropdown options={modules} on:select={handleModuleSelection}/>
+            <Table.Head class="max-w-12 min-w-12">
+                Module
+            </Table.Head>
+            <Table.Head class="max-w-12 min-w-12">
+                Object
+            </Table.Head>
+            <Table.Head class="px-1 w-[10px]">
+                 
+            </Table.Head>
+        </Table.Row>
+    </Table.Header>
+    <Table.Body class="w-full">
+        <Table.Row>
+            <Table.Cell class="px-1 max-w-12 min-w-12">
+                {#if modules}
+                <StringDropdown bind:options={modules} on:select={handleModuleSelection} placeholder={modPlaceholder}/>
+                {/if}
             </Table.Cell>
-            <Table.Cell class="px-1">
-                <StringDropdown options={objects} on:select ={handleObjectSelection}/>
+            <Table.Cell class="px-1 max-w-12 min-w-12">
+                <StringDropdown options={objects} bind:selected={selectedObject} on:select ={handleObjectSelection} placeholder={objsPlaceholder}/>
             </Table.Cell>
             <Table.Cell class="px-1 w-[10px]">
-                <Button size="sm" variant="ghost" class="hover:text-blue-600" on:click={handleAddLink}>
+                <Button size="sm" variant="ghost" class="hover:text-blue-600" on:click={handleAddLink} disabled={!readToLink}>
                     <Icon icon="gravity-ui:circle-plus" width="20px" />
                 </Button>
             </Table.Cell>
@@ -61,6 +156,11 @@
                 </Table.Cell>
                 <Table.Cell>
                     {link.module}-{link.object}
+                </Table.Cell>
+                <Table.Cell class="w-12">
+                    <Button variant="ghost" on:click={() => handleVisitLink(link)}>
+                        <Icon icon="gravity-ui:circle-chevron-right" rotate={45} width="20px" />
+                    </Button>
                 </Table.Cell>
                 <Table.Cell class="w-12">
                     <Button variant="ghost" class="hover:text-red-600" on:click={() => handleRemoveLink(link)}>

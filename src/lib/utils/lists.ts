@@ -95,3 +95,15 @@ export function listAllProjects(parent: TreeItem): TreeItem[] {
 export function listAllFolders(parent: TreeItem): TreeItem[] {
     return listChildren(parent, "folder")
 }
+
+export function listAllModules(parent: TreeItem): TreeItem[] {
+    let list: TreeItem[] = [];
+    parent.children.forEach((subitem) => {
+        if(subitem.itemType === "project" || subitem.itemType === "folder" ) {
+            Array.prototype.push.apply(list, listAllModules(subitem))
+        } else if(subitem.itemType === "module") {
+            list.push(subitem);
+        }
+    });
+    return list;
+}
