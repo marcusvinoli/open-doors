@@ -6,7 +6,7 @@ export function convertToTreeItemState(item: TreeItem): TreeItemState {
     name: item.name,
     path: item.path,
     itemType: item.itemType,
-    opened: false, 
+    opened: true, 
     children: item.children.map(child => convertToTreeItemState(child))
   };
 }

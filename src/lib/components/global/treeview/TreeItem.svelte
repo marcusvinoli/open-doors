@@ -17,7 +17,14 @@
     function handleClick(event: any) {
         event.stopPropagation();
         dispatch('click', {item: item});
-        toggleItem();
+        if (!item.opened) {
+            item.opened = true;
+        }
+    }
+    
+    function openLevel(event: any) {
+        event.stopPropagation();
+        item.opened =! item.opened;
     }
 </script>
 
@@ -28,11 +35,15 @@
         {/each}
     </div>
     <div class="flex text-left truncate p-1 items-center">
-        {#if item.opened}
-            <Icon icon="gravity-ui:chevron-down" width="10px"/>
-        {:else}
-            <Icon icon="gravity-ui:chevron-right" width="10px"/>
-        {/if}
+        <button class="" on:click={openLevel}>
+            {#if item.opened && item.itemType != "module"}
+                <Icon icon="gravity-ui:chevron-down" width="12px"/>
+            {:else if !item.opened  && item.itemType != "module"}
+                <Icon icon="gravity-ui:chevron-right" width="12px"/>
+            {:else}
+                <div class="w-[12px]"></div>
+            {/if}
+        </button>
         <icon class="pr-2 pl-1">
             {#if item.itemType === "repository"}
                 <Icon icon="gravity-ui:database" width="15px"/>
