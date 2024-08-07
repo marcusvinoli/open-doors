@@ -1,8 +1,7 @@
 <script lang="ts">
     import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType } from "$lib/components/global/toolbar/Toolbar";
-    import PanelView from '$lib/components/global/panelview/PanelView.svelte';
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-    import { onMount } from "svelte";
+    import { beforeUpdate, onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { confirm } from '@tauri-apps/api/dialog';
     import { addTab, updateActiveTab } from "$lib/stores/Tabs";
@@ -11,7 +10,7 @@
     import { repository } from "$lib/stores/Repository";
     import * as Resizable from "$lib/components/ui/resizable";
     import ObjectEditor from "$lib/components/global/object_editor/ObjectEditor.svelte";
-    import type { Object, ObjectView } from "$lib/components/structs/Object";
+    import type { Link, Object, ObjectView } from "$lib/components/structs/Object";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import IndexTree from "$lib/components/global/indextree/IndexTree.svelte";
     import ObjectExplorer from "$lib/components/global/object_explorer/ObjectExplorer.svelte";
@@ -20,18 +19,18 @@
     import TemplateForm from "$lib/components/forms/module/TemplateForm.svelte";
     import { loadRepository, reloadRepository } from "$lib/controllers/Repository";
     import { loadAuthorInformation } from "$lib/controllers/User";
+    import { pageState } from "./store";
     
     let selectedObject: ObjectView | null = null;
     let objects: ObjectView[] = [];
-
     let module: Module;
 
     let editPanelFlag: boolean = false;
     let treePanelFlag: boolean = false;
     let templateFlag: boolean = false;
     let editModeFlag: boolean = true;
-
     let updateModuleFlag: boolean = false;
+    let tabKey: string = "";
 
     function loadHomeToolbar() {
         clearToolbar();
@@ -150,6 +149,7 @@
                 selectedObject = null;
                 editPanelFlag = false;
                 updateModuleFlag = true;
+                load(module.path);
             })
     }
     
@@ -162,6 +162,7 @@
             .finally(() => {
                 selectedObject = null;
                 updateModuleFlag = true;
+                load(module.path);
             })
         
     }
@@ -179,6 +180,7 @@
             .finally(() => {
                 selectedObject = null;
                 updateModuleFlag = true;
+                load(module.path);
             })
     }
     
@@ -190,6 +192,7 @@
         selectedObject = event.detail.object;
         editPanelFlag = true;
     }
+    
 
     function scrollIntoView(event: any) {
         const el = document.getElementById("row-" + event.detail.path);
@@ -239,6 +242,21 @@
         return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
     }
 
+    function getLinks(links: Link[], id: number) {
+        let ret: Link[] = [];
+        if (!links) {
+            return [];
+        }
+
+        links.forEach((link) => {
+            if (link.object === id) {
+                ret.push(link);
+            }
+        })
+
+        return ret;
+    }
+
     async function load(modPath: string) {
         module = await readModuleFromPath(modPath);
         let retObjects = await readObjects(modPath);
@@ -250,7 +268,7 @@
                 object: obj,
                 isDraft: false,
                 hasChanges: false,
-                links: [],
+                inboundLinks: getLinks(module.inboundLinks, obj.id),
             }
             newObjects.push(dob);
         });
@@ -261,7 +279,7 @@
                 object: dobj,
                 isDraft: true,
                 hasChanges: false,
-                links: [],
+                inboundLinks: getLinks(module.inboundLinks, dobj.id),
             }
 
             if (index < 0) {
@@ -273,13 +291,22 @@
         objects = sortItems(newObjects);
     }
 
-    function pageSetup() {
-        
+    function generateKey(input: string): string {
+        const sanitized = input.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const truncated = sanitized.length > 30 ? sanitized.substring(0, 30) : sanitized;
+        return truncated;
     }
     
     $: {
         const { mod, version } = $page.params;
         load(mod);
+        tabKey = generateKey(`${mod.substring($repository?.tree.path.length)}-${version}`);
+        
+        const savedState = pageState.getPageState(tabKey);
+        if (savedState) {
+            ({ scrollX, scrollY, selectedObject, editPanelFlag } = savedState);
+            window.scrollTo(savedState.scrollX, savedState.scrollY);
+        }
     }
     
     onMount(() => {
@@ -287,16 +314,33 @@
         const url: string = $page.url.pathname;
         const name: string = params.mod.substring($repository?.tree.path.length);
         const version: string = params.version;
-        
         loadRepository();
         loadHomeToolbar();
         addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
-        load(params.mod);
+        load(params.mod);       
+        const savedState = pageState.getPageState(tabKey);
+        if (savedState) {
+            ({ scrollX, scrollY, selectedObject, editPanelFlag } = savedState);
+            window.scrollTo(savedState.scrollX, savedState.scrollY);
+        }
     })
+    
+    beforeUpdate(() => {
+        const state = {
+            scrollX: window.scrollX,
+            scrollY: window.scrollY,
+            selectedObject,
+            editPanelFlag
+        };
+        pageState.setPageState(tabKey, state);
+    });
+
 </script>
 
 <div class="bg-slate-50 h-full py-1">
+    {#if module}
     <TemplateForm bind:module={module} bind:openDialog={templateFlag}/>
+    {/if}
     <Resizable.PaneGroup direction="horizontal">
         {#if treePanelFlag}
         <Resizable.Pane defaultSize={20} collapsible order={1}>
@@ -312,7 +356,9 @@
         {#if editPanelFlag}
         <Resizable.Handle withHandle/>
         <Resizable.Pane class="h-full" defaultSize={50} order={3}>
-            <ObjectEditor template={module.template} bind:objv={selectedObject} on:close={handleCloseEditPanel} on:saveDraft={handleObjectDraftCreation} on:save={handleObjectCreation} on:delete={handleObjectExclusion}/>
+            {#if module}
+            <ObjectEditor bind:template={module.template} bind:objv={selectedObject} on:close={handleCloseEditPanel} on:saveDraft={handleObjectDraftCreation} on:save={handleObjectCreation} on:delete={handleObjectExclusion}/>
+            {/if}
         </Resizable.Pane>
         {/if}
     </Resizable.PaneGroup>

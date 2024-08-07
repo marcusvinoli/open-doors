@@ -1,11 +1,11 @@
-use std::{cmp::max, path::PathBuf, vec};
+use std::{cmp::max, fs::read, path::PathBuf, vec};
 
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
 
 use crate::core::{error::ModuleError, middleware as mid};
 
-use super::{baseline::Baseline, definitions as defs, object::Object, template::Template};
+use super::{baseline::Baseline, definitions as defs, links::{self, Link}, object::Object, template::Template};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {
@@ -21,6 +21,7 @@ pub struct Module{
     pub manifest: ModuleManifest,
     pub template: Template,
     pub baselines: Vec<Baseline>,
+    pub inbound_links: Vec<Link>,
 }
 
 impl Module {
@@ -28,11 +29,12 @@ impl Module {
         let module_path = mid::create_folder(&path, &man.prefix)?;
         let baselines: Vec<Baseline> = vec![Baseline::default()];
         let template: Template = Template::default();
+        let inbound_links: Vec<Link> = Vec::new();
         
         mid::create_yml_file(&module_path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
         mid::create_yml_file(&module_path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
         mid::create_yml_file(&module_path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
-        mid::create_yml_file(&module_path, defs::OD_LINKS_FILE_NAME, &())?;
+        mid::create_yml_file(&module_path, defs::OD_LINKS_FILE_NAME, &inbound_links)?;
 
         mid::create_folder(&module_path, defs::OD_OBJS_FOLDER_NAME)?;
         mid::create_folder(&module_path, defs::OD_DRAFT_FOLDER_NAME)?;
@@ -43,6 +45,7 @@ impl Module {
             manifest: man.clone(), 
             template,
             baselines,
+            inbound_links,
         })
     }
     
@@ -51,19 +54,21 @@ impl Module {
         let manifest: ModuleManifest = mid::read_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME)?;
         let template: Template = mid::read_yml_file(&path, defs::OD_TEMPLATE_FILE_NAME)?;
         let baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
+        let inbound_links: Vec<Link> = mid::read_yml_file(&path, defs::OD_LINKS_FILE_NAME)?;
         
         Ok(Module { 
             path: path.clone(), 
             manifest, 
             template, 
-            baselines, 
+            baselines,
+            inbound_links,
         })
     }
     
     pub fn update(path: &PathBuf, man: &ModuleManifest) -> Result<ModuleManifest, ModuleError> {
         Module::check_for_module_folder(&path)?;
 
-        mid::update_yml_folder(&path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
+        mid::update_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
         
         Ok(mid::read_yml_file::<ModuleManifest, _>(&path, defs::OD_MODULE_MANIFEST_FILE_NAME)?)
     }
@@ -95,11 +100,37 @@ impl Module {
     pub fn create_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
         let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
         mid::move_file(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), &self.path.join(defs::OD_OBJS_FOLDER_NAME), &format!("{id}.yml"))?;
+        
+        if let Some(outbound_links) = &obj.outbound_links {
+            let inbound_link: Link = Link { 
+                path: self.path.clone(),
+                object: obj.id(),
+                module: self.manifest.prefix.clone(),
+            };
+            for outbound_link in outbound_links {
+                let dest_mod: Module = Module::read(&outbound_link.path)?;
+                dest_mod.create_inbound_link(&inbound_link)?;
+            }
+        }
+        
         Ok(self.find_object(id)?)
     }
     
     pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
         let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
+
+        if let Some(outbound_links) = &obj.outbound_links {
+            let inbound_link: Link = Link { 
+                path: self.path.clone(),
+                object: obj.id(),
+                module: self.manifest.prefix.clone(),
+            };
+            for outbound_link in outbound_links {
+                let dest_mod: Module = Module::read(&outbound_link.path)?;
+                dest_mod.create_inbound_link(&inbound_link)?;
+            }
+        }
+
         Ok(self.find_object(id)?)
     }
 
@@ -234,6 +265,26 @@ impl Module {
 
     pub fn read_from_baseline(path: &PathBuf, baseline: Baseline) -> Result<Vec<Object>, ModuleError> {
         todo!()
+    }
+
+    pub fn read_inbound_links(&self) -> Result<Vec<Link>, ModuleError> {
+        Ok(mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?)
+    }
+
+    pub fn create_inbound_link(&self, link: &Link) -> Result<Vec<Link>, ModuleError> {
+        self.delete_inbound_link(&link)?;
+        let mut links: Vec<Link> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
+        links.push(link.clone());
+        mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?;
+        self.read_inbound_links()
+    }
+
+    pub fn delete_inbound_link(&self, link: &Link) -> Result<Vec<Link>, ModuleError> {
+        let mut links: Vec<Link> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
+        if let Some(pos) = links.iter().position(|lk| lk == link) {
+            links.remove(pos);
+        }
+        self.read_inbound_links()
     }
 
     fn check_for_module_folder(path: &PathBuf) -> Result<(), ModuleError> {

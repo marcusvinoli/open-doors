@@ -4,6 +4,8 @@ use chrono::{DateTime, Utc};
 
 use crate::core::user::User;
 
+use super::links::Link;
+
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
 pub struct Object {
@@ -20,7 +22,9 @@ pub struct Object {
     #[serde(skip_serializing_if="Option::is_none")]
     pub deleted_at: Option<DateTime<Utc>>,
     #[serde(skip_serializing_if="Option::is_none")]
-    pub custom_fields: Option<HashMap<String, String>>, 
+    pub custom_fields: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub outbound_links: Option<Vec<Link>>,
 }
 
 impl Object {

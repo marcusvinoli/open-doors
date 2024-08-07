@@ -8,7 +8,7 @@
     import { Checkbox } from "$lib/components/ui/checkbox/index.js";
     import * as Accordion from "$lib/components/ui/accordion";
     import { marked } from 'marked'
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import Icon from "@iconify/svelte";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js"
@@ -17,7 +17,7 @@
     import * as Table from "$lib/components/ui/table";
     import LinkForm from "$lib/components/forms/module/LinkForm.svelte";
     
-    export let objv: ObjectView | null;
+    export let objv: ObjectView | null = createEmptyObject();
     export let template: Template;
     export let prefix: string = "";
     export let separator: string = "";
@@ -30,9 +30,9 @@
 
     const dispatch = createEventDispatcher();
 
-    if(!objv) {
+    function createEmptyObject(): ObjectView {
         isDeletable = false;
-        objv = {
+        return {
             object: {
                 id: 0,
                 header: "",
@@ -46,8 +46,9 @@
                 deletedAt: null,
                 customFields: createCustomFieldHashFromTemplate(template),
                 level: "",
+                outboundLinks: [],
             },
-            links: [],
+            inboundLinks: [],
             isDraft: false,
             hasChanges: false,
         }
@@ -98,12 +99,10 @@
         dispatch('delete', {obj: objv})
     }
 
-    $: {
-        if (!objv.object.customFields) {
-            objv.object.customFields = createCustomFieldHashFromTemplate(template);
-        }
+    
+    if (!objv?.object.customFields) {
+        objv!.object.customFields = createCustomFieldHashFromTemplate(template);
     }
-
 </script>
 
 {#if objv}
@@ -251,29 +250,32 @@
             {/if}
             <div class="grid my-1">
                 <h2 class="font-bold my-1">Links</h2>
-                <div class="flex my-1">
-                    <div class="gap-2 w-full">
-                        <div class="flex items-center gap-1 ml-2">
-                            <Icon icon="ci:arrow-down-left-lg" width="20px"/>
-                            Inbound Links
-                        </div>
-                        <LinkForm />
-                    </div>
-                    <Separator orientation="vertical"/>
-                    <div class="gap-2 w-full">
+                <div class="flex flex-col my-1">
+                    <div class="gap-2 w-full py-1">
                         <div class="flex items-center gap-1 ml-2">
                             <Icon icon="ci:arrow-up-right-lg" width="20px"/>
                             Outbound Links
                         </div>
-                        <LinkForm />
+                        <LinkForm bind:links={objv.object.outboundLinks} editable={true}/>
                     </div>
+                    <Separator/>
+                    {#if objv?.inboundLinks.length > 0}
+                    <div class="gap-2 w-full pt-4">
+                        <div class="flex items-center gap-1 ml-2">
+                            <Icon icon="ci:arrow-down-left-lg" width="20px"/>
+                            Inbound Links
+                        </div>
+                        <LinkForm links={objv.inboundLinks} editable={false}/>
+                    </div>
+                    {/if}
                 </div>
             </div>
             {#if isDeletable}
-            <div class="grid wrap pag-2 my-1">
+            <Separator/>
+            <div class="grid wrap pag-2 mt-3">
                 <Button variant="destructive" class="px-5" on:click={deleteObj}>
                     <Icon icon="ci:close-square" width="20px"/>
-                    <p class="pl-2">Delete</p>
+                    <p class="pl-2">Delete Object</p>
                 </Button>
             </div>
             {/if}

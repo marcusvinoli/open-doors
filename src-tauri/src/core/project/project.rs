@@ -43,7 +43,7 @@ impl Project {
     
     pub fn update_manifest(path: &PathBuf, man: &ProjectManifest) -> Result<ProjectManifest, ProjectError> {
         Project::check_for_project_folder(&path)?;
-        mid::update_yml_folder(&path, defs::OD_PROJECT_MANIFEST_FILE_NAME,&man)?;
+        mid::update_yml_file(&path, defs::OD_PROJECT_MANIFEST_FILE_NAME,&man)?;
         Ok(mid::read_yml_file::<ProjectManifest, _>(&path, defs::OD_PROJECT_MANIFEST_FILE_NAME)?)
     }
         

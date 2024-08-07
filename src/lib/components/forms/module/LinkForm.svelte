@@ -13,8 +13,9 @@
     import type { TreeItem } from '$lib/components/structs/Tree';
     import { readObjects } from '$lib/controllers/Module';
 
-    export let links: Link[] = [];
-    
+    export let links: Link[] | null = [];
+    export let editable: boolean = true;
+
     export let modPlaceholder = "Select a module...";
     export let objsPlaceholder = "Select a module first...";
 
@@ -46,7 +47,6 @@
         readObjects(modTree.path)
             .then((objs) => {
                 moduleObjects = objs as Object[];
-                console.log(objs);
                 listAllObjects(modTree.name, "-")
             })
             .catch((err) => {
@@ -69,10 +69,30 @@
             return;
         }
 
-        let index = moduleTrees.findIndex((mod) => {return (mod.name === selectedModule)})
+        if (!links) {
+            links = [];
+        }
 
-        dispatch('createLink', {modulePath: moduleTrees[index].path, objectId: selectedObject.split("-").pop()})
+        let index = moduleTrees.findIndex((mod) => {return (mod.name === selectedModule)});
 
+        if (index < 0) {
+            return;
+        }
+        
+        let newLink: Link = {
+            path: moduleTrees[index].path,
+            module: selectedModule,
+            object: parseInt(selectedObject.split("-").pop()??"0"),
+        }
+
+        let findIndex = links?.findIndex((link) => {return (newLink === link)});
+
+        if (findIndex < 0) {
+            links = [...links, newLink];
+        }
+
+        console.log("Links", links);
+        
         readToLink = false;
         selectedModule = "";
         selectedObject = "";
@@ -122,52 +142,58 @@
 <Table.Root class="w-full">
     <Table.Header>
         <Table.Row>
-            <Table.Head class="max-w-12 min-w-12">
+            <Table.Head class="w-[1/3]">
                 Module
             </Table.Head>
-            <Table.Head class="max-w-12 min-w-12">
+            <Table.Head class="">
                 Object
             </Table.Head>
-            <Table.Head class="px-1 w-[10px]">
+            <Table.Head class="">
                  
             </Table.Head>
         </Table.Row>
     </Table.Header>
     <Table.Body class="w-full">
+        {#if editable}
         <Table.Row>
-            <Table.Cell class="px-1 max-w-12 min-w-12">
-                {#if modules}
-                <StringDropdown bind:options={modules} on:select={handleModuleSelection} placeholder={modPlaceholder}/>
-                {/if}
+            <Table.Cell class="px-1">
+                <div class="min-w-[80px]">
+                    {#if modules}
+                    <StringDropdown bind:options={modules} on:select={handleModuleSelection} placeholder={modPlaceholder}/>
+                    {/if}
+                </div>
             </Table.Cell>
-            <Table.Cell class="px-1 max-w-12 min-w-12">
+            <Table.Cell class="px-1 w-full">
                 <StringDropdown options={objects} bind:selected={selectedObject} on:select ={handleObjectSelection} placeholder={objsPlaceholder}/>
             </Table.Cell>
-            <Table.Cell class="px-1 w-[10px]">
+            <Table.Cell class="pl-1 pr-2 w-[20px]">
                 <Button size="sm" variant="ghost" class="hover:text-blue-600" on:click={handleAddLink} disabled={!readToLink}>
                     <Icon icon="gravity-ui:circle-plus" width="20px" />
                 </Button>
             </Table.Cell>
         </Table.Row>
+        {/if}
+        {#if links}
         {#each links as link}
             <Table.Row>
-                <Table.Cell class="max-h-24">
-                    {link.module}
+                <Table.Cell class="max-w-[1/3]">
+                    <span>{link.module}</span>
                 </Table.Cell>
-                <Table.Cell>
-                    {link.module}-{link.object}
+                <Table.Cell class="max-w-12 min-w-12">
+                    <div class="flex flex-row items-center">
+                        <Button size="sm" variant="ghost" on:click={() => handleVisitLink(link)}>
+                            <Icon icon="gravity-ui:circle-chevron-right" rotate={0} width="20px" />
+                        </Button>
+                        <span>{link.module}-{link.object}</span>
+                    </div>
                 </Table.Cell>
-                <Table.Cell class="w-12">
-                    <Button variant="ghost" on:click={() => handleVisitLink(link)}>
-                        <Icon icon="gravity-ui:circle-chevron-right" rotate={45} width="20px" />
-                    </Button>
-                </Table.Cell>
-                <Table.Cell class="w-12">
-                    <Button variant="ghost" class="hover:text-red-600" on:click={() => handleRemoveLink(link)}>
+                <Table.Cell class="pl-1 pr-2">
+                    <Button size="sm" variant="ghost" class="hover:text-red-600" on:click={() => handleRemoveLink(link)}>
                         <Icon icon="gravity-ui:circle-minus" width="20px" />
                     </Button>
                 </Table.Cell>
             </Table.Row>
         {/each}
+        {/if}
     </Table.Body>
 </Table.Root>

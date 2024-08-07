@@ -1,20 +1,10 @@
-import type { ObjectView } from "./Object";
-import type { Template
-    
- } from "./Template";
+import type { ObjectView, Link } from "./Object";
+import type { Template } from "./Template";
 export interface ModuleManifest {
     title: string,
     prefix: string,
     separator: string,
     description: string,
-}
-
-export type LinkType = "outbound" | "inbound";
-
-export type Link = {
-    to: string,
-    from: string,
-    type: LinkType,
 }
 
 export interface Baseline {
@@ -28,6 +18,7 @@ export interface Module {
     manifest: ModuleManifest,
     template: Template,
     baselines: Baseline[],
+    inboundLinks: Link[],
 }
 
 export interface ModuleView extends Module {

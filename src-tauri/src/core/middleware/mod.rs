@@ -55,7 +55,7 @@ pub fn create_yml_file<T: Serialize, S: AsRef<Path>>(path: &PathBuf, file_name: 
     Ok(())
 }
 
-pub fn update_yml_folder<T: Serialize, S: AsRef<Path>>(path: &PathBuf, file_name: S, data: T) -> Result<(), MiddlewareError> {
+pub fn update_yml_file<T: Serialize, S: AsRef<Path>>(path: &PathBuf, file_name: S, data: T) -> Result<(), MiddlewareError> {
     create_yml_file(path, file_name, data)
 }
 

@@ -2,8 +2,9 @@ import type { Author } from "./Author";
 import type { User } from "./User";
 
 export interface Link {
+    path: string,
     module: string,
-    object: string,
+    object: number,
 }
 
 export interface Links {
@@ -24,11 +25,12 @@ export interface Object {
     updatedAt: Date,
     deletedAt: Date | null,
     customFields: IHash | null,
+    outboundLinks: Link[] | null,
 }
 
 export interface ObjectView {
     object: Object,
-    links: Link[] = [],
+    inboundLinks: Link[] = [],
     isDraft: boolean = false,
     hasChanges: boolean = false,
 }

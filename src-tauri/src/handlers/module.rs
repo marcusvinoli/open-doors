@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use tauri::command; 
 
-use crate::core::{error::OpenDoorsError, module::{object::Object, template::Template, Module, ModuleManifest}, tree::TreeItem};
+use crate::core::{error::OpenDoorsError, module::{links::Link, object::Object, template::Template, Module, ModuleManifest}, tree::TreeItem};
 
 #[command] 
 pub fn create_module(man: ModuleManifest, parent: TreeItem) -> Result<Module, OpenDoorsError> {
@@ -68,6 +68,20 @@ pub fn update_draft_object(path: PathBuf, object: Object) -> Result<Object, Open
 #[command] 
 pub fn delete_object(path: PathBuf, id: usize) -> Result<Object, OpenDoorsError> {
     let mut module = Module::read(&path)?;
+    let obj = module.find_object(id)?;
+
+    if let Some(outbound_links) = &obj.outbound_links {
+        let inbound_link: Link = Link { 
+            path: module.path.clone(),
+            object: obj.id(),
+            module: module.manifest.prefix.clone(),
+        };
+        for outbound_link in outbound_links {
+            let dest_mod: Module = Module::read(&outbound_link.path)?;
+            dest_mod.delete_inbound_link(&inbound_link)?;
+        }
+    }
+
     Ok(module.delete_object(id)?)
 }
 

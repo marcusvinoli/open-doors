@@ -69,7 +69,7 @@ impl Repository {
             return Err(RepositoryError::GitError(GitError::RepositoryNotEmpty));
         }
     
-        mid::update_yml_folder(&path, defs::OD_REPO_MANIFEST_FILE_NAME, &man)?;
+        mid::update_yml_file(&path, defs::OD_REPO_MANIFEST_FILE_NAME, &man)?;
     
         return Ok(());
     }
