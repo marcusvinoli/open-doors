@@ -72,7 +72,6 @@ export const goIn = (item: TreeItem) => {
         th = listRelatives(repo?.tree, repo?.tree, item);
         th.push(item);
         currentItem.set(item);
-        console.log(item);
         return th;
     })
 }

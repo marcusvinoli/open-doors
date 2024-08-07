@@ -34,7 +34,6 @@
 
     async function handleOpenRepository(event: any) {
         let path = event.detail.path as string;
-        console.log("Opening repository located at " + path);
         openRepository(path)
             .then(() => {
                 redirectHome();
