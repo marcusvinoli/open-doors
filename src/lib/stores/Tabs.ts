@@ -56,5 +56,9 @@ export const clearTabs = () => {
 }
 
 export const openTab = (path: string) => {
-    goto(path);
+    goto(path)
+}
+
+export const updateActiveTab = (path: string) => {
+    activeTab.set(path);
 }

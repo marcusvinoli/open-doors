@@ -5,7 +5,7 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { confirm } from '@tauri-apps/api/dialog';
-    import { addTab } from "$lib/stores/Tabs";
+    import { addTab, updateActiveTab } from "$lib/stores/Tabs";
     import { get } from "svelte/store";
     import { page } from "$app/stores";
     import { repository } from "$lib/stores/Repository";
@@ -239,7 +239,8 @@
         return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
     }
 
-    async function loadObjects(modPath: string) {
+    async function load(modPath: string) {
+        module = await readModuleFromPath(modPath);
         let retObjects = await readObjects(modPath);
         let retDraftObjects = await readDraftObjects(modPath);
         let newObjects: ObjectView[] = [];
@@ -271,31 +272,26 @@
         });
         objects = sortItems(newObjects);
     }
+
+    function pageSetup() {
+        
+    }
     
     $: {
-        if (updateModuleFlag && module) {
-            loadObjects(module.path);
-            updateModuleFlag = false;
-        }
+        const { mod, version } = $page.params;
+        load(mod);
     }
     
     onMount(() => {
-        loadRepository();
-        
         const params = get(page).params;
         const url: string = $page.url.pathname;
         const name: string = params.mod.substring($repository?.tree.path.length);
         const version: string = params.version;
-        addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
-        readModuleFromPath(params.mod)
-            .then((md) => {
-                module = md;
-                loadObjects(md.path);
-            })
-            .catch((err) => {
-                console.log(err)
-            })
+        
+        loadRepository();
         loadHomeToolbar();
+        addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
+        load(params.mod);
     })
 </script>
 
