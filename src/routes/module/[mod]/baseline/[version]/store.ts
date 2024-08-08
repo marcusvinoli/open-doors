@@ -1,3 +1,4 @@
+import type { View } from '$lib/components/global/object_explorer/viewStructs';
 import type { ObjectView } from '$lib/components/structs/Object';
 import { writable } from 'svelte/store';
 
@@ -6,6 +7,7 @@ export interface PageState {
   scrollY: number;
   selectedObject: ObjectView | null;
   editPanelFlag: boolean;
+  view: View;
 }
 
 const createPageState = () => {

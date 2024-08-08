@@ -20,6 +20,8 @@
     import { loadRepository, reloadRepository } from "$lib/controllers/Repository";
     import { loadAuthorInformation } from "$lib/controllers/User";
     import { pageState } from "./store";
+    import type { View } from "$lib/components/global/object_explorer/viewStructs";
+    import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
     
     let selectedObject: ObjectView | null = null;
     let objects: ObjectView[] = [];
@@ -31,6 +33,7 @@
     let editModeFlag: boolean = true;
     let updateModuleFlag: boolean = false;
     let tabKey: string = "";
+    let view: View = defaultView();
 
     function loadHomeToolbar() {
         clearToolbar();
@@ -284,7 +287,7 @@
                 newObjects[index] = dob;
             }
         });
-        
+
         objects = sortItems(newObjects);
     }
 
@@ -301,9 +304,10 @@
         
         const savedState = pageState.getPageState(tabKey);
         if (savedState) {
-            ({ scrollX, scrollY, selectedObject, editPanelFlag } = savedState);
+            ({ scrollX, scrollY, selectedObject, editPanelFlag, view } = savedState);
             window.scrollTo(savedState.scrollX, savedState.scrollY);
         }
+        console.log("Gotcha");
     }
     
     onMount(() => {
@@ -327,7 +331,8 @@
             scrollX: window.scrollX,
             scrollY: window.scrollY,
             selectedObject,
-            editPanelFlag
+            editPanelFlag,
+            view,
         };
         pageState.setPageState(tabKey, state);
     });
@@ -347,7 +352,7 @@
         {/if}
         <Resizable.Pane order={2}>
             {#if module}
-            <ObjectExplorer bind:module={module} bind:objects={objects} editMode={editModeFlag} on:click={handleObjectSelect}/>
+            <ObjectExplorer bind:view={view} bind:module={module} bind:objects={objects} editMode={editModeFlag} on:click={handleObjectSelect}/>
             {/if}
         </Resizable.Pane>
         {#if editPanelFlag}

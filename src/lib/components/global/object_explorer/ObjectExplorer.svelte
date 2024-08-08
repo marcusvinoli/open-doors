@@ -5,7 +5,7 @@
     import { createEventDispatcher, onMount } from "svelte";
     import { Button } from "$lib/components/ui/button";
     import { marked } from "marked";
-    import { view } from "./view";
+    import type { View } from "./viewStructs";
     import * as ContextMenu from "$lib/components/ui/context-menu/index.js";
     import "./markdown.css";
     import "./flashing.css";
@@ -17,11 +17,9 @@
     export let module: Module;
     export let editMode: boolean = true;
     export let showDeleted: boolean = false;
+    export let view: View;
     
     let showRowNumber = true;
-    let showIsActive = true;
-    let showIsNormative = true;
-    let showIsRequirement = true;
 
     let objs: ObjectView[] = [];
 
@@ -49,14 +47,13 @@
     
     $: {
         objs = objects;
-        let tempView = $view.items;
-        if(tempView.length > 0) {
+        console.log(view);
+        if(view.items.length > 0) {
             parseTemplate(module.template).forEach((item) => {
-                if (tempView.findIndex((tv) => tv.key === item.key) < 0) {
-                    tempView.push(item);
+                if (view.items.findIndex((tv) => tv.key === item.key) < 0) {
+                    view.items.push(item);
                 }
             })
-            $view.items = tempView;
         }
     }
 
@@ -64,15 +61,15 @@
     let tableCellClass: string = "text-sm "
 
     onMount(() => {
-        if ($view.items.length === 0) {
-            $view = defaultView();
+        if (view.items.length === 0 || !view) {
+            view = defaultView();
         }
     })
 
 </script>
 
 <div class="h-full w-full flex flex-col">
-    {#if objects.length > 0}
+    {#if objects.length > 0 && view}
         <Table.Root class="w-full relative" id="resizableTable">
             <Table.Header class="w-full min-w-96">
                 <Table.Row class="">
@@ -92,7 +89,7 @@
                           </ContextMenu.Root>
                     </Table.Head>
                     {/if}
-                    {#each $view.items as attributes}
+                    {#each view.items as attributes}
                         {#if attributes.show}
                         <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
                             <ContextMenu.Root>
@@ -105,7 +102,7 @@
                                     <ContextMenu.Sub>
                                         <ContextMenu.SubTrigger>View</ContextMenu.SubTrigger>
                                         <ContextMenu.SubContent class="w-48">
-                                            {#each $view.items as vw}
+                                            {#each view.items as vw}
                                             <ContextMenu.CheckboxItem bind:checked={vw.show}>
                                                 {vw.attribute}
                                             </ContextMenu.CheckboxItem>
@@ -134,7 +131,7 @@
                     {#if showRowNumber}
                         <Table.Cell class={tableCellClass}>{index}</Table.Cell>
                     {/if}
-                    {#each $view.items as attr}
+                    {#each view.items as attr}
                         {#if attr.show}
                             {#if attr.key === "id"}
                                 <Table.Cell class={tableCellClass}>{module.manifest.prefix}{module.manifest.separator}{ov.object.id}</Table.Cell>
