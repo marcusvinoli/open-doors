@@ -139,61 +139,58 @@
 
 </script>
 
-<Table.Root class="w-full">
-    <Table.Header>
-        <Table.Row>
-            <Table.Head class="w-[1/3]">
-                Module
-            </Table.Head>
-            <Table.Head class="">
-                Object
-            </Table.Head>
-            <Table.Head class="">
-                 
-            </Table.Head>
-        </Table.Row>
-    </Table.Header>
-    <Table.Body class="w-full">
+<div class="w-full flex flex-col px-1">
+    <div class="w-full flex flex-col">
         {#if editable}
-        <Table.Row>
-            <Table.Cell class="px-1">
-                <div class="min-w-[80px]">
+        <div class="w-full flex flex-col py-3 border-b-[1px]">
+            <div class="w-full flex flex-row text-sm">
+                <div class="w-[200px] px-2">
+                    Module
+                </div>
+                <div class="px-2">
+                    Object
+                </div>
+                <div class="w-[50px]">
+                
+                </div>
+            </div>
+            <div class="w-full flex py-1 items-center">
+                <div class="px-1 w-[200px]">
                     {#if modules}
                     <StringDropdown bind:options={modules} on:select={handleModuleSelection} placeholder={modPlaceholder}/>
                     {/if}
                 </div>
-            </Table.Cell>
-            <Table.Cell class="px-1 w-full">
-                <StringDropdown options={objects} bind:selected={selectedObject} on:select ={handleObjectSelection} placeholder={objsPlaceholder}/>
-            </Table.Cell>
-            <Table.Cell class="pl-1 pr-2 w-[20px]">
-                <Button size="sm" variant="ghost" class="hover:text-blue-600" on:click={handleAddLink} disabled={!readToLink}>
-                    <Icon icon="gravity-ui:circle-plus" width="20px" />
-                </Button>
-            </Table.Cell>
-        </Table.Row>
+                <div class="px-1 grow">
+                    <StringDropdown options={objects} bind:selected={selectedObject} on:select ={handleObjectSelection} placeholder={objsPlaceholder}/>
+                </div>
+                <div class="w-[50px]">
+                    <Button size="sm" variant="ghost" class="hover:text-blue-600" on:click={handleAddLink} disabled={!readToLink}>
+                        <Icon icon="gravity-ui:circle-plus" width="20px" />
+                    </Button>
+                </div>
+            </div>
+        </div>
         {/if}
         {#if links}
-        {#each links as link}
-            <Table.Row>
-                <Table.Cell class="max-w-[1/3]">
-                    <span>{link.module}</span>
-                </Table.Cell>
-                <Table.Cell class="max-w-12 min-w-12">
-                    <div class="flex flex-row items-center">
-                        <Button size="sm" variant="ghost" on:click={() => handleVisitLink(link)}>
-                            <Icon icon="gravity-ui:circle-chevron-right" rotate={0} width="20px" />
-                        </Button>
-                        <span>{link.module}-{link.object}</span>
-                    </div>
-                </Table.Cell>
-                <Table.Cell class="pl-1 pr-2">
-                    <Button size="sm" variant="ghost" class="hover:text-red-600" on:click={() => handleRemoveLink(link)}>
+            {#each links as link, index}
+            <div class="w-full flex flex-row text-sm items-center py-1 {((links.length - index) > 1 ? "border-b-[1px] border-b-slate-200" : "")}">
+                <div class="flex flex-row items-center px-1">
+                    <Button size="sm" variant="ghost" on:click={() => handleVisitLink(link)}>
+                        <Icon icon="gravity-ui:circle-chevron-right" rotate={0} width="20px" />
+                    </Button>
+                </div>
+                <div class="px-2 grow">
+                    <span>{link.module} / {link.module}-{link.object}</span>
+                </div>
+                {#if editable}
+                <div class="w-[50px]">
+                    <Button size="sm" variant="ghost" class="hover:text-red-600" on:click={() => {handleRemoveLink(link)}}>
                         <Icon icon="gravity-ui:circle-minus" width="20px" />
                     </Button>
-                </Table.Cell>
-            </Table.Row>
-        {/each}
+                </div>
+                {/if}
+            </div>
+            {/each}
         {/if}
-    </Table.Body>
-</Table.Root>
+    </div>
+</div>

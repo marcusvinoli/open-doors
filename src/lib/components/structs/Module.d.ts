@@ -18,7 +18,7 @@ export interface Module {
     manifest: ModuleManifest,
     template: Template,
     baselines: Baseline[],
-    inboundLinks: Link[],
+    inboundLinks: IHash,
 }
 
 export interface ModuleView extends Module {

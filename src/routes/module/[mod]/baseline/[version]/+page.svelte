@@ -193,7 +193,6 @@
         editPanelFlag = true;
     }
     
-
     function scrollIntoView(event: any) {
         const el = document.getElementById("row-" + event.detail.path);
 	    const ov = document.getElementById("scroll-table");
@@ -242,17 +241,14 @@
         return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
     }
 
-    function getLinks(links: Link[], id: number) {
+    function getLinks(links: any, id: number) {
         let ret: Link[] = [];
-        if (!links) {
-            return [];
-        }
 
-        links.forEach((link) => {
-            if (link.object === id) {
-                ret.push(link);
-            }
-        })
+        if (links[id]) {
+            links[id].forEach((lk: Link) => {
+                ret.push(lk);
+            })
+        }
 
         return ret;
     }
@@ -288,6 +284,7 @@
                 newObjects[index] = dob;
             }
         });
+        
         objects = sortItems(newObjects);
     }
 

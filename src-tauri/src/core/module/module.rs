@@ -1,11 +1,11 @@
-use std::{cmp::max, fs::read, path::PathBuf, vec};
+use std::{cmp::max, collections::HashMap, path::PathBuf, vec};
 
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
 
 use crate::core::{error::ModuleError, middleware as mid};
 
-use super::{baseline::Baseline, definitions as defs, links::{self, Link}, object::Object, template::Template};
+use super::{baseline::Baseline, definitions as defs, links::Link, object::Object, template::Template};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {
@@ -16,12 +16,13 @@ pub struct ModuleManifest {
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[serde(rename_all="camelCase")]
 pub struct Module{
     pub path: PathBuf,
     pub manifest: ModuleManifest,
     pub template: Template,
     pub baselines: Vec<Baseline>,
-    pub inbound_links: Vec<Link>,
+    pub inbound_links: HashMap<usize, Vec<Link>>,
 }
 
 impl Module {
@@ -29,7 +30,7 @@ impl Module {
         let module_path = mid::create_folder(&path, &man.prefix)?;
         let baselines: Vec<Baseline> = vec![Baseline::default()];
         let template: Template = Template::default();
-        let inbound_links: Vec<Link> = Vec::new();
+        let inbound_links: HashMap<usize, Vec<Link>> = HashMap::new();
         
         mid::create_yml_file(&module_path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
         mid::create_yml_file(&module_path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
@@ -54,7 +55,7 @@ impl Module {
         let manifest: ModuleManifest = mid::read_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME)?;
         let template: Template = mid::read_yml_file(&path, defs::OD_TEMPLATE_FILE_NAME)?;
         let baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
-        let inbound_links: Vec<Link> = mid::read_yml_file(&path, defs::OD_LINKS_FILE_NAME)?;
+        let inbound_links: HashMap<usize, Vec<Link>> = mid::read_yml_file(&path, defs::OD_LINKS_FILE_NAME)?;
         
         Ok(Module { 
             path: path.clone(), 
@@ -104,12 +105,12 @@ impl Module {
         if let Some(outbound_links) = &obj.outbound_links {
             let inbound_link: Link = Link { 
                 path: self.path.clone(),
-                object: obj.id(),
+                object: id.clone(),
                 module: self.manifest.prefix.clone(),
             };
             for outbound_link in outbound_links {
                 let dest_mod: Module = Module::read(&outbound_link.path)?;
-                dest_mod.create_inbound_link(&inbound_link)?;
+                dest_mod.create_inbound_link(&inbound_link, &outbound_link.object)?;
             }
         }
         
@@ -127,7 +128,7 @@ impl Module {
             };
             for outbound_link in outbound_links {
                 let dest_mod: Module = Module::read(&outbound_link.path)?;
-                dest_mod.create_inbound_link(&inbound_link)?;
+                dest_mod.create_inbound_link(&inbound_link, &outbound_link.object)?;
             }
         }
 
@@ -267,24 +268,41 @@ impl Module {
         todo!()
     }
 
-    pub fn read_inbound_links(&self) -> Result<Vec<Link>, ModuleError> {
+    pub fn read_inbound_links(&self) -> Result<HashMap<usize, Vec<Link>>, ModuleError> {
         Ok(mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?)
     }
 
-    pub fn create_inbound_link(&self, link: &Link) -> Result<Vec<Link>, ModuleError> {
-        self.delete_inbound_link(&link)?;
-        let mut links: Vec<Link> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
-        links.push(link.clone());
+    pub fn create_inbound_link(&self, link: &Link, id: &usize) -> Result<HashMap<usize, Vec<Link>>, ModuleError> {
+        let mut links: HashMap<usize, Vec<Link>> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
+        Module::add_unique_link(&mut links, &id, &link);
         mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?;
         self.read_inbound_links()
     }
 
-    pub fn delete_inbound_link(&self, link: &Link) -> Result<Vec<Link>, ModuleError> {
-        let mut links: Vec<Link> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
-        if let Some(pos) = links.iter().position(|lk| lk == link) {
-            links.remove(pos);
+    pub fn delete_inbound_link(&self, link: &Link) -> Result<HashMap<usize, Vec<Link>>, ModuleError> {
+        let mut links: HashMap<usize, Vec<Link>> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
+        let mut empty_keys: Vec<usize> = Vec::new();
+
+        for (id, links) in links.iter_mut() {
+            links.retain(|x| x != link);
+            if links.is_empty() {
+                empty_keys.push(*id);
+            }
         }
+
+        for id in empty_keys {
+            links.remove(&id);
+        }
+
         self.read_inbound_links()
+    }
+
+    fn add_unique_link(map: &mut HashMap<usize, Vec<Link>>, id: &usize, link: &Link) {
+        map.entry(id.clone())
+            .or_insert_with(Vec::new)
+            .iter()
+            .position(|x| *x == link.clone())
+            .map_or_else(|| map.get_mut(&id).unwrap().push(link.clone()), |_| {});
     }
 
     fn check_for_module_folder(path: &PathBuf) -> Result<(), ModuleError> {

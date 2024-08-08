@@ -109,6 +109,7 @@
         if (!objv?.object.customFields) {
             objv!.object.customFields = createCustomFieldHashFromTemplate(template);
         }
+        console.log("Obj", objv);
     })
 
 </script>
@@ -260,16 +261,16 @@
                 <h2 class="font-bold my-1">Links</h2>
                 <div class="flex flex-col my-1">
                     <div class="gap-2 w-full py-1">
-                        <div class="flex items-center gap-1 ml-2">
+                        <div class="flex items-center gap-1 ml-1 my-1 font-semibold">
                             <Icon icon="ci:arrow-up-right-lg" width="20px"/>
                             Outbound Links
                         </div>
                         <LinkForm bind:links={objv.object.outboundLinks} editable={true}/>
                     </div>
-                    <Separator/>
                     {#if objv?.inboundLinks.length > 0}
+                    <Separator/>
                     <div class="gap-2 w-full pt-4">
-                        <div class="flex items-center gap-1 ml-2">
+                        <div class="flex items-center gap-1 ml-1 my-1 font-semibold">
                             <Icon icon="ci:arrow-down-left-lg" width="20px"/>
                             Inbound Links
                         </div>
