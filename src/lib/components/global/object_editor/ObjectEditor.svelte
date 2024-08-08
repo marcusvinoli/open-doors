@@ -8,7 +8,7 @@
     import { Checkbox } from "$lib/components/ui/checkbox/index.js";
     import * as Accordion from "$lib/components/ui/accordion";
     import { marked } from 'marked'
-    import { createEventDispatcher, onMount } from "svelte";
+    import { beforeUpdate, createEventDispatcher, onMount } from "svelte";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import Icon from "@iconify/svelte";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js"
@@ -99,10 +99,18 @@
         dispatch('delete', {obj: objv})
     }
 
-    
-    if (!objv?.object.customFields) {
-        objv!.object.customFields = createCustomFieldHashFromTemplate(template);
-    }
+    beforeUpdate(() => {
+        if (!objv) {
+            objv = createEmptyObject();
+            isDeletable = false;
+        } else {
+            isDeletable = false;
+        }
+        if (!objv?.object.customFields) {
+            objv!.object.customFields = createCustomFieldHashFromTemplate(template);
+        }
+    })
+
 </script>
 
 {#if objv}

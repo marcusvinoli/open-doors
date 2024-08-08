@@ -357,7 +357,7 @@
         <Resizable.Handle withHandle/>
         <Resizable.Pane class="h-full" defaultSize={50} order={3}>
             {#if module}
-            <ObjectEditor bind:template={module.template} bind:objv={selectedObject} on:close={handleCloseEditPanel} on:saveDraft={handleObjectDraftCreation} on:save={handleObjectCreation} on:delete={handleObjectExclusion}/>
+            <ObjectEditor bind:template={module.template} objv={selectedObject} on:close={handleCloseEditPanel} on:saveDraft={handleObjectDraftCreation} on:save={handleObjectCreation} on:delete={handleObjectExclusion}/>
             {/if}
         </Resizable.Pane>
         {/if}
