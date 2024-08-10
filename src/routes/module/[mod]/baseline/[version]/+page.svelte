@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType } from "$lib/components/global/toolbar/Toolbar";
+    import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
     import { beforeUpdate, onMount } from "svelte";
     import { goto } from "$app/navigation";
@@ -11,17 +11,17 @@
     import * as Resizable from "$lib/components/ui/resizable";
     import ObjectEditor from "$lib/components/global/object_editor/ObjectEditor.svelte";
     import type { Link, Object, ObjectView } from "$lib/components/structs/Object";
-    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import IndexTree from "$lib/components/global/indextree/IndexTree.svelte";
     import ObjectExplorer from "$lib/components/global/object_explorer/ObjectExplorer.svelte";
     import { createDraftObject, createObject, deleteObject, readDraftObjects, readModule, readModuleFromPath, readObjects } from "$lib/controllers/Module";
     import type { Module } from "$lib/components/structs/Module";
     import TemplateForm from "$lib/components/forms/module/TemplateForm.svelte";
     import { loadRepository, reloadRepository } from "$lib/controllers/Repository";
-    import { loadAuthorInformation } from "$lib/controllers/User";
     import { pageState } from "./store";
     import type { View } from "$lib/components/global/object_explorer/viewStructs";
     import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
+    import ToolbarToggle from "$lib/components/global/toolbar/ToolbarToggle.svelte";
+    import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
     
     let selectedObject: ObjectView | null = null;
     let objects: ObjectView[] = [];
@@ -99,6 +99,31 @@
                 }
             },
         }
+
+        let readOnlyModeButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Read Only",
+            icon: "lucide:pencil-off",
+            action: () => {
+                editModeFlag = false;
+            },
+        }
+
+        let editModeButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Edit",
+            icon: "lucide:pencil",
+            action: () => {
+                editModeFlag = true;
+            },
+        }
+
+        let viewModeButton: ToolbarToggleType = {
+            type: "toggle",
+            buttonOn: editModeButton,
+            buttonOff: readOnlyModeButton,
+            status: editModeFlag,
+        }
         
         let creationGroup: ToolbarDropdownType = {
             button: newButton,
@@ -129,8 +154,8 @@
             type: "buttonsGroup"
         }
 
-        let treePanelView: ToolbarGroupType = {
-            items: [showTree],
+        let viewGrouplView: ToolbarGroupType = {
+            items: [showTree, viewModeButton],
             type: "buttonsGroup"
         }
 
@@ -141,8 +166,9 @@
     
         addToolbarItem(navigationGroup);
         addToolbarItem(newGroup);
-        addToolbarItem(treePanelView);
+        addToolbarItem(viewGrouplView);
         addToolbarItem(templateButton);
+
     }
 
     function handleObjectCreation(event: any) {
@@ -352,10 +378,10 @@
         {/if}
         <Resizable.Pane order={2}>
             {#if module}
-            <ObjectExplorer bind:view={view} bind:module={module} bind:objects={objects} editMode={editModeFlag} on:click={handleObjectSelect}/>
+            <ObjectExplorer bind:view={view} bind:module={module} bind:objects={objects} bind:editMode={editModeFlag} on:click={handleObjectSelect}/>
             {/if}
         </Resizable.Pane>
-        {#if editPanelFlag}
+        {#if editPanelFlag && editModeFlag}
         <Resizable.Handle withHandle/>
         <Resizable.Pane class="h-full" defaultSize={50} order={3}>
             {#if module}

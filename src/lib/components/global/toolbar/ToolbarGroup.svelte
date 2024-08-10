@@ -2,6 +2,7 @@
     import { Separator } from "$lib/components/ui/separator";
     import ToolbarButton from "./ToolbarButton.svelte";
     import ToolbarDropdown from "./ToolbarDropdown.svelte";
+    import ToolbarToggle from "./ToolbarToggle.svelte";
     import type { ToolbarGroupType } from "./Toolbar";
 
     export let group: ToolbarGroupType;
@@ -15,6 +16,8 @@
             <svelte:self group={item} />
         {:else if item.type === "dropdown"}
             <ToolbarDropdown dropdown={item} />
+        {:else if item.type === "toggle"}
+            <ToolbarToggle item={item} />
         {/if}
     {/each}
     <Separator orientation="vertical" class="mx-1"/>

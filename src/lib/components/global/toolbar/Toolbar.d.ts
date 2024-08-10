@@ -1,4 +1,4 @@
-export type ToolbarItemType = "button" | "buttonsGroup" | "dropdown" | "void";
+ export type ToolbarItemType = "button" | "buttonsGroup" | "dropdown" | "void" | "toggle";
 
 export interface ToolbarItemInterface {
     type: ToolbarItemType = "void"
@@ -20,6 +20,13 @@ export interface ToolbarDropdownType extends ToolbarItemInterface {
     type: ToolbarItemType = "dropdown",
     button: ToolbarButtonType,
     items: ToolbarGroupType[],
+}
+
+export interface ToolbarToggleType extends ToolbarItemInterface {
+    type: ToolbarItemType = "toggle",
+    buttonOn: ToolbarButtonType,
+    buttonOff: ToolbarButtonType,
+    status: boolean,
 }
 
 export interface Toolbar {
