@@ -70,7 +70,7 @@
 
 <div class="h-full w-full flex flex-col">
     {#if objects.length > 0 && view}
-        <Table.Root class="w-full relative" id="resizableTable">
+        <Table.Root class="w-full relative" id="scroll-table">
             <Table.Header class="w-full min-w-96">
                 <Table.Row class="">
                     {#if showRowNumber}
