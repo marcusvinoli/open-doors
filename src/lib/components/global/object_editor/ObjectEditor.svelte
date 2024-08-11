@@ -1,21 +1,21 @@
 <script lang="ts">
-    import type { ObjectView } from "$lib/components/structs/Object";
+    import Icon from "@iconify/svelte";
+    import LinkForm from "$lib/components/forms/module/LinkForm.svelte";
+    import Separator from "$lib/components/ui/separator/separator.svelte";
+    import AttributeInput from "./AttributeInput.svelte";
     import { user } from "$lib/stores/User";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
-    import Separator from "$lib/components/ui/separator/separator.svelte";
-    import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-    import * as Accordion from "$lib/components/ui/accordion";
     import { marked } from 'marked'
-    import { beforeUpdate, createEventDispatcher, onMount } from "svelte";
+    import { Checkbox } from "$lib/components/ui/checkbox/index.js";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
-    import Icon from "@iconify/svelte";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js"
-    import "./markdown.css";
-    import type { Template } from "$lib/components/structs/Template";
+    import { beforeUpdate, createEventDispatcher } from "svelte";
     import * as Table from "$lib/components/ui/table";
-    import LinkForm from "$lib/components/forms/module/LinkForm.svelte";
+    import type { Template } from "$lib/components/structs/Template";
+    import type { ObjectView } from "$lib/components/structs/Object";
+    import "./markdown.css";
     
     export let objv: ObjectView | null = createEmptyObject();
     export let template: Template;
@@ -31,6 +31,8 @@
     const dispatch = createEventDispatcher();
 
     function createEmptyObject(): ObjectView {
+        let customFields: IHash = {};
+        createCustomFieldHashFromTemplate(template, customFields);
         isDeletable = false;
         return {
             object: {
@@ -44,7 +46,7 @@
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 deletedAt: null,
-                customFields: createCustomFieldHashFromTemplate(template),
+                customFields: customFields,
                 level: "",
                 outboundLinks: [],
             },
@@ -54,20 +56,12 @@
         }
     }
 
-    function createCustomFieldHashFromTemplate(template: Template): IHash {
-        const obj: IHash = {};
-        
-        let keys: string[] = [];
-
+    function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {      
         template.fields.forEach((field) => {
-            keys.push(field.key);
+            if (!customFields[field.key]) {
+                customFields[field.key] = "";
+            }
         })
-
-        keys.forEach(key => {
-            obj[key] = "";
-        });
-
-        return obj;
     }
 
     function closeEdit() {
@@ -106,9 +100,7 @@
         } else {
             isDeletable = false;
         }
-        if (!objv?.object.customFields) {
-            objv!.object.customFields = createCustomFieldHashFromTemplate(template);
-        }
+        createCustomFieldHashFromTemplate(template, objv!.object.customFields);
         console.log("Obj", objv);
     })
 
@@ -183,9 +175,7 @@
                     <div class="col-span-7">
                         <ScrollArea class=" col-span-1">
                             <div class="preview rounded-sm">
-                                <!-- {@html marked("# " + objv.object.header)} -->
-                                {@html marked((objv.object.header ? "# " + objv.object.header + "\n" : "") + objv.object.content)}
-                                <!-- {@html marked("# ")} -->
+                                {@html marked((objv.object.header ? "# " + objv.object.level + " " + objv.object.header + "\n" : "") + objv.object.content)}
                             </div>
                         </ScrollArea>
                     </div>
@@ -197,7 +187,7 @@
                 <div class="grid grid-cols-8 items-center gap-2 min-h[100px]">
                     <div class="col-span-1">
                     </div>
-                    <div class="flex flex-col col-span-3 gap-2">
+                    <div class="flex flex-col col-span-3 gap-3 pb-2">
                         <div class="flex items-center col-span-2">
                             <Checkbox id="actCheck" bind:checked={objv.object.isActive} aria-labelledby="actCheck-label" />
                             <Label
@@ -247,7 +237,7 @@
                                         {field.attribute}
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <Input id="name" bind:value={objv.object.customFields[field.key]}/>
+                                        <AttributeInput bind:value={objv.object.customFields[field.key]} field={field}/>
                                     </Table.Cell>
                                 </Table.Row>
                             {/each}

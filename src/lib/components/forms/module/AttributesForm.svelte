@@ -37,7 +37,7 @@
 			case "nullableOption": 
 				return { nullableOption: allowedValues.split(",").map(s => s.trim()) };
 			case "nullableBoolean":
-				return { nullableBoolean: "" };
+				return { nullableBoolean: false };
 			default:
 				return { any: "" };
 		}

@@ -15,7 +15,7 @@ export interface NullableOptions extends DataKind {
 }
 
 export interface NullableBoolean extends DataKind {
-    nullableBoolean: "",
+    nullableBoolean: false,
 }
 
 export interface Field {
