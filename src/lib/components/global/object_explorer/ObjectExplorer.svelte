@@ -12,14 +12,15 @@
 	import type { ObjectView, Object } from "$lib/components/structs/Object";
 	import "./markdown.css";
 	import "./flashing.css";
+    import CustomFieldCell from "./CustomFieldCell.svelte";
 
 	export let objects: ObjectView[] = [];
 	export let module: Module;
 	export let editMode: boolean = true;
 	export let showDeleted: boolean = false;
 	export let view: View;
-	export let showRowNumber = true;
-	export let showLinks = true;
+	export let showRowNumber: boolean = true;
+	export let showLinks: boolean = true;
 
 	let objs: ObjectView[] = [];
 
@@ -89,7 +90,7 @@
 								{(showRowNumber)? "Hide" : "Show"} Row Number
 								</ContextMenu.Item>
 								<ContextMenu.Item on:click={toggleLinksView}>
-								{(showRowNumber)? "Hide" : "Show"} Object Links
+								{(showLinks)? "Hide" : "Show"} Object Links
 								</ContextMenu.Item>
 							</ContextMenu.Content>
 						</ContextMenu.Root>

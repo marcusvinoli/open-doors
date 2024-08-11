@@ -31,6 +31,8 @@
 	let treePanelFlag: boolean = false;
 	let templateFlag: boolean = false;
 	let editModeFlag: boolean = true;
+	let showLinksFlag: boolean = true;
+	let showRowNumberFlag: boolean = true;
 	let updateModuleFlag: boolean = false;
 	let tabKey: string = "";
 	let view: View = defaultView();
@@ -319,7 +321,7 @@
 		
 		const savedState = pageState.getPageState(tabKey);
 		if (savedState) {
-			({ scrollX, scrollY, selectedObject, editPanelFlag, view } = savedState);
+			({ scrollX, scrollY, selectedObject, editPanelFlag, view, showLinksFlag, showRowNumberFlag } = savedState);
 			window.scrollTo(savedState.scrollX, savedState.scrollY);
 		}
 	}
@@ -341,7 +343,7 @@
 		load(params.mod);       
 		const savedState = pageState.getPageState(tabKey);
 		if (savedState) {
-			({ scrollX, scrollY, selectedObject, editPanelFlag } = savedState);
+			({ scrollX, scrollY, selectedObject, editPanelFlag, view, showLinksFlag, showRowNumberFlag } = savedState);
 			window.scrollTo(savedState.scrollX, savedState.scrollY);
 		}
 	})
@@ -353,6 +355,8 @@
 			selectedObject,
 			editPanelFlag,
 			view,
+			showLinksFlag,
+			showRowNumberFlag,
 		};
 		pageState.setPageState(tabKey, state);
 	});
@@ -372,7 +376,7 @@
 		{/if}
 		<Resizable.Pane order={2}>
 			{#if module}
-			<ObjectExplorer bind:view={view} bind:module={module} bind:objects={objects} bind:editMode={editModeFlag} on:click={handleObjectSelect}/>
+			<ObjectExplorer bind:view={view} bind:module={module} bind:objects={objects} bind:editMode={editModeFlag} on:click={handleObjectSelect} bind:showLinks={showLinksFlag} bind:showRowNumber={showRowNumberFlag}/>
 			{/if}
 		</Resizable.Pane>
 		{#if editPanelFlag && editModeFlag}

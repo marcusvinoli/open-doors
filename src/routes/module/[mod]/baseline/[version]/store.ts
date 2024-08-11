@@ -7,6 +7,8 @@ export interface PageState {
   scrollY: number;
   selectedObject: ObjectView | null;
   editPanelFlag: boolean;
+  showLinksFlag: boolean,
+	showRowNumberFlag: boolean,
   view: View;
 }
 
