@@ -56,15 +56,6 @@
 			},
 		}
 
-		let toggleEditMode: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Show/Hide tree panel",
-			icon: "gravity-ui:layout-header-side-content",
-			action: () => {
-				editModeFlag = !editModeFlag;
-			},
-		}
-
 		let templateManager: ToolbarButtonType = {
 			type: "button",
 			tooltip: "Template",
@@ -315,7 +306,6 @@
 		});
 
 		objects = sortItems(newObjects);
-		console.log("Rec2?")
 	}
 
 	function generateKey(input: string): string {
@@ -332,7 +322,6 @@
 			({ scrollX, scrollY, selectedObject, editPanelFlag, view } = savedState);
 			window.scrollTo(savedState.scrollX, savedState.scrollY);
 		}
-		console.log("Rec1?")
 	}
 	
 	$: {
@@ -390,10 +379,11 @@
 		<Resizable.Handle withHandle/>
 		<Resizable.Pane class="h-full" defaultSize={50} order={3}>
 			{#if module}
+			{#key selectedObject}
 			<ObjectEditor bind:template={module.template} objv={selectedObject} on:close={handleCloseEditPanel} on:saveDraft={handleObjectDraftCreation} on:save={handleObjectCreation} on:delete={handleObjectExclusion}/>
+			{/key}
 			{/if}
 		</Resizable.Pane>
 		{/if}
 	</Resizable.PaneGroup>
-	<div class="flash"></div>
 </div>

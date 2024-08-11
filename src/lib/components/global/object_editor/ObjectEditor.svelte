@@ -11,11 +11,12 @@
     import { Checkbox } from "$lib/components/ui/checkbox/index.js";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js"
-    import { beforeUpdate, createEventDispatcher } from "svelte";
+    import { afterUpdate, beforeUpdate, createEventDispatcher, onMount } from "svelte";
     import * as Table from "$lib/components/ui/table";
     import type { Template } from "$lib/components/structs/Template";
     import type { ObjectView } from "$lib/components/structs/Object";
     import "./markdown.css";
+    import { custom } from "zod";
     
     export let objv: ObjectView | null = createEmptyObject();
     export let template: Template;
@@ -56,7 +57,7 @@
         }
     }
 
-    function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {      
+    function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
         template.fields.forEach((field) => {
             if (!customFields[field.key]) {
                 customFields[field.key] = "";
@@ -93,15 +94,17 @@
         dispatch('delete', {obj: objv})
     }
 
-    beforeUpdate(() => {
+    onMount(() => {
         if (!objv) {
             objv = createEmptyObject();
             isDeletable = false;
         } else {
-            isDeletable = false;
+            isDeletable = true;
+            if (!objv.object.customFields) {
+                objv.object.customFields = {};
+            }
+            createCustomFieldHashFromTemplate(template, objv.object.customFields);
         }
-        createCustomFieldHashFromTemplate(template, objv!.object.customFields);
-        console.log("Obj", objv);
     })
 
 </script>
