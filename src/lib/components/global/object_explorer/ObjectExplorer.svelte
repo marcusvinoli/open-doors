@@ -47,7 +47,6 @@
     
     $: {
         objs = objects;
-        console.log(view);
         if(view.items.length > 0) {
             parseTemplate(module.template).forEach((item) => {
                 if (view.items.findIndex((tv) => tv.key === item.key) < 0) {

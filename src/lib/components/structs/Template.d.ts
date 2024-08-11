@@ -14,6 +14,10 @@ export interface NullableOptions extends DataKind {
     nullableOptions: string[],
 }
 
+export interface NullableBoolean extends DataKind {
+    nullableBoolean: "",
+}
+
 export interface Field {
     attribute: string,
     kind: DataKind,
