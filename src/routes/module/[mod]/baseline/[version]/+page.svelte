@@ -61,8 +61,8 @@
 
 		let templateManager: ToolbarButtonType = {
 			type: "button",
-			tooltip: "Template",
-			icon: "gravity-ui:layout-columns-3",
+			tooltip: "Custom Attributes",
+			icon: "gravity-ui:shapes-3",
 			action: () => {
 				templateFlag = !templateFlag;
 			}
@@ -96,7 +96,7 @@
 
 		let readOnlyModeButton: ToolbarButtonType = {
 			type: "button",
-			tooltip: "Read Only",
+			tooltip: "Toggle Edit Mode",
 			icon: "lucide:pencil-off",
 			action: () => {
 				editModeFlag = false;
@@ -105,7 +105,7 @@
 
 		let editModeButton: ToolbarButtonType = {
 			type: "button",
-			tooltip: "Edit",
+			tooltip: "Toggle Read-Only Mode",
 			icon: "lucide:pencil",
 			action: () => {
 				editModeFlag = true;
