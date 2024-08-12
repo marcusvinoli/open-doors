@@ -62,12 +62,13 @@
 	}
 
 	function removeAttribute(key: string) {
-		let index = tempModule.template.fields.findIndex((fd) => fd.key === key);
+		let tempTemplte = tempModule.template.fields;
+		let index = tempTemplte.findIndex((fd) => (fd.key === key));
 		if (index < 0) {
 			return;
 		}
-		tempModule.template.fields.splice(index, 1);
-		tempModule.template.fields = tempModule.template.fields;
+		tempTemplte.splice(index, 1);
+		tempModule.template.fields = tempTemplte;
 	}
 
 	function getDataKind(data: any) {
@@ -105,6 +106,7 @@
 		readModuleFromPath(module.path)
 			.then(mod => {
 				module = mod as Module;
+				dispatch('updateTemplate', {})
 			})
 			.finally(() => {
 				closeDialog();
