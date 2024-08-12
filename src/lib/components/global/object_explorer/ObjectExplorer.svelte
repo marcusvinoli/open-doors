@@ -13,6 +13,7 @@
 	import "./markdown.css";
 	import "./flashing.css";
     import CustomFieldCell from "./CustomFieldCell.svelte";
+    import { SubContent } from "$lib/components/ui/dropdown-menu";
 
 	export let objects: ObjectView[] = [];
 	export let module: Module;
@@ -137,114 +138,132 @@
 			<Table.Body class="w-full min-w-96">
 				{#each objs as ov, index}
 				{#if !ov.object.deletedAt && !showDeleted}
-				<Table.Row class={(ov.object.deletedAt ? "bg-rose-200" : "")} id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
-					{#if showRowNumber}
-						<Table.Cell class={tableCellClass}>{index + 1}</Table.Cell>
-					{/if}
-					{#each view.items as attr}
-						{#if attr.show}
-							{#if attr.key === "id"}
-								<Table.Cell class={tableCellClass}>{module.manifest.prefix}{module.manifest.separator}{ov.object.id}</Table.Cell>
-							{:else if attr.key === "content"}
-								<Table.Cell class={tableCellClass + (ov.isDraft ? " border-l-2 border-l-yellow-500" : "")}>
-									<div class="flex flex-row">
-										<div class="markdown min-w-[320px] grow">
-											{#if ov.object.header !== ""}
-											{@html marked(generateHashString(ov.object.level) + ov.object.level + " " + ov.object.header)}
-											{/if}
-											{@html marked(ov.object.content)}
-										</div>
-										{#if showLinks}
-											<div class="flex flex-col justify-between">
-												<div class="text-red-500">
-													{#if ov.object.outboundLinks?.length??0 > 0}
-													<Tooltip.Root openDelay={200}>
-														<Tooltip.Trigger>
-															<Icon icon="ci:arrow-up-right-lg" width="15px"/>
-														</Tooltip.Trigger>
-														<Tooltip.Content>
-															<p>{ov.object.outboundLinks?.length??0} outbound links</p>
-														</Tooltip.Content>
-													</Tooltip.Root>
-													{/if}
-												</div>
-												<div class="text-yellow-500">
-													{#if ov.inboundLinks.length > 0}
-													<Tooltip.Root openDelay={200}>
-														<Tooltip.Trigger>
-															<Icon icon="ci:arrow-down-left-lg" width="15px"/>
-														</Tooltip.Trigger>
-														<Tooltip.Content>
-															<p>{ov.inboundLinks.length} outbound links</p>
-														</Tooltip.Content>
-													</Tooltip.Root>
-													{/if}
-												</div>
-											</div>
-										{/if}
-									</div>
-								</Table.Cell>
-							{:else if attr.key === "isActive"}
-								<Table.Cell class="font-medium w-[20px]">
-									{#if ov.object.isActive}
-									<div class="text-green-500 flex justify-center items-center">
-										<Icon icon="gravity-ui:check" width="15px"/>
-									</div>
-									{:else}
-									<div class="text-red-500 flex justify-center items-center">
-										<Icon icon="gravity-ui:xmark" width="15px"/>
-									</div>
-									{/if}
-								</Table.Cell>
-							{:else if attr.key === "isNormative"}
-								<Table.Cell class="font-medium w-[20px]">
-									{#if ov.object.isNormative}
-									<div class="text-green-500 flex justify-center items-center">
-										<Icon icon="gravity-ui:check" width="15px"/>
-									</div>
-									{:else}
-									<div class="text-red-500 flex justify-center items-center">
-										<Icon icon="gravity-ui:xmark" width="15px"/>
-									</div>
-									{/if}
-								</Table.Cell>
-							{:else if attr.key === "isRequirement"}
-								<Table.Cell class="font-medium w-[20px]">
-									{#if ov.object.isRequirement}
-									<div class="text-green-500 flex justify-center items-center">
-									<Icon icon="gravity-ui:check" width="15px"/>
-									</div>
-									{:else}
-									<div class="text-red-500 flex justify-center items-center">
-										<Icon icon="gravity-ui:xmark" width="15px"/>
-									</div>
-									{/if}
-								</Table.Cell>
-							{:else if attr.key === "author"}
-								<Table.Cell class={tableCellClass}>
-									<div class="text-sm italic text-gray-800">
-										{ov.object.author}
-									</div>
-								</Table.Cell>
-							{:else}
-								<Table.Cell class={tableCellClass}>
-									<CustomFieldCell object={ov.object} key={attr.key} />
-								</Table.Cell>
-							{/if}
+					<Table.Row class={(ov.object.deletedAt ? "bg-rose-200" : "")} id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
+						{#if showRowNumber}
+							<Table.Cell class={tableCellClass}>{index + 1}</Table.Cell>
 						{/if}
-					{/each}
-					{#if editMode}
-					<Table.Head class="w-[30px] text-center">
-						<Table.Cell class="w-[30px]">
-							<Button variant="ghost" on:click={() => onEditClick(ov)}>
-								<div class="flex justify-center items-center">
-									<Icon icon="gravity-ui:pencil-to-square" width="20px"/>
-								</div>
-							</Button>
-						</Table.Cell>
-					</Table.Head>
-					{/if}
-				</Table.Row>
+						{#each view.items as attr}
+							{#if attr.show}
+								{#if attr.key === "id"}
+									<Table.Cell class={tableCellClass}>{module.manifest.prefix}{module.manifest.separator}{ov.object.id}</Table.Cell>
+								{:else if attr.key === "content"}
+									<Table.Cell class={tableCellClass + (ov.isDraft ? " border-l-2 border-l-yellow-500" : "")}>
+										<ContextMenu.Root closeOnOutsideClick closeFocus>
+											<ContextMenu.Trigger class="w-full">
+											<div class="flex flex-row">
+												<div class="markdown min-w-[320px] grow">
+													{#if ov.object.header !== ""}
+													{@html marked(generateHashString(ov.object.level) + ov.object.level + " " + ov.object.header)}
+													{/if}
+													{@html marked(ov.object.content)}
+												</div>
+												{#if showLinks}
+													<div class="flex flex-col justify-between">
+														<div class="text-red-500">
+															{#if ov.object.outboundLinks?.length??0 > 0}
+															<Tooltip.Root openDelay={200}>
+																<Tooltip.Trigger>
+																	<Icon icon="ci:arrow-up-right-lg" width="15px"/>
+																</Tooltip.Trigger>
+																<Tooltip.Content>
+																	<p>{ov.object.outboundLinks?.length??0} outbound links</p>
+																</Tooltip.Content>
+															</Tooltip.Root>
+															{/if}
+														</div>
+														<div class="text-yellow-500">
+															{#if ov.inboundLinks.length > 0}
+															<Tooltip.Root openDelay={200}>
+																<Tooltip.Trigger>
+																	<Icon icon="ci:arrow-down-left-lg" width="15px"/>
+																</Tooltip.Trigger>
+																<Tooltip.Content>
+																	<p>{ov.inboundLinks.length} outbound links</p>
+																</Tooltip.Content>
+															</Tooltip.Root>
+															{/if}
+														</div>
+													</div>
+												{/if}
+											</div>
+											</ContextMenu.Trigger>
+											<ContextMenu.Content>
+												{#if ov.isDraft}
+												<ContextMenu.Item>Commit changes</ContextMenu.Item>
+												{/if}
+												<ContextMenu.Item>Delete</ContextMenu.Item>
+												<ContextMenu.Separator />
+												<ContextMenu.Sub>
+													<ContextMenu.SubTrigger class="w-48">New Object...</ContextMenu.SubTrigger>
+													<ContextMenu.SubContent>
+														<ContextMenu.Item>Create Above</ContextMenu.Item>
+														<ContextMenu.Item>Create Bellow</ContextMenu.Item>
+													</ContextMenu.SubContent>
+												</ContextMenu.Sub>
+											</ContextMenu.Content>
+										</ContextMenu.Root>	
+									</Table.Cell>
+								{:else if attr.key === "isActive"}
+									<Table.Cell class="font-medium w-[20px]">
+										{#if ov.object.isActive}
+										<div class="text-green-500 flex justify-center items-center">
+											<Icon icon="gravity-ui:check" width="15px"/>
+										</div>
+										{:else}
+										<div class="text-red-500 flex justify-center items-center">
+											<Icon icon="gravity-ui:xmark" width="15px"/>
+										</div>
+										{/if}
+									</Table.Cell>
+								{:else if attr.key === "isNormative"}
+									<Table.Cell class="font-medium w-[20px]">
+										{#if ov.object.isNormative}
+										<div class="text-green-500 flex justify-center items-center">
+											<Icon icon="gravity-ui:check" width="15px"/>
+										</div>
+										{:else}
+										<div class="text-red-500 flex justify-center items-center">
+											<Icon icon="gravity-ui:xmark" width="15px"/>
+										</div>
+										{/if}
+									</Table.Cell>
+								{:else if attr.key === "isRequirement"}
+									<Table.Cell class="font-medium w-[20px]">
+										{#if ov.object.isRequirement}
+										<div class="text-green-500 flex justify-center items-center">
+										<Icon icon="gravity-ui:check" width="15px"/>
+										</div>
+										{:else}
+										<div class="text-red-500 flex justify-center items-center">
+											<Icon icon="gravity-ui:xmark" width="15px"/>
+										</div>
+										{/if}
+									</Table.Cell>
+								{:else if attr.key === "author"}
+									<Table.Cell class={tableCellClass}>
+										<div class="text-sm italic text-gray-800">
+											{ov.object.author}
+										</div>
+									</Table.Cell>
+								{:else}
+									<Table.Cell class={tableCellClass}>
+										<CustomFieldCell object={ov.object} key={attr.key} />
+									</Table.Cell>
+								{/if}
+							{/if}
+						{/each}
+						{#if editMode}
+						<Table.Head class="w-[30px] text-center">
+							<Table.Cell class="w-[30px]">
+								<Button variant="ghost" on:click={() => onEditClick(ov)}>
+									<div class="flex justify-center items-center">
+										<Icon icon="gravity-ui:pencil-to-square" width="20px"/>
+									</div>
+								</Button>
+							</Table.Cell>
+						</Table.Head>
+						{/if}
+					</Table.Row>				
 				{/if}
 				{/each}
 			</Table.Body>

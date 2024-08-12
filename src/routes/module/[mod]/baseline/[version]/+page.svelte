@@ -20,9 +20,6 @@
 	import { pageState } from "./store";
 	import type { View } from "$lib/components/global/object_explorer/viewStructs";
 	import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
-	import ToolbarToggle from "$lib/components/global/toolbar/ToolbarToggle.svelte";
-	import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
-    
 	
 	let selectedObject: ObjectView | null = null;
 	let objects: ObjectView[] = [];
