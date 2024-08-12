@@ -175,7 +175,7 @@
             {#each links as link, index}
             <div class="w-full flex flex-row text-sm items-center py-1 {((links.length - index) > 1 ? "border-b-[1px] border-b-slate-200" : "")}">
                 <div class="flex flex-row items-center px-1">
-                    <Button size="sm" variant="ghost" on:click={() => handleVisitLink(link)}>
+                    <Button size="sm" variant="ghost" on:click={() => {handleVisitLink(link)}}>
                         <Icon icon="gravity-ui:circle-chevron-right" rotate={0} width="20px" />
                     </Button>
                 </div>

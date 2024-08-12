@@ -22,6 +22,7 @@
 	import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
 	import ToolbarToggle from "$lib/components/global/toolbar/ToolbarToggle.svelte";
 	import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
+    
 	
 	let selectedObject: ObjectView | null = null;
 	let objects: ObjectView[] = [];
@@ -214,14 +215,20 @@
 		selectedObject = event.detail.object;
 		editPanelFlag = true;
 	}
+
+	function handleScrollIntoView(event: any) {
+		scrollIntoView(event.detail.path);
+	}
 	
-	function scrollIntoView(event: any) {
-		const el = document.getElementById("row-" + event.detail.path);
+	function scrollIntoView(id: string) {
+		const el = document.getElementById("row-" + id);
 		const ov = document.getElementById("scroll-table");
+		const hd = document.getElementById("scroll-table-header");
 		if (!el) return;
 		if (!ov) return;
+		if (!hd) return;
 
-		const offset = 50; // Ajuste o valor do offset conforme a altura do seu cabeçalho
+		const offset = hd.offsetHeight;
 
 		ov.scrollTo({
 			top: el.offsetTop - offset,
@@ -233,6 +240,18 @@
 		});
 
 		el.classList.add('flash');
+	}
+
+	function getScrollPosition() {
+		const ov = document.getElementById("scroll-table");
+		if (!ov) {return };
+		return {x: ov.scrollTop, y: ov.scrollLeft};
+	}
+	
+	function setScrollPosition(x: number, y: number) {
+		const ov = document.getElementById("scroll-table");
+		if (!ov) {return };
+		ov.scrollTo({top: x, left: y, behavior: 'instant'})
 	}
 
 	function compareLevels(a: string, b: string): number {
@@ -322,36 +341,41 @@
 		const savedState = pageState.getPageState(tabKey);
 		if (savedState) {
 			({ scrollX, scrollY, selectedObject, editPanelFlag, view, showLinksFlag, showRowNumberFlag } = savedState);
-			window.scrollTo(savedState.scrollX, savedState.scrollY);
+			setScrollPosition(scrollX, scrollY);
 		}
 	}
-	
-	$: {
-		const { mod, version } = $page.params;
-		load(mod);
-		updateState(mod, version);
-	}
-	
-	onMount(() => {
-		const params = get(page).params;
+
+	function setupPage() {
+		const params = $page.params;
 		const url: string = $page.url.pathname;
 		const name: string = params.mod.substring($repository?.tree.path.length);
 		const version: string = params.version;
 		loadRepository();
 		loadHomeToolbar();
 		addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
-		load(params.mod);       
-		const savedState = pageState.getPageState(tabKey);
-		if (savedState) {
-			({ scrollX, scrollY, selectedObject, editPanelFlag, view, showLinksFlag, showRowNumberFlag } = savedState);
-			window.scrollTo(savedState.scrollX, savedState.scrollY);
-		}
+		load(params.mod).then(() => {
+			updateState(params.mod, params.version);
+			const hash = $page.url.hash;
+			if(hash && hash !== "") {
+				scrollIntoView(hash.slice(1));
+			}
+		})
+	}
+	
+	$: {
+		const { mod, version } = $page.params;
+		setupPage();
+	}
+	
+	onMount(async () => {
+		setupPage();
 	})
 	
 	beforeUpdate(() => {
+		const scroll = getScrollPosition();
 		const state = {
-			scrollX: window.scrollX,
-			scrollY: window.scrollY,
+			scrollX: scroll?.x??0,
+			scrollY: scroll?.y??0,
 			selectedObject,
 			editPanelFlag,
 			view,
@@ -370,7 +394,7 @@
 	<Resizable.PaneGroup direction="horizontal">
 		{#if treePanelFlag}
 		<Resizable.Pane defaultSize={20} collapsible order={1}>
-			<IndexTree items={objects} on:click={scrollIntoView}/>
+			<IndexTree items={objects} on:click={handleScrollIntoView}/>
 		</Resizable.Pane>
 		<Resizable.Handle withHandle/>
 		{/if}

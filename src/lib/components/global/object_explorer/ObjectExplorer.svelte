@@ -75,7 +75,7 @@
 <div class="h-full w-full flex flex-col">
 	{#if objects.length > 0 && view}
 		<Table.Root class="w-full relative" id="scroll-table">
-			<Table.Header class="w-full min-w-96">
+			<Table.Header class="w-full min-w-96" id="scroll-table-header">
 				<Table.Row class="">
 					{#if showRowNumber}
 					<Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
@@ -139,7 +139,7 @@
 				{#if !ov.object.deletedAt && !showDeleted}
 				<Table.Row class={(ov.object.deletedAt ? "bg-rose-200" : "")} id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
 					{#if showRowNumber}
-						<Table.Cell class={tableCellClass}>{index}</Table.Cell>
+						<Table.Cell class={tableCellClass}>{index + 1}</Table.Cell>
 					{/if}
 					{#each view.items as attr}
 						{#if attr.show}

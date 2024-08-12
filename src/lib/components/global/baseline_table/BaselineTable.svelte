@@ -4,7 +4,7 @@
     import * as Table from "$lib/components/ui/table";
     import Button from '$lib/components/ui/button/button.svelte';
     export let baselines: Baseline[];
-    export let projectName: string;
+    
 </script>
 
 <div>
@@ -22,9 +22,9 @@
         <Table.Body>
             {#each baselines as baseline}
             <Table.Row class="h-[10px]">
-              <Table.Cell class="font-medium">{baseline.tag}</Table.Cell>
+              <Table.Cell class="font-medium">{baseline.version}</Table.Cell>
               <Table.Cell class="font-medium">
-                {#if baseline.commitDate}
+                {#if baseline.commit}
                     <div class="text-green-500 flex justify-center items-center">
                         <Icon icon="gravity-ui:circle-fill" width="15px"/>
                     </div>
@@ -32,10 +32,10 @@
                     <div class="text-yellow-500 flex justify-center items-center">
                         <Icon icon="gravity-ui:circle-fill" width="15px"/>
                     </div>
-                    {/if}
+                {/if}
                 </Table.Cell>
-                <Table.Cell>{baseline.message}</Table.Cell>
-                <Table.Cell>{baseline.commitDate?.toLocaleDateString() || ""}</Table.Cell>
+                <Table.Cell>{baseline.description}</Table.Cell>
+                <Table.Cell>{baseline.commit??""}</Table.Cell>
                 <Table.Cell class="w-[80px]">
                     <Button variant="ghost">
                     <div class="flex justify-center items-center">

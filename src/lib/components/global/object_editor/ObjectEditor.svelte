@@ -17,6 +17,8 @@
     import type { ObjectView } from "$lib/components/structs/Object";
     import "./markdown.css";
     import { custom } from "zod";
+    import { goto } from "$app/navigation";
+    import { encodePath } from "$lib/utils/pathHandler";
     
     export let objv: ObjectView | null = createEmptyObject();
     export let template: Template;
@@ -92,6 +94,10 @@
             objv.object.author = $user.toString();
         }
         dispatch('delete', {obj: objv})
+    }
+
+    function handleVisitLink(event: any) {
+        goto("/module/" + encodePath(event.detail.link.path) + "#" + event.detail.link.object);
     }
 
     onMount(() => {
@@ -258,7 +264,7 @@
                             <Icon icon="ci:arrow-up-right-lg" width="20px"/>
                             Outbound Links
                         </div>
-                        <LinkForm bind:links={objv.object.outboundLinks} editable={true}/>
+                        <LinkForm bind:links={objv.object.outboundLinks} editable={true} on:visitLink={handleVisitLink}/>
                     </div>
                     {#if objv?.inboundLinks.length > 0}
                     <Separator/>
@@ -267,7 +273,7 @@
                             <Icon icon="ci:arrow-down-left-lg" width="20px"/>
                             Inbound Links
                         </div>
-                        <LinkForm links={objv.inboundLinks} editable={false}/>
+                        <LinkForm links={objv.inboundLinks} editable={false} on:visitLink={handleVisitLink}/>
                     </div>
                     {/if}
                 </div>
