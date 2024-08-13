@@ -237,10 +237,8 @@
 	
 	function handleObjectDraftCreation(event: any) {
 		let obj = event.detail.objectView.object;
-		console.log("Saving...", obj)
 		createDraftObject(module.path, obj)
 			.then((objs) => {
-				console.log("Saved...", objs)
 				selectedObject = createEmptyObject();
 				editPanelFlag = false;
 				loadAllObjects(module.path);
@@ -402,8 +400,6 @@
 		let retObjects = await readObjects(modPath);
 		let retDraftObjects = await readDraftObjects(modPath);
 		let newObjects: ObjectView[] = [];
-		console.log("Objects", retObjects);
-		console.log("Draft Objects", retDraftObjects);
 
 		retObjects.forEach((obj) => {
 			let dob = {
