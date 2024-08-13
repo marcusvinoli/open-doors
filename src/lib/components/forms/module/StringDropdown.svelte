@@ -11,6 +11,7 @@
 	export let options: string[] = [];
 	export let selected: string = "";
 	export let placeholder: string = "";
+	export let disabled: boolean = false;
 
 	const dispatch = createEventDispatcher();
 
@@ -34,7 +35,7 @@
 
 <Popover.Root bind:open={openCombobox} let:ids>
 	<Popover.Trigger asChild let:builder>
-	<Button builders={[builder]} variant="outline" role="combobox" aria-expanded={openCombobox} class="justify-between w-full">
+	<Button builders={[builder]} variant="outline" role="combobox" aria-expanded={openCombobox} class="justify-between w-full" disabled={disabled}>
 		<p class="w-full text-left">{selected !== "" ? selected : placeholder}</p>
 		<ChevronDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
 	</Button>

@@ -11,6 +11,7 @@
 	export let selected: string[] = [];
 	export let placeholder: string = "";
 	export let selectedList: string = placeholder;
+	export let disabled: boolean = false;
 
 	let openCombobox: boolean = false;
 	// We want to refocus the trigger button when the user selects
@@ -53,7 +54,7 @@
 
 <Popover.Root bind:open={openCombobox} let:ids closeFocus>
 	<Popover.Trigger asChild let:builder class="w-full">
-	<Button builders={[builder]} variant="outline" role="combobox" aria-expanded={openCombobox} class="justify-between w-full">
+	<Button builders={[builder]} variant="outline" role="combobox" aria-expanded={openCombobox} class="justify-between w-full" disabled={disabled} >
 		<p class="w-full text-left">{(placeholder !== "") ? placeholder : selectedList}</p>
 		<ChevronDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
 	</Button>
