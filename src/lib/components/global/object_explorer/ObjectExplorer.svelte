@@ -17,7 +17,7 @@
 	export let objects: ObjectView[] = [];
 	export let module: Module;
 	export let view: View;
-	
+
 	export let editMode: boolean = true;
 	export let showLinks: boolean = true;
 	export let showDeleted: boolean = false;
@@ -43,8 +43,8 @@
 		dispatch('delete', {objectView: obj})
 	}
 
-	function handleCreateAbove(obj: ObjectView) {
-		dispatch('createAbove', {objectView: obj})
+	function handleCreate(obj: ObjectView) {
+		dispatch('create', {objectView: obj})
 	}
 
 	function handleCreateBelow(obj: ObjectView) {
@@ -210,10 +210,10 @@
 												<ContextMenu.Item on:click={() => {handleDelete(ov)}}>Delete</ContextMenu.Item>
 												<ContextMenu.Separator />
 												<ContextMenu.Sub>
-													<ContextMenu.SubTrigger class="w-48">New Object...</ContextMenu.SubTrigger>
+													<ContextMenu.SubTrigger class="w-48">New...</ContextMenu.SubTrigger>
 													<ContextMenu.SubContent>
-														<ContextMenu.Item on:click={() => {handleCreateAbove(ov)}}>Create Above</ContextMenu.Item>
-														<ContextMenu.Item on:click={() => {handleCreateBelow(ov)}}>Create Below</ContextMenu.Item>
+														<ContextMenu.Item on:click={() => {handleCreate(ov)}}>Object</ContextMenu.Item>
+														<ContextMenu.Item on:click={() => {handleCreateBelow(ov)}}>Object below</ContextMenu.Item>
 													</ContextMenu.SubContent>
 												</ContextMenu.Sub>
 											</ContextMenu.Content>

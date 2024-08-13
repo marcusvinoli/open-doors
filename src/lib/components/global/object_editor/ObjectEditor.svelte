@@ -21,7 +21,6 @@
     
     export let objectView: ObjectView;
     export let module: Module;
-    let ov: ObjectView;
     
     const dispatch = createEventDispatcher();
 
@@ -30,43 +29,41 @@
     }
     
     function saveDrafObj() {
-        if(ov) {
-            ov.hasChanges = true;
-            ov.object.updatedAt = new Date();
-            ov.object.author = $user.toString();
+        if(objectView) {
+            objectView.hasChanges = true;
+            objectView.object.updatedAt = new Date();
+            objectView.object.author = $user.toString();
         }
-        dispatch('saveDraft', {objectView: ov})
+        dispatch('saveDraft', {objectView: objectView})
     }
     
     function saveObj() {
-        if(ov) {
-            ov.hasChanges = true;
-            ov.object.updatedAt = new Date();
-            ov.object.author = $user.toString();
+        if(objectView) {
+            objectView.hasChanges = true;
+            objectView.object.updatedAt = new Date();
+            objectView.object.author = $user.toString();
         }
-        dispatch('save', {objectView: ov})
+        dispatch('save', {objectView: objectView})
     }
     
     function deleteObj() {
-        if(ov) {
-            ov.object.author = $user.toString();
+        if(objectView) {
+            objectView.object.author = $user.toString();
         }
-        dispatch('delete', {objectView: ov})
+        dispatch('delete', {objectView: objectView})
     }
 
     function handleVisitLink(event: any) {
         goto("/module/" + encodePath(event.detail.link.path) + "#" + event.detail.link.object);
     }
 
-    onMount(() => { ov = JSON.parse(JSON.stringify(objectView)); console.log(ov) }) 
-
 </script>
 
-{#if ov}
+{#if objectView}
 <div class="h-full flex flex-col px-3 min-w-[450px] box-border">
     <div class="grow min-h-[50%]">
         <ScrollArea class="h-full">
-            {#if ov.isDraft && !ov.object.deletedAt}
+            {#if objectView.isDraft && !objectView.object.deletedAt}
             <div class="py-2">
                 <div class="text-yellow-600 border-yellow-500 border-2 bg-yellow-100 text-center p-2 rounded-md">
                     <div class="italic text-sm flex items-center justify-center gap-2 mb-0">
@@ -76,7 +73,7 @@
                 </div>
             </div>
             {/if}
-            {#if ov.object.deletedAt}
+            {#if objectView.object.deletedAt}
             <div class="py-2">
                 <div class="text-red-600 border-red-500 border-2 bg-red-100 text-center p-2 rounded-md">
                     <div class="italic text-sm flex items-center justify-center gap-2 mb-0">
@@ -90,13 +87,13 @@
                 <h2 class="font-bold mb-1">Object Heading</h2>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">ID</Label>
-                    {#if ov.object.id === 0}
+                    {#if objectView.object.id === 0}
                     <Input id="name" placeholder="Auto Generated" class="col-span-3" disabled/>
                     {:else}
-                    <Input id="name" value={module.manifest.prefix+module.manifest.separator+ov.object.id} class="col-span-3" disabled/>
+                    <Input id="name" value={module.manifest.prefix+module.manifest.separator+objectView.object.id} class="col-span-3" disabled/>
                     {/if}
                     <Label for="name" class="text-right col-span-1">Level</Label>
-                    <Input id="name" bind:value={ov.object.level} class="col-span-3" />
+                    <Input id="name" bind:value={objectView.object.level} class="col-span-3" />
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:bars-descending-align-left-arrow-down" width="15px"/>
@@ -108,7 +105,7 @@
                 </div>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Header</Label>
-                    <Input id="name" bind:value={ov.object.header}  class="col-span-7" />
+                    <Input id="name" bind:value={objectView.object.header}  class="col-span-7" />
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:text-indent" width="15px"/>
@@ -124,14 +121,14 @@
                 <h2 class="font-bold my-1">Object Main Content</h2>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Text</Label>
-                    <Textarea id="name" bind:value={ov.object.content}  class="col-span-7 font-mono" />
+                    <Textarea id="name" bind:value={objectView.object.content}  class="col-span-7 font-mono" />
                 </div>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Preview</Label>
                     <div class="col-span-7">
                         <ScrollArea class=" col-span-1">
                             <div class="preview rounded-sm">
-                                {@html marked((ov.object.header ? "# " + ov.object.level + " " + ov.object.header + "\n" : "") + ov.object.content)}
+                                {@html marked((objectView.object.header ? "# " + objectView.object.level + " " + objectView.object.header + "\n" : "") + objectView.object.content)}
                             </div>
                         </ScrollArea>
                     </div>
@@ -145,7 +142,7 @@
                     </div>
                     <div class="flex flex-col col-span-3 gap-3 pb-2">
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="actCheck" bind:checked={ov.object.isActive} aria-labelledby="actCheck-label" />
+                            <Checkbox id="actCheck" bind:checked={objectView.object.isActive} aria-labelledby="actCheck-label" />
                             <Label
                             id="actCheck-label"
                             for="actCheck"
@@ -154,7 +151,7 @@
                             </Label>
                         </div>
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="reqCheck" bind:checked={ov.object.isRequirement} aria-labelledby="reqCheck-label" />
+                            <Checkbox id="reqCheck" bind:checked={objectView.object.isRequirement} aria-labelledby="reqCheck-label" />
                             <Label
                             id="reqCheck-label"
                             for="reqCheck"
@@ -163,7 +160,7 @@
                             </Label>
                         </div>
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="reqNorm" bind:checked={ov.object.isNormative} aria-labelledby="reqNorm-label" />
+                            <Checkbox id="reqNorm" bind:checked={objectView.object.isNormative} aria-labelledby="reqNorm-label" />
                             <Label
                             id="reqNorm-label"
                             for="reqNorm"
@@ -175,7 +172,7 @@
                 </div>
                 <Separator/>
             </div>
-            {#if module.template.fields.length > 0 && ov.object.customFields}
+            {#if module.template.fields.length > 0 && objectView.object.customFields}
             <div class="grid gap-2 my-1">
                 <h2 class="font-bold my-1">Custom Attributes</h2 >
                 <div class="">
@@ -193,7 +190,7 @@
                                         {field.attribute}
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <AttributeInput bind:value={ov.object.customFields[field.key]} field={field}/>
+                                        <AttributeInput bind:value={objectView.object.customFields[field.key]} field={field}/>
                                     </Table.Cell>
                                 </Table.Row>
                             {/each}
@@ -211,21 +208,21 @@
                             <Icon icon="ci:arrow-up-right-lg" width="20px"/>
                             Outbound Links
                         </div>
-                        <LinkForm bind:links={ov.object.outboundLinks} editable={true} on:visitLink={handleVisitLink}/>
+                        <LinkForm bind:links={objectView.object.outboundLinks} editable={true} on:visitLink={handleVisitLink}/>
                     </div>
-                    {#if ov?.inboundLinks.length > 0}
+                    {#if objectView?.inboundLinks.length > 0}
                     <Separator/>
                     <div class="gap-2 w-full pt-4">
                         <div class="flex items-center gap-1 ml-1 my-1 font-semibold">
                             <Icon icon="ci:arrow-down-left-lg" width="20px"/>
                             Inbound Links
                         </div>
-                        <LinkForm links={ov.inboundLinks} editable={false} on:visitLink={handleVisitLink}/>
+                        <LinkForm links={objectView.inboundLinks} editable={false} on:visitLink={handleVisitLink}/>
                     </div>
                     {/if}
                 </div>
             </div>
-            {#if ov.object.id !== 0}
+            {#if objectView.object.id !== 0}
             <Separator/>
             <div class="grid wrap pag-2 mt-3">
                 <Button variant="destructive" class="px-5" on:click={deleteObj}>

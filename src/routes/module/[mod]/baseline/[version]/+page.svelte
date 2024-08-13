@@ -246,12 +246,12 @@
 	}
 
 	function handleObjectSelect(event: any) {
-		selectedObject = event.detail.objectView; 
+		if (event) { 
+			selectedObject = event.detail.objectView; 
+		}
 		let customFields = selectedObject?.object.customFields || {};
-		console.log("Custom Fields 1", customFields);
 		createCustomFieldHashFromTemplate(module.template, customFields)
 		selectedObject!.object.customFields! = customFields;
-		console.log("Custom Fields 2", selectedObject?.object.customFields);
 		editPanelFlag = true;
 	}
 
@@ -317,20 +317,16 @@
 		return 0;
 	}
 
-	function sortItems(items: ObjectView[]): ObjectView[] {
-		return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
-	}
-
-	function getNewLevel(currentLevel: string, direction: 'above' | 'below'): string {
+	function getNewLevel(currentLevel: string, direction: 'sameLevel' | 'belowLevel'): string {
 		const parts = currentLevel.split(/[\.\-]/).map(part => isNaN(Number(part)) ? part : Number(part));
 
-		if (direction === 'below') {
+		if (direction === 'belowLevel') {
 			if (typeof parts[parts.length - 1] === 'number') {
 			return currentLevel + '.1';
 			} else {
 			return currentLevel + '.1';
 			}
-		} else if (direction === 'above') {
+		} else if (direction === 'sameLevel') {
 			if (typeof parts[parts.length - 1] === 'number') {
 			parts[parts.length - 1] = (parts[parts.length - 1] as number) + 1;
 			} else {
@@ -343,6 +339,26 @@
 		
 		return currentLevel;
 	} 
+
+	function handleCreateObjectBelow(event: any) {
+		let currObj = event.detail.objectView as ObjectView;
+		let currentLevel = currObj.object.level;
+		selectedObject = createEmptyObject();
+		selectedObject.object.level = getNewLevel(currentLevel, 'sameLevel');
+		handleObjectSelect(undefined);
+	}
+
+	function handleCreateObjectNextLevel(event: any) {
+		let currObj = event.detail.objectView as ObjectView;
+		let currentLevel = currObj.object.level;
+		selectedObject = createEmptyObject();
+		selectedObject.object.level = getNewLevel(currentLevel, 'belowLevel');
+		handleObjectSelect(undefined);
+	}
+
+	function sortItems(items: ObjectView[]): ObjectView[] {
+		return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
+	}
 
 	function getLinks(links: any, id: number) {
 		let ret: Link[] = [];
@@ -454,7 +470,6 @@
 			showRowNumberFlag,
 		};
 		pageState.setPageState(tabKey, state);
-		console.log("Update...")
 	});
 
 </script>
@@ -472,17 +487,34 @@
 		{/if}
 			<Resizable.Pane order={2}>
 				{#if module}
-					<ObjectExplorer bind:view={view} bind:module={module} bind:objects={objects} bind:editMode={editModeFlag} bind:showLinks={showLinksFlag} bind:showRowNumber={showRowNumberFlag} on:click={handleObjectSelect} on:delete={handleObjectExclusion} on:commit={handleObjectCreation}/>
+					<ObjectExplorer 
+						bind:view={view} 
+						bind:module={module} 
+						bind:objects={objects} 
+						bind:editMode={editModeFlag} 
+						bind:showLinks={showLinksFlag} 
+						bind:showRowNumber={showRowNumberFlag} 
+						on:click={handleObjectSelect} 
+						on:create={handleObjectSelect}
+						on:commit={handleObjectCreation} 
+						on:delete={handleObjectExclusion} 
+						on:createBelow={handleCreateObjectBelow} 
+					/>
 				{/if}
 			</Resizable.Pane>
 		{#if editPanelFlag && editModeFlag}
 			<Resizable.Handle/>
 			<Resizable.Pane class="h-full" defaultSize={50} order={3}>
-				{#key selectedObject}
-					{#if selectedObject}
-						<ObjectEditor bind:module={module} objectView={selectedObject} on:close={handleCloseEditPanel} on:saveDraft={handleObjectDraftCreation} on:save={handleObjectCreation} on:delete={handleObjectExclusion}/>
-					{/if}
-				{/key}
+				{#if selectedObject}
+				<ObjectEditor 
+				bind:objectView={selectedObject} 
+				bind:module={module} 
+				on:save={handleObjectCreation} 
+				on:close={handleCloseEditPanel} 
+				on:delete={handleObjectExclusion}
+				on:saveDraft={handleObjectDraftCreation} 
+				/>
+				{/if}
 			</Resizable.Pane>
 		{/if}
 	</Resizable.PaneGroup>
