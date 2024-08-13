@@ -1,9 +1,9 @@
-use std::{cmp::max, collections::HashMap, path::PathBuf, vec};
+use std::{cmp::max, collections::HashMap, fmt::format, path::PathBuf, vec};
 
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
 
-use crate::core::{error::ModuleError, middleware as mid};
+use crate::{core::{error::ModuleError, middleware as mid}, git};
 
 use super::{baseline::Baseline, definitions as defs, links::Link, object::Object, template::Template};
 
@@ -100,7 +100,15 @@ impl Module {
     
     pub fn create_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
         let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
-        mid::move_file(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), &self.path.join(defs::OD_OBJS_FOLDER_NAME), &format!("{id}.yml"))?;
+        
+        mid::move_file(&self.path.join(defs::OD_DRAFT_FOLDER_NAME),
+            &self.path.join(defs::OD_OBJS_FOLDER_NAME), &format!("{id}.yml"))?;
+        
+        git::add(&self.path.join(defs::OD_DRAFT_FOLDER_NAME).display().to_string(),
+            (&self.path.join(defs::OD_DRAFT_FOLDER_NAME).join(&format!("{id}.yml"))).display().to_string())?;
+
+        git::add(&self.path.join(defs::OD_OBJS_FOLDER_NAME).display().to_string(),
+            (&self.path.join(defs::OD_OBJS_FOLDER_NAME).join(&format!("{id}.yml"))).display().to_string())?;
         
         if let Some(outbound_links) = &obj.outbound_links {
             let inbound_link: Link = Link { 
@@ -200,7 +208,9 @@ impl Module {
     }
     
     pub fn update_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
-        self.create_object(obj)
+        let obj = self.create_object(obj)?;
+        git::commit(&self.path.join(defs::OD_DRAFT_FOLDER_NAME).display().to_string(), format!("#OD: Updated object {}", obj.id()))?;
+        Ok(self.read_object(obj.id())?)
     }
     
     pub fn update_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {

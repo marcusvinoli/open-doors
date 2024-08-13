@@ -63,6 +63,8 @@ pub enum ModuleError {
     MiddlewareError(#[from] MiddlewareError),
     #[error("The Directory is not a Module")]
     InvalidModuleDirectory,
+    #[error("GIT ERROR {0}")]
+    GitError(#[from] crate::git::GitError),
     #[error("Unknown Error!")]
     UnknownError,
 }

@@ -61,3 +61,35 @@ pub fn is_git_repository<T: AsRef<str> + Display>(path: T) -> Result<bool, GitEr
 pub fn init<T: AsRef<str> + Display>(path: T) -> Result<bool, GitError> {
     Ok(git_run_cmd(["-C", &path.to_string(), "init"])?.status.success())
 }
+
+pub fn set_remote<T: AsRef<str> + Display>(path: T, remote: &String) -> Result<bool, GitError> {
+    Ok(git_run_cmd(["-C", &path.to_string(), "remote", "add", "origin", remote])?.status.success())
+}
+
+pub fn set_pull_strategy<T: AsRef<str> + Display>(path: T) -> Result<bool, GitError> {
+    Ok(git_run_cmd(["-C", &path.to_string(), "config", "pull.rebase", "true"])?.status.success())
+}
+
+pub fn set_push_strategy<T: AsRef<str> + Display>(path: T) -> Result<bool, GitError> {
+    Ok(git_run_cmd(["-C", &path.to_string(), "push", "--set-upstream", "origin", "master"])?.status.success())
+}
+
+pub fn first_pull<T: AsRef<str> + Display>(path: T) -> Result<bool, GitError> {
+    Ok(git_run_cmd(["-C", &path.to_string(), "pull", "origin", "main"])?.status.success())
+}
+
+pub fn pull<T: AsRef<str> + Display>(path: T) -> Result<bool, GitError> {
+    Ok(git_run_cmd(["-C", &path.to_string(), "pull"])?.status.success())
+}
+
+pub fn push<T: AsRef<str> + Display>(path: T) -> Result<bool, GitError> {
+    Ok(git_run_cmd(["-C", &path.to_string(), "push"])?.status.success())
+}
+
+pub fn create_tag<T: AsRef<str> + Display>(path: T, tag: &String) -> Result<bool, GitError> {
+    Ok(git_run_cmd(["-C", &path.to_string(), "tag", tag])?.status.success())
+}
+
+pub fn read_tags<T: AsRef<str> + Display>(path: T) -> Result<bool, GitError> {
+    Ok(git_run_cmd(["-C", &path.to_string(), "tag", "-v"])?.status.success())
+}

@@ -42,7 +42,11 @@ impl Repository {
     
         git::init(&repo_path.display().to_string())?;
         git::add_all(&repo_path.display().to_string())?;
-        git::commit(&repo_path.display().to_string(), "OpenDOORs repository initiated.")?;
+        git::commit(&repo_path.display().to_string(), "#OD: Repo init.")?;
+        
+        if let Some(rm) = remote {
+            git::set_remote(&repo_path.display().to_string(), rm)?;
+        }
         
         Ok(Repository {
             manifest: man, 
