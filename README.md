@@ -1,12 +1,10 @@
-# OpenDOORS
+![alt "open-doors logo"](./images/open-doors-readme-cover.png)
 
-<img src="./icons/open-doors-logo.png" width="400px" style="display: block; padding: 2em 0; margin: 0 auto;" >
-
-Open-doors is an open-source requirements management tool designed for capturing, tracking, and managing requirements. This application leverages a distributed, object-oriented approach to handle complex requirement specifications efficiently. 
+**Open-doors** is an open-source requirements management tool designed for capturing, tracking, and managing requirements. This application leverages a distributed, object-oriented approach to handle complex requirement specifications efficiently. 
 
 Storing objects in YAML format and using Git for change tracking, ensuring traceability and flexibility, open-doors supports Markdown for text formatting, links between objects and custom attributes.
   
-> ### <span style="color: #20c035; margin: 1em 0;"> Heads up! This is a very experimental tool. Use carefully and be kind reporting any issues.
+> ### <span style="color: #c03534; margin: 1em 0;"> HEADS UP! This is a very experimental tool. Use carefully and be kind reporting issues.</span>
 
 ## Features
 
@@ -25,13 +23,13 @@ We are working on these features to include as soon as possible (_not necessaril
 
 - **Full and Automated Git Support:** currently, open-doors only is capable of staging changes for us. All the git handling ("Commiting, pushing, pulling, etc...) must be done manualy using a terminal or other tool.
 
-- **Import/Export:** Soon, you will be able to export the modules as a HTML, CSV, TSV, or as the most commom spreadsheet files. Also you will be able import them from a vas majority of documents.
+- **Unique ID across the whole repository:** The current object enumerating strategy follows the local copy of repository for enumerating itens. Soon this strategy will change to prevent duplicated objects.
 
 - **Baseline Definition:** The baselines uses git tags for commiting a group of objects, consolidating those changes in a version. Soon, this feature will be fully integrated to open-doors.
 
 - **Traceability Matrix:** One of the most important tool provided by any requirements management tool, that is used to track all the product specifications compliance.
 
-- **Unique ID across the whole repository:** The current object enumerating strategy follows the local copy of repository for enumerating itens. Soon this strategy will change to prevent duplicated objects.
+- **Import/Export:** Soon, you will be able to export the modules as a HTML, CSV, TSV, or as the most commom spreadsheet files. Also you will be able import them from a vas majority of documents.
 
 - **Database Connection:** Although the purpose of open-doors is to use a Git Server, and rely on YAML docs saved locally on file system, a database may provide a lot of convenience and enable simultaneous work on a same module.
 
