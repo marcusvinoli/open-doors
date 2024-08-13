@@ -1,38 +1,66 @@
-# create-svelte
+# OpenDOORS
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+<img src="./icons/open-doors-logo.png" width="400px" style="display: block; padding: 2em 0; margin: 0 auto;" >
 
-## Creating a project
+Open-doors is an open-source requirements management tool designed for capturing, tracking, and managing requirements. This application leverages a distributed, object-oriented approach to handle complex requirement specifications efficiently. 
 
-If you're seeing this, you've probably already done this step. Congrats!
+Storing objects in YAML format and using Git for change tracking, ensuring traceability and flexibility, open-doors supports Markdown for text formatting, links between objects and custom attributes.
+  
+> ### <span style="color: #20c035; margin: 1em 0;"> Heads up! This is a very experimental tool. Use carefully and be kind reporting any issues.
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+## Features
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+These features are currently supported on open-doors: 
+
+- **File-Structure Hierarchy:** open-doors provides a structured hierarchy to efficiently organize folders, formal modules, and projects, making it easy to manage complex requirements.
+
+- **Object Linking:** Create and manage links between related objects, ensuring traceability and a clear understanding of dependencies.
+
+- **Custom Attributes:** Define custom attributes for your requirements, supporting string, string list, and boolean types to tailor the system to your project's specific needs.
+
+- **Markdown Support:** Integrate and render Markdown content within your requirements to enhance documentation with rich text formatting.
+
+### Coming soon
+We are working on these features to include as soon as possible (_not necessarily in this exact order_): 
+
+- **Full and Automated Git Support:** currently, open-doors only is capable of staging changes for us. All the git handling ("Commiting, pushing, pulling, etc...) must be done manualy using a terminal or other tool.
+
+- **Import/Export:** Soon, you will be able to export the modules as a HTML, CSV, TSV, or as the most commom spreadsheet files. Also you will be able import them from a vas majority of documents.
+
+- **Baseline Definition:** The baselines uses git tags for commiting a group of objects, consolidating those changes in a version. Soon, this feature will be fully integrated to open-doors.
+
+- **Traceability Matrix:** One of the most important tool provided by any requirements management tool, that is used to track all the product specifications compliance.
+
+- **Unique ID across the whole repository:** The current object enumerating strategy follows the local copy of repository for enumerating itens. Soon this strategy will change to prevent duplicated objects.
+
+- **Database Connection:** Although the purpose of open-doors is to use a Git Server, and rely on YAML docs saved locally on file system, a database may provide a lot of convenience and enable simultaneous work on a same module.
+
+## Screenshots
+
+Take a look on how this application looks like.
+
+<img src="./images/home.png" alt="od-screnshot" width="600px" style="display: block; padding: 1em 0; margin: 0 auto;" >
+<img src="./images/formal-module.png" alt="od-screnshot" width="600px" style="display: block; padding: 1em 0; margin: 0 auto;" >
+<img src="./images/object-explorer.png" alt="od-screnshot" width="600px" style="display: block; padding: 1em 0; margin: 0 auto;" >
+
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+If you are an enthusiast of Svelte, Rust, TS and some other "indie technology", join us! Any contribution is welcome! Any contribution is welcome (_including complaining about a bug when opening an issue_).
 
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
 
 ## Building
 
-To create a production version of your app:
+Build might be tricky if you don't have already cargo installed, neither node + npm. Make sure you have [Rust](https://www.rust-lang.org/learn/get-started) and [NodeJS](https://nodejs.org/) before everything. First, install all dependencies: 
 
 ```bash
-npm run build
+npm install
+```
+Then, run:
+```bash
+npm run tauri build
 ```
 
-You can preview the production build with `npm run preview`.
+## Keep in Touch
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+I am not a "professional programmer", but this app gets its basic job done honestfully. Remember that is was born from a Hobby. Therefore bugs, inconsistencies, SOLID and Clean-Code principles transgressions... But I appreciate advices and feedbacks. You can send-me an [e-mail](mailto:marcusvinoli@gmail.com) ou find me on my [LinkedIn](https://linkedin.com/in/marcusvinoli)
