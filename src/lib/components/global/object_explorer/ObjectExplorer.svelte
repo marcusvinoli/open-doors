@@ -18,7 +18,7 @@
 	export let module: Module;
 	export let view: View;
 
-	export let editMode: boolean = true;
+	export let readOnly: boolean = true;
 	export let showLinks: boolean = true;
 	export let showDeleted: boolean = false;
 	export let showRowNumber: boolean = true;
@@ -145,7 +145,7 @@
 						</Table.Head>
 						{/if}
 					{/each}
-					{#if editMode}
+					{#if !readOnly}
 					<Table.Head class="min-w-[50px] sticky top-0 bg-slate-50 shadow-sm">
 					</Table.Head>
 					{/if}
@@ -153,8 +153,8 @@
 			</Table.Header>
 			<Table.Body class="w-full min-w-96">
 				{#each objs as ov, index}
-				{#if !ov.object.deletedAt && !showDeleted}
-					<Table.Row class={(ov.object.deletedAt ? "bg-rose-200" : "")} id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
+				{#if !(ov.object.deletedAt && showDeleted)}
+					<Table.Row class={(ov.object.deletedAt ? "bg-rose-50 hover:bg-red-200" : "")} id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
 						{#if showRowNumber}
 							<Table.Cell class={tableCellClass}>{index + 1}</Table.Cell>
 						{/if}
@@ -164,7 +164,47 @@
 									<Table.Cell class={tableCellClass}>{module.manifest.prefix}{module.manifest.separator}{ov.object.id}</Table.Cell>
 								{:else if attr.key === "content"}
 									<Table.Cell class={tableCellClass + (ov.isDraft ? " border-l-2 border-l-yellow-500" : "")}>
-										<ContextMenu.Root closeOnOutsideClick closeFocus>
+									{#if ov.object.deletedAt}
+										<div class="flex flex-row">
+											<div class="markdown min-w-[320px] grow">
+												<s>
+													{#if ov.object.header !== ""}
+													{@html marked(generateHashString(ov.object.level) + ov.object.level + " " + ov.object.header)}
+													{/if}
+													{@html marked(ov.object.content)}
+												</s>
+											</div>
+											{#if showLinks}
+												<div class="flex flex-col justify-between">
+													<div class="text-red-500">
+														{#if ov.object.outboundLinks?.length??0 > 0}
+														<Tooltip.Root openDelay={200}>
+															<Tooltip.Trigger>
+																<Icon icon="ci:arrow-up-right-lg" width="15px"/>
+															</Tooltip.Trigger>
+															<Tooltip.Content>
+																<p>{ov.object.outboundLinks?.length??0} outbound links</p>
+															</Tooltip.Content>
+														</Tooltip.Root>
+														{/if}
+													</div>
+													<div class="text-yellow-500">
+														{#if ov.inboundLinks.length > 0}
+														<Tooltip.Root openDelay={200}>
+															<Tooltip.Trigger>
+																<Icon icon="ci:arrow-down-left-lg" width="15px"/>
+															</Tooltip.Trigger>
+															<Tooltip.Content>
+																<p>{ov.inboundLinks.length} outbound links</p>
+															</Tooltip.Content>
+														</Tooltip.Root>
+														{/if}
+													</div>
+												</div>
+											{/if}
+										</div>
+									{:else}
+										<ContextMenu.Root closeOnOutsideClick closeFocus closeOnEscape>
 											<ContextMenu.Trigger class="w-full">
 											<div class="flex flex-row">
 												<div class="markdown min-w-[320px] grow">
@@ -218,6 +258,7 @@
 												</ContextMenu.Sub>
 											</ContextMenu.Content>
 										</ContextMenu.Root>	
+									{/if}	
 									</Table.Cell>
 								{:else if attr.key === "isActive"}
 									<Table.Cell class="font-medium w-[20px]">
@@ -268,7 +309,7 @@
 								{/if}
 							{/if}
 						{/each}
-						{#if editMode}
+						{#if !readOnly}
 						<Table.Head class="w-[30px] text-center">
 							<Table.Cell class="w-[30px]">
 								<Button variant="ghost" on:click={() => onEditClick(ov)}>

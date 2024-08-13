@@ -9,6 +9,7 @@ export interface PageState {
   editPanelFlag: boolean;
   showLinksFlag: boolean,
 	showRowNumberFlag: boolean,
+  readOnlyFlag: boolean,
   view: View;
 }
 

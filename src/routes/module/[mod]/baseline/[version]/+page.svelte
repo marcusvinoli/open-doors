@@ -27,10 +27,11 @@
 	let module: Module;
 
 	let templateFlag: boolean = false;
-	let editModeFlag: boolean = true;
+	let readOnlyFlag: boolean = false;
 	let editPanelFlag: boolean = false;
 	let treePanelFlag: boolean = false;
 	let showLinksFlag: boolean = true;
+	let showDeletionsFlag: boolean = false;
 	let showRowNumberFlag: boolean = true;
 	
 	let tabKey: string = "";
@@ -97,7 +98,7 @@
 			tooltip: "Toggle Edit Mode",
 			icon: "lucide:pencil-off",
 			action: () => {
-				editModeFlag = false;
+				readOnlyFlag = true;
 			},
 		}
 
@@ -106,7 +107,7 @@
 			tooltip: "Toggle Read-Only Mode",
 			icon: "lucide:pencil",
 			action: () => {
-				editModeFlag = true;
+				readOnlyFlag = false;
 			},
 		}
 
@@ -114,7 +115,32 @@
 			type: "toggle",
 			buttonOn: editModeButton,
 			buttonOff: readOnlyModeButton,
-			status: editModeFlag,
+			status: readOnlyFlag,
+		}
+
+		let showDeletionsButton: ToolbarButtonType = {
+			type: "button",
+			tooltip: "Show deletions",
+			icon: "gravity-ui:square-chart-bar",
+			action: () => {
+				showDeletionsFlag = true;
+			},
+		}
+
+		let dontShowDeletionsButton: ToolbarButtonType = {
+			type: "button",
+			tooltip: "Don't show deletions",
+			icon: "gravity-ui:square-dashed-text",
+			action: () => {
+				showDeletionsFlag = false;
+			},
+		}
+
+		let deletionsModeButton: ToolbarToggleType = {
+			type: "toggle",
+			buttonOn: showDeletionsButton,
+			buttonOff: dontShowDeletionsButton,
+			status: showDeletionsFlag,
 		}
 		
 		let creationGroup: ToolbarDropdownType = {
@@ -147,7 +173,7 @@
 		}
 
 		let viewGrouplView: ToolbarGroupType = {
-			items: [showTree, viewModeButton],
+			items: [showTree, viewModeButton, deletionsModeButton],
 			type: "buttonsGroup"
 		}
 
@@ -427,7 +453,7 @@
 		tabKey = generateKey(`${mod.substring($repository?.tree.path.length)}-${version}`);
 		const savedState = pageState.getPageState(tabKey);
 		if (savedState) {
-			({ scrollX, scrollY, selectedObject, editPanelFlag, view, showLinksFlag, showRowNumberFlag } = savedState);
+			({ scrollX, scrollY, selectedObject, editPanelFlag, view, showLinksFlag, showRowNumberFlag, readOnlyFlag } = savedState);
 			setScrollPosition(scrollX, scrollY);
 		}
 	}
@@ -439,7 +465,6 @@
 		const version: string = params.version;
 		loadRepository();
 		loadHomeToolbar();
-		addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
 		load(params.mod).then(() => {
 			updateState(params.mod, params.version);
 			const hash = $page.url.hash;
@@ -447,6 +472,7 @@
 				scrollIntoView(hash.slice(1));
 			}
 		})
+		addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
 	}
 	
 	$: {
@@ -463,11 +489,12 @@
 		const state = {
 			scrollX: scroll?.x??0,
 			scrollY: scroll?.y??0,
+			view,
+			showRowNumberFlag,
 			selectedObject,
 			editPanelFlag,
-			view,
 			showLinksFlag,
-			showRowNumberFlag,
+			readOnlyFlag,
 		};
 		pageState.setPageState(tabKey, state);
 	});
@@ -491,9 +518,10 @@
 						bind:view={view} 
 						bind:module={module} 
 						bind:objects={objects} 
-						bind:editMode={editModeFlag} 
+						bind:readOnly={readOnlyFlag} 
 						bind:showLinks={showLinksFlag} 
 						bind:showRowNumber={showRowNumberFlag} 
+						bind:showDeleted={showDeletionsFlag}
 						on:click={handleObjectSelect} 
 						on:create={handleObjectSelect}
 						on:commit={handleObjectCreation} 
@@ -502,13 +530,14 @@
 					/>
 				{/if}
 			</Resizable.Pane>
-		{#if editPanelFlag && editModeFlag}
+		{#if editPanelFlag}
 			<Resizable.Handle/>
 			<Resizable.Pane class="h-full" defaultSize={50} order={3}>
 				{#if selectedObject}
 				<ObjectEditor 
 				bind:objectView={selectedObject} 
 				bind:module={module} 
+				bind:readOnlyMode={readOnlyFlag}
 				on:save={handleObjectCreation} 
 				on:close={handleCloseEditPanel} 
 				on:delete={handleObjectExclusion}

@@ -21,6 +21,8 @@
     
     export let objectView: ObjectView;
     export let module: Module;
+    export let readOnlyMode: boolean = false;
+    let allowChanges: boolean;
     
     const dispatch = createEventDispatcher();
 
@@ -56,6 +58,14 @@
     function handleVisitLink(event: any) {
         goto("/module/" + encodePath(event.detail.link.path) + "#" + event.detail.link.object);
     }
+
+    $: {
+        allowChanges = !(readOnlyMode || (objectView.object.deletedAt ? true : false));
+    }
+    
+    onMount(() => {
+        allowChanges = !(readOnlyMode || (objectView.object.deletedAt ? true : false));
+    })
 
 </script>
 
@@ -93,7 +103,7 @@
                     <Input id="name" value={module.manifest.prefix+module.manifest.separator+objectView.object.id} class="col-span-3" disabled/>
                     {/if}
                     <Label for="name" class="text-right col-span-1">Level</Label>
-                    <Input id="name" bind:value={objectView.object.level} class="col-span-3" />
+                    <Input id="name" bind:value={objectView.object.level} class="col-span-3" disabled={!allowChanges}/>
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:bars-descending-align-left-arrow-down" width="15px"/>
@@ -105,7 +115,7 @@
                 </div>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Header</Label>
-                    <Input id="name" bind:value={objectView.object.header}  class="col-span-7" />
+                    <Input id="name" bind:value={objectView.object.header}  class="col-span-7" disabled={!allowChanges}/>
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:text-indent" width="15px"/>
@@ -119,10 +129,12 @@
             </div>
             <div class="grid gap-2 my-1">
                 <h2 class="font-bold my-1">Object Main Content</h2>
-                <div class="grid grid-cols-8 items-center gap-2 px-1">
-                    <Label for="name" class="text-right col-span-1">Text</Label>
-                    <Textarea id="name" bind:value={objectView.object.content}  class="col-span-7 font-mono" />
-                </div>
+                {#if allowChanges}
+                    <div class="grid grid-cols-8 items-center gap-2 px-1">
+                        <Label for="name" class="text-right col-span-1">Text</Label>
+                        <Textarea id="name" bind:value={objectView.object.content}  class="col-span-7 font-mono" />
+                    </div>
+                {/if}
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Preview</Label>
                     <div class="col-span-7">
@@ -142,7 +154,7 @@
                     </div>
                     <div class="flex flex-col col-span-3 gap-3 pb-2">
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="actCheck" bind:checked={objectView.object.isActive} aria-labelledby="actCheck-label" />
+                            <Checkbox id="actCheck" bind:checked={objectView.object.isActive} aria-labelledby="actCheck-label" disabled={!allowChanges}/>
                             <Label
                             id="actCheck-label"
                             for="actCheck"
@@ -151,7 +163,7 @@
                             </Label>
                         </div>
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="reqCheck" bind:checked={objectView.object.isRequirement} aria-labelledby="reqCheck-label" />
+                            <Checkbox id="reqCheck" bind:checked={objectView.object.isRequirement} aria-labelledby="reqCheck-label" disabled={!allowChanges}/>
                             <Label
                             id="reqCheck-label"
                             for="reqCheck"
@@ -160,7 +172,7 @@
                             </Label>
                         </div>
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="reqNorm" bind:checked={objectView.object.isNormative} aria-labelledby="reqNorm-label" />
+                            <Checkbox id="reqNorm" bind:checked={objectView.object.isNormative} aria-labelledby="reqNorm-label" disabled={!allowChanges}/>
                             <Label
                             id="reqNorm-label"
                             for="reqNorm"
@@ -190,7 +202,7 @@
                                         {field.attribute}
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <AttributeInput bind:value={objectView.object.customFields[field.key]} field={field}/>
+                                        <AttributeInput bind:value={objectView.object.customFields[field.key]} field={field} disabled={!allowChanges}/>
                                     </Table.Cell>
                                 </Table.Row>
                             {/each}
@@ -208,7 +220,7 @@
                             <Icon icon="ci:arrow-up-right-lg" width="20px"/>
                             Outbound Links
                         </div>
-                        <LinkForm bind:links={objectView.object.outboundLinks} editable={true} on:visitLink={handleVisitLink}/>
+                        <LinkForm bind:links={objectView.object.outboundLinks} editable={allowChanges} on:visitLink={handleVisitLink}/>
                     </div>
                     {#if objectView?.inboundLinks.length > 0}
                     <Separator/>
@@ -222,7 +234,7 @@
                     {/if}
                 </div>
             </div>
-            {#if objectView.object.id !== 0}
+            {#if objectView.object.id !== 0 && allowChanges}
             <Separator/>
             <div class="grid wrap pag-2 mt-3">
                 <Button variant="destructive" class="px-5" on:click={deleteObj}>
@@ -235,21 +247,29 @@
     </div>
     <Separator/>
     <div class="flex flex-row pb-1 pt-3">
-        <Button variant="secondary" class="px-5" on:click={closeEdit}>
-            <Icon icon="ci:add-minus-square" width="20px"/>
-            <p class="pl-2">Cancel</p>
-        </Button>
-        <div class="grow"></div>
-        <div class="flex flex-row gap-3">
-            <Button variant="secondary" class="px-5" on:click={saveObj}>
-                <Icon icon="ci:add-to-queue" width="20px"/>
-                <p class="pl-2">Save and Stage</p>
+        {#if allowChanges}
+            <Button variant="secondary" class="px-5" on:click={closeEdit}>
+                <Icon icon="ci:add-minus-square" width="20px"/>
+                <p class="pl-2">Cancel</p>
             </Button>
-            <Button class="px-5" on:click={saveDrafObj}>
-                <Icon icon="ci:add-plus-square" width="20px"/>
-                <p class="pl-2">Save as Draft</p>
+            <div class="grow"></div>
+            <div class="flex flex-row gap-3">
+                <Button variant="secondary" class="px-5" on:click={saveObj}>
+                    <Icon icon="ci:add-to-queue" width="20px"/>
+                    <p class="pl-2">Save and Stage</p>
+                </Button>
+                <Button class="px-5" on:click={saveDrafObj}>
+                    <Icon icon="ci:add-plus-square" width="20px"/>
+                    <p class="pl-2">Save as Draft</p>
+                </Button>
+            </div>
+        {:else}
+            <Button variant="secondary" class="px-5" on:click={closeEdit}>
+                <Icon icon="ci:add-minus-square" width="20px"/>
+                <p class="pl-2">Close</p>
             </Button>
-        </div>
+            <div class="grow"></div>
+        {/if}
     </div>
 </div>
 {/if}
