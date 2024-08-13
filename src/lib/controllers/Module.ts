@@ -65,8 +65,9 @@ export function readObjects(modulePath: String) {
 
 export function readDraftObjects(modulePath: String) {
     return invoke('read_draft_objects', {path: modulePath})
-        .then((mods) => {
-            return mods as Object[];
+        .then((objs) => {
+            console.log(objs);
+            return objs as Object[];
         })
 }
 

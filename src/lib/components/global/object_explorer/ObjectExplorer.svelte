@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
+    import CustomFieldCell from "./CustomFieldCell.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import { marked } from "marked";
 	import { defaultView, parseTemplate } from "./viewMethods";
@@ -12,27 +13,42 @@
 	import type { ObjectView, Object } from "$lib/components/structs/Object";
 	import "./markdown.css";
 	import "./flashing.css";
-    import CustomFieldCell from "./CustomFieldCell.svelte";
-    import { SubContent } from "$lib/components/ui/dropdown-menu";
 
 	export let objects: ObjectView[] = [];
 	export let module: Module;
-	export let editMode: boolean = true;
-	export let showDeleted: boolean = false;
 	export let view: View;
-	export let showRowNumber: boolean = true;
+	
+	export let editMode: boolean = true;
 	export let showLinks: boolean = true;
+	export let showDeleted: boolean = false;
+	export let showRowNumber: boolean = true;
 
 	let objs: ObjectView[] = [];
 
 	const dispatch = createEventDispatcher();
 
 	function onEditClick(obj: ObjectView) {
-		dispatch("select", {object: obj})
+		dispatch("select", {objectView: obj})
 	}
 
 	function handleRowClick(obj: ObjectView) {
-		dispatch('click', {object: obj})
+		dispatch('click', {objectView: obj})
+	}
+
+	function handleCommit(obj: ObjectView) {
+		dispatch('commit', {objectView: obj})
+	}
+
+	function handleDelete(obj: ObjectView) {
+		dispatch('delete', {objectView: obj})
+	}
+
+	function handleCreateAbove(obj: ObjectView) {
+		dispatch('createAbove', {objectView: obj})
+	}
+
+	function handleCreateBelow(obj: ObjectView) {
+		dispatch('createBelow', {objectView: obj})
 	}
 
 	function generateHashString(level: string): string {
@@ -189,15 +205,15 @@
 											</ContextMenu.Trigger>
 											<ContextMenu.Content>
 												{#if ov.isDraft}
-												<ContextMenu.Item>Commit changes</ContextMenu.Item>
+												<ContextMenu.Item on:click={() => {handleCommit(ov)}}>Commit changes</ContextMenu.Item>
 												{/if}
-												<ContextMenu.Item>Delete</ContextMenu.Item>
+												<ContextMenu.Item on:click={() => {handleDelete(ov)}}>Delete</ContextMenu.Item>
 												<ContextMenu.Separator />
 												<ContextMenu.Sub>
 													<ContextMenu.SubTrigger class="w-48">New Object...</ContextMenu.SubTrigger>
 													<ContextMenu.SubContent>
-														<ContextMenu.Item>Create Above</ContextMenu.Item>
-														<ContextMenu.Item>Create Bellow</ContextMenu.Item>
+														<ContextMenu.Item on:click={() => {handleCreateAbove(ov)}}>Create Above</ContextMenu.Item>
+														<ContextMenu.Item on:click={() => {handleCreateBelow(ov)}}>Create Below</ContextMenu.Item>
 													</ContextMenu.SubContent>
 												</ContextMenu.Sub>
 											</ContextMenu.Content>

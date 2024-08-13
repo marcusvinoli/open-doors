@@ -1,6 +1,10 @@
 import type { Author } from "./Author";
 import type { User } from "./User";
 
+export interface IHash {
+    [key: string]: string;
+}
+
 export interface Link {
     path: string,
     module: string,

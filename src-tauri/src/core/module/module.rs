@@ -84,7 +84,7 @@ impl Module {
     }
 
     pub fn read_draft_object(&self, id: usize) -> Result<Object, ModuleError> {
-        Ok(Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id)?)
+        Ok(Module::open_object(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), id)?)
     }
 
     pub fn find_object(&self, id: usize) -> Result<Object, ModuleError> {
@@ -114,7 +114,7 @@ impl Module {
             }
         }
         
-        Ok(self.find_object(id)?)
+        Ok(self.read_object(id)?)
     }
     
     pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
@@ -132,7 +132,7 @@ impl Module {
             }
         }
 
-        Ok(self.find_object(id)?)
+        Ok(self.read_draft_object(id)?)
     }
 
     pub fn create_objects(&mut self, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
@@ -167,12 +167,9 @@ impl Module {
     
                 if let Some(number_str) = file_name_str.strip_suffix(".yml") {
                     if let Ok(number) = number_str.parse::<usize>() {
-                        objs.push(self.find_object(number)?)
+                        objs.push(self.read_object(number)?)
                     }
                 }
-                
-            } else {
-                continue;
             }
         }
 
@@ -193,15 +190,12 @@ impl Module {
     
                 if let Some(number_str) = file_name_str.strip_suffix(".yml") {
                     if let Ok(number) = number_str.parse::<usize>() {
-                        objs.push(self.find_object(number)?)
+                        objs.push(self.read_draft_object(number)?);
                     }
                 }
-
-            } else {
-                continue;
             }
         }
-
+        
         Ok(objs)
     }
     

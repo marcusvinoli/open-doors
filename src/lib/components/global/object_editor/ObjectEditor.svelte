@@ -4,6 +4,7 @@
     import Separator from "$lib/components/ui/separator/separator.svelte";
     import AttributeInput from "./AttributeInput.svelte";
     import { user } from "$lib/stores/User";
+    import { goto } from "$app/navigation";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
@@ -11,115 +12,61 @@
     import { Checkbox } from "$lib/components/ui/checkbox/index.js";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js"
-    import { afterUpdate, beforeUpdate, createEventDispatcher, onMount } from "svelte";
-    import * as Table from "$lib/components/ui/table";
-    import type { Template } from "$lib/components/structs/Template";
-    import type { ObjectView } from "$lib/components/structs/Object";
-    import "./markdown.css";
-    import { custom } from "zod";
-    import { goto } from "$app/navigation";
     import { encodePath } from "$lib/utils/pathHandler";
+    import { createEventDispatcher, onMount } from "svelte";
+    import * as Table from "$lib/components/ui/table";
+    import type { ObjectView } from "$lib/components/structs/Object";
+    import type { Module } from "$lib/components/structs/Module";
+    import "./markdown.css";
     
-    export let objv: ObjectView | null = createEmptyObject();
-    export let template: Template;
-    export let prefix: string = "";
-    export let separator: string = "";
+    export let objectView: ObjectView;
+    export let module: Module;
+    let ov: ObjectView;
     
-    interface IHash {
-        [key: string]: string;
-    }
-
-    let isDeletable: boolean = true;
-
     const dispatch = createEventDispatcher();
-
-    function createEmptyObject(): ObjectView {
-        let customFields: IHash = {};
-        createCustomFieldHashFromTemplate(template, customFields);
-        isDeletable = false;
-        return {
-            object: {
-                id: 0,
-                header: "",
-                content: "",
-                author: $user.toString()!,
-                isActive: true,
-                isNormative: false,
-                isRequirement: false,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deletedAt: null,
-                customFields: customFields,
-                level: "",
-                outboundLinks: [],
-            },
-            inboundLinks: [],
-            isDraft: false,
-            hasChanges: false,
-        }
-    }
-
-    function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
-        template.fields.forEach((field) => {
-            if (!customFields[field.key]) {
-                customFields[field.key] = "";
-            }
-        })
-    }
 
     function closeEdit() {
         dispatch('close', {})
     }
     
     function saveDrafObj() {
-        if(objv) {
-            objv.hasChanges = true;
-            objv.object.updatedAt = new Date();
-            objv.object.author = $user.toString();
+        if(ov) {
+            ov.hasChanges = true;
+            ov.object.updatedAt = new Date();
+            ov.object.author = $user.toString();
         }
-        dispatch('saveDraft', {obj: objv})
+        dispatch('saveDraft', {objectView: ov})
     }
     
     function saveObj() {
-        if(objv) {
-            objv.hasChanges = true;
-            objv.object.updatedAt = new Date();
-            objv.object.author = $user.toString();
+        if(ov) {
+            ov.hasChanges = true;
+            ov.object.updatedAt = new Date();
+            ov.object.author = $user.toString();
         }
-        dispatch('save', {obj: objv})
+        dispatch('save', {objectView: ov})
     }
     
     function deleteObj() {
-        if(objv) {
-            objv.object.author = $user.toString();
+        if(ov) {
+            ov.object.author = $user.toString();
         }
-        dispatch('delete', {obj: objv})
+        dispatch('delete', {objectView: ov})
     }
 
     function handleVisitLink(event: any) {
         goto("/module/" + encodePath(event.detail.link.path) + "#" + event.detail.link.object);
     }
 
-    onMount(() => {
-        if (!objv) {
-            objv = createEmptyObject();
-            isDeletable = false;
-        } else {
-            isDeletable = true;
-            if (!objv.object.customFields) {
-                objv.object.customFields = {};
-            }
-            createCustomFieldHashFromTemplate(template, objv.object.customFields);
-        }
-    })
+    onMount(() => { ov = JSON.parse(JSON.stringify(objectView)); console.log(ov) }) 
 
 </script>
 
-{#if objv}
+{#if ov}
 <div class="h-full flex flex-col px-3 min-w-[450px] box-border">
     <div class="grow min-h-[50%]">
         <ScrollArea class="h-full">
-            {#if objv.isDraft && !objv.object.deletedAt}
+            {#if ov.isDraft && !ov.object.deletedAt}
             <div class="py-2">
                 <div class="text-yellow-600 border-yellow-500 border-2 bg-yellow-100 text-center p-2 rounded-md">
                     <div class="italic text-sm flex items-center justify-center gap-2 mb-0">
@@ -129,7 +76,7 @@
                 </div>
             </div>
             {/if}
-            {#if objv.object.deletedAt}
+            {#if ov.object.deletedAt}
             <div class="py-2">
                 <div class="text-red-600 border-red-500 border-2 bg-red-100 text-center p-2 rounded-md">
                     <div class="italic text-sm flex items-center justify-center gap-2 mb-0">
@@ -143,13 +90,13 @@
                 <h2 class="font-bold mb-1">Object Heading</h2>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">ID</Label>
-                    {#if objv.object.id === 0}
+                    {#if ov.object.id === 0}
                     <Input id="name" placeholder="Auto Generated" class="col-span-3" disabled/>
                     {:else}
-                    <Input id="name" value={prefix+separator+objv.object.id} class="col-span-3" disabled/>
+                    <Input id="name" value={module.manifest.prefix+module.manifest.separator+ov.object.id} class="col-span-3" disabled/>
                     {/if}
                     <Label for="name" class="text-right col-span-1">Level</Label>
-                    <Input id="name" bind:value={objv.object.level} class="col-span-3" />
+                    <Input id="name" bind:value={ov.object.level} class="col-span-3" />
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:bars-descending-align-left-arrow-down" width="15px"/>
@@ -161,7 +108,7 @@
                 </div>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Header</Label>
-                    <Input id="name" bind:value={objv.object.header}  class="col-span-7" />
+                    <Input id="name" bind:value={ov.object.header}  class="col-span-7" />
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:text-indent" width="15px"/>
@@ -177,14 +124,14 @@
                 <h2 class="font-bold my-1">Object Main Content</h2>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Text</Label>
-                    <Textarea id="name" bind:value={objv.object.content}  class="col-span-7 font-mono" />
+                    <Textarea id="name" bind:value={ov.object.content}  class="col-span-7 font-mono" />
                 </div>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Preview</Label>
                     <div class="col-span-7">
                         <ScrollArea class=" col-span-1">
                             <div class="preview rounded-sm">
-                                {@html marked((objv.object.header ? "# " + objv.object.level + " " + objv.object.header + "\n" : "") + objv.object.content)}
+                                {@html marked((ov.object.header ? "# " + ov.object.level + " " + ov.object.header + "\n" : "") + ov.object.content)}
                             </div>
                         </ScrollArea>
                     </div>
@@ -198,7 +145,7 @@
                     </div>
                     <div class="flex flex-col col-span-3 gap-3 pb-2">
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="actCheck" bind:checked={objv.object.isActive} aria-labelledby="actCheck-label" />
+                            <Checkbox id="actCheck" bind:checked={ov.object.isActive} aria-labelledby="actCheck-label" />
                             <Label
                             id="actCheck-label"
                             for="actCheck"
@@ -207,7 +154,7 @@
                             </Label>
                         </div>
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="reqCheck" bind:checked={objv.object.isRequirement} aria-labelledby="reqCheck-label" />
+                            <Checkbox id="reqCheck" bind:checked={ov.object.isRequirement} aria-labelledby="reqCheck-label" />
                             <Label
                             id="reqCheck-label"
                             for="reqCheck"
@@ -216,7 +163,7 @@
                             </Label>
                         </div>
                         <div class="flex items-center col-span-2">
-                            <Checkbox id="reqNorm" bind:checked={objv.object.isNormative} aria-labelledby="reqNorm-label" />
+                            <Checkbox id="reqNorm" bind:checked={ov.object.isNormative} aria-labelledby="reqNorm-label" />
                             <Label
                             id="reqNorm-label"
                             for="reqNorm"
@@ -228,7 +175,7 @@
                 </div>
                 <Separator/>
             </div>
-            {#if template.fields.length > 0 && objv.object.customFields}
+            {#if module.template.fields.length > 0 && ov.object.customFields}
             <div class="grid gap-2 my-1">
                 <h2 class="font-bold my-1">Custom Attributes</h2 >
                 <div class="">
@@ -240,13 +187,13 @@
                             </Table.Row>
                         </Table.Header>
                         <Table.Body class="">
-                            {#each template.fields as field}
+                            {#each module.template.fields as field}
                                 <Table.Row>
                                     <Table.Cell class="text-right">
                                         {field.attribute}
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <AttributeInput bind:value={objv.object.customFields[field.key]} field={field}/>
+                                        <AttributeInput bind:value={ov.object.customFields[field.key]} field={field}/>
                                     </Table.Cell>
                                 </Table.Row>
                             {/each}
@@ -264,21 +211,21 @@
                             <Icon icon="ci:arrow-up-right-lg" width="20px"/>
                             Outbound Links
                         </div>
-                        <LinkForm bind:links={objv.object.outboundLinks} editable={true} on:visitLink={handleVisitLink}/>
+                        <LinkForm bind:links={ov.object.outboundLinks} editable={true} on:visitLink={handleVisitLink}/>
                     </div>
-                    {#if objv?.inboundLinks.length > 0}
+                    {#if ov?.inboundLinks.length > 0}
                     <Separator/>
                     <div class="gap-2 w-full pt-4">
                         <div class="flex items-center gap-1 ml-1 my-1 font-semibold">
                             <Icon icon="ci:arrow-down-left-lg" width="20px"/>
                             Inbound Links
                         </div>
-                        <LinkForm links={objv.inboundLinks} editable={false} on:visitLink={handleVisitLink}/>
+                        <LinkForm links={ov.inboundLinks} editable={false} on:visitLink={handleVisitLink}/>
                     </div>
                     {/if}
                 </div>
             </div>
-            {#if isDeletable}
+            {#if ov.object.id !== 0}
             <Separator/>
             <div class="grid wrap pag-2 mt-3">
                 <Button variant="destructive" class="px-5" on:click={deleteObj}>
