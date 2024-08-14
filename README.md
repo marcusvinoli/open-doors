@@ -1,5 +1,7 @@
 ![alt "open-doors logo"](./images/open-doors-readme-cover.png)
 
+[![publish](https://github.com/marcusvinoli/open-doors/actions/workflows/main.yml/badge.svg)](https://github.com/marcusvinoli/open-doors/actions/workflows/main.yml)
+
 **Open-doors** is an open-source requirements management tool designed for capturing, tracking, and managing requirements. This application leverages a distributed, object-oriented approach to handle complex requirement specifications efficiently. 
 
 Storing objects in YAML format and using Git for change tracking, ensuring traceability and flexibility, open-doors supports Markdown for text formatting, links between objects and custom attributes.
