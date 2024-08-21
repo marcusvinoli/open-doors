@@ -3,13 +3,19 @@ pub mod error;
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::process::{Command, Output};
-
 pub use error::GitError as GitError;
 
 fn git_run_cmd<T: AsRef<OsStr>, U: IntoIterator<Item = T>>(args: U) -> std::io::Result<Output> {
-    Command::new("git")
-        .args(args)
-        .output()
+    let mut cmd = Command::new("git");
+    cmd.args(args);
+
+    #[cfg(target_os = "windows")] {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    cmd.output()
 }
 
 pub fn is_git_installed() -> Result<bool, GitError> {
