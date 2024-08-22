@@ -57,7 +57,7 @@
             <div class="grid grid-cols-5 items-center gap-4">
                 <Label for="name" class="text-right col-span-1">Location</Label>
                 <div class="flex flex-row gap-3 col-span-4">
-                    <Input id="name" bind:value={path} class="" />
+                    <Input id="name" bind:value={path} class="" autocomplete="off"/>
                     <Button variant="secondary" class="" on:click={selectFolder}>
                         <Icon icon="gravity-ui:folder-magnifier" width="25px"/>
                     </Button>
@@ -65,17 +65,17 @@
             </div>
             <div class="grid grid-cols-5 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Name</Label>
-                <Input id="name" bind:value={name} class="col-span-4" />
+                <Input id="name" bind:value={name} class="col-span-4" autocomplete="off"/>
             </div>
             <div class="grid grid-cols-5 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Remote URL</Label>
-                <Input id="name" bind:value={remote} class="col-span-4" placeholder="*Optional"/>
+                <Input id="name" bind:value={remote} class="col-span-4" placeholder="*Optional" autocomplete="off"/>
             </div>
             {/if}
         </div>
         <Dialog.Footer>
             <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleCreate}>Create</Button>
+            <Button on:click={handleCreate} disabled={((path==="")||(name===""))}>Create</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>
