@@ -103,7 +103,7 @@
                     <Input id="name" value={module.manifest.prefix+module.manifest.separator+objectView.object.id} class="col-span-3" disabled/>
                     {/if}
                     <Label for="name" class="text-right col-span-1">Level</Label>
-                    <Input id="name" bind:value={objectView.object.level} class="col-span-3" disabled={!allowChanges}/>
+                    <Input id="name" bind:value={objectView.object.level} class="col-span-3" disabled={!allowChanges} autocomplete="off"/>
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:bars-descending-align-left-arrow-down" width="15px"/>
@@ -115,7 +115,7 @@
                 </div>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Header</Label>
-                    <Input id="name" bind:value={objectView.object.header}  class="col-span-7" disabled={!allowChanges}/>
+                    <Input id="name" bind:value={objectView.object.header}  class="col-span-7" disabled={!allowChanges} autocomplete="off"/>
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:text-indent" width="15px"/>
