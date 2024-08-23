@@ -18,6 +18,8 @@
     import type { ObjectView } from "$lib/components/structs/Object";
     import type { Module } from "$lib/components/structs/Module";
     import "./markdown.css";
+    import path from "path";
+    import { repository } from "$lib/stores/Repository";
     
     export let objectView: ObjectView;
     export let module: Module;
@@ -56,7 +58,9 @@
     }
 
     function handleVisitLink(event: any) {
-        goto("/module/" + encodePath(event.detail.link.path) + "#" + event.detail.link.object);
+        let linkPath = path.normalize(event.detail.link.path);
+        let repoPath = path.resolve($repository?.tree.path);
+        goto("/module/" + encodePath(path.join(repoPath, linkPath)) + "#" + event.detail.link.object);
     }
 
     $: {
