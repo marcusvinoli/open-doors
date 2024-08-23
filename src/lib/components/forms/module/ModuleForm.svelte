@@ -135,13 +135,13 @@
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
                     <Label for="desc" class="text-right col-span-1">Module description</Label>
-                    <Input multiple id="desc" placeholder="Module Description" bind:value={updatedModule.description}  class="col-span-3" />
+                    <Input multiple id="desc" placeholder="Module Description" bind:value={updatedModule.description}  class="col-span-3" autocomplete="off"/>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
                     <Label for="prefix" class="text-right col-span-1">Prefix</Label>
                     <Input id="prefix" placeholder="PRJ" bind:value={updatedModule.prefix} class="col-span-1" disabled/>
                     <Label for="name" class="text-right col-span-1">Separator</Label>
-                    <Input id="name" placeholder="-" bind:value={updatedModule.separator} class="col-span-1"/>
+                    <Input id="name" placeholder="-" bind:value={updatedModule.separator} class="col-span-1" autocomplete="off"/>
                 </div>
             {/if}
             </div>
@@ -153,7 +153,7 @@
             </Button>
             <div class="grow"></div>
             <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleModuleUpdate}>Save Changes</Button>
+            <Button on:click={handleModuleUpdate} disabled={(updatedModule?.title==="")}>Save Changes</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

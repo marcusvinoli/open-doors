@@ -137,7 +137,7 @@
 			<Table.Body class="w-full">
 				<Table.Row class="">
 					<Table.Cell class="pl-2 pr-1">
-						<Input bind:value={newAttribute} placeholder="New attribute..." class="px-2 py-1 w-full"/>
+						<Input bind:value={newAttribute} placeholder="New attribute..." class="px-2 py-1 w-full" autocomplete="off"/>
 					</Table.Cell>
 					<Table.Cell class="px-1">
 						<DataTypeDropdown bind:dataType={newDataTypeSelected} />
@@ -146,7 +146,7 @@
 						<Input bind:value={newAllowedValues} placeholder="Comma, Separeted, Values" class="px-2 py-1 w-full" disabled={(newDataTypeSelected === "any") || (newDataTypeSelected === "nullableBoolean")}/>
 					</Table.Cell>
 					<Table.Cell class="w-[30px] pl-1 pr-2">
-						<Button variant="ghost" class="hover:text-blue-600" on:click={addAttribute} disabled={(newAttribute === "")}>
+						<Button variant="ghost" class="hover:text-blue-600" on:click={addAttribute} disabled={(newAttribute==="")}>
 							<Icon icon="gravity-ui:circle-plus" width="20px" />
 						</Button>
 					</Table.Cell>

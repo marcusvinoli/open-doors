@@ -92,7 +92,7 @@
         </div>
         <Dialog.Footer>
             <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleCreateModule}>Create</Button>
+            <Button on:click={handleCreateModule} disabled={(moduleManifest.prefix===""||moduleManifest.title==="")}>Create</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>
