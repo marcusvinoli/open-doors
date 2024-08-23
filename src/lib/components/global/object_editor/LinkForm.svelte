@@ -6,7 +6,6 @@
     import type { Module } from '$lib/components/structs/Module';
     import type { Object } from '$lib/components/structs/Object';
     import StringDropdown from './StringDropdown.svelte';
-    import StringComboBox from './StringComboBox.svelte';
     import { createEventDispatcher, onMount } from 'svelte';
     import { listAllModules } from '$lib/utils/lists';
     import { repository } from '$lib/stores/Repository';

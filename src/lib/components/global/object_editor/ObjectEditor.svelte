@@ -1,6 +1,6 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
-    import LinkForm from "$lib/components/forms/module/LinkForm.svelte";
+    import LinkForm from "$lib/components/global/object_editor/LinkForm.svelte";
     import Separator from "$lib/components/ui/separator/separator.svelte";
     import AttributeInput from "./AttributeInput.svelte";
     import { user } from "$lib/stores/User";
