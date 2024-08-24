@@ -59,7 +59,7 @@
 
     function handleVisitLink(event: any) {
         let linkPath = path.normalize(event.detail.link.path);
-        let repoPath = path.resolve($repository?.tree.path);
+        let repoPath = path.normalize($repository?.tree.path);
         goto("/module/" + encodePath(path.join(repoPath, linkPath)) + "#" + event.detail.link.object);
     }
 
