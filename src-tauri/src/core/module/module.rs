@@ -1,9 +1,9 @@
-use std::{cmp::max, collections::HashMap, fmt::format, path::PathBuf, vec};
+use std::{cmp::max, collections::HashMap, path::PathBuf, vec};
 
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
 
-use crate::{core::{error::ModuleError, middleware as mid}, git};
+use crate::core::{error::ModuleError, middleware as mid};
 
 use super::{baseline::Baseline, definitions as defs, links::Link, object::Object, template::Template};
 
@@ -101,6 +101,38 @@ impl Module {
 	pub fn create_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
 		let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
 		
+		if let Some(outbound_links) = &obj.outbound_links {
+			let mut valid_links: Vec<Link> = Vec::new();
+			let repo_path: PathBuf = self.get_repository_path().unwrap_or_default();
+			let rel_path: PathBuf = Module::subtract_paths(&repo_path, &self.path).unwrap_or(self.path.clone());
+
+			let inbound_link: Link = Link { 
+				path: rel_path,
+				object: id.clone(),
+				module: self.manifest.prefix.clone(),
+			};
+
+			println!("Inbound Link Path: {}", inbound_link.path.display());
+
+			for outbound_link in outbound_links {
+				let module_path: PathBuf = Module::add_paths(&repo_path, &outbound_link.path);
+				println!("Outbound Link Path: {}", repo_path.join(&outbound_link.path.clone()).display());
+				let res_module: Result<Module, ModuleError> = Module::read(&module_path);
+				if let Err(_) = res_module {
+					continue;
+				}
+				if let Ok(_) = res_module.unwrap().create_inbound_link(&inbound_link, &outbound_link.object) {
+					valid_links.push(outbound_link.clone());
+				}
+			}
+
+			if valid_links.is_empty() {
+				obj.outbound_links = None;
+			}
+		}
+
+		self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
+		
 		let res = mid::move_file(&self.path.join(defs::OD_DRAFT_FOLDER_NAME),
 			&self.path.join(defs::OD_OBJS_FOLDER_NAME), &format!("{id}.yml"));
 		
@@ -110,36 +142,11 @@ impl Module {
 			&self.path.join(defs::OD_OBJS_FOLDER_NAME), &format!("{id}.yml"))?;
 		}
 		
-		if let Some(outbound_links) = &obj.outbound_links {
-			let inbound_link: Link = Link { 
-				path: self.path.clone(),
-				object: id.clone(),
-				module: self.manifest.prefix.clone(),
-			};
-			for outbound_link in outbound_links {
-				let dest_mod: Module = Module::read(&outbound_link.path)?;
-				dest_mod.create_inbound_link(&inbound_link, &outbound_link.object)?;
-			}
-		}
-		
 		Ok(self.read_object(id)?)
 	}
 	
 	pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
 		let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
-
-		if let Some(outbound_links) = &obj.outbound_links {
-			let inbound_link: Link = Link { 
-				path: self.path.clone(),
-				object: obj.id(),
-				module: self.manifest.prefix.clone(),
-			};
-			for outbound_link in outbound_links {
-				let dest_mod: Module = Module::read(&outbound_link.path)?;
-				dest_mod.create_inbound_link(&inbound_link, &outbound_link.object)?;
-			}
-		}
-
 		Ok(self.read_draft_object(id)?)
 	}
 
@@ -221,7 +228,6 @@ impl Module {
 	
 	pub fn update_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
 		let obj = self.create_object(obj)?;
-		git::commit(&self.path.join(defs::OD_DRAFT_FOLDER_NAME).display().to_string(), format!("#OD: Updated object {}", obj.id()))?;
 		Ok(self.read_object(obj.id())?)
 	}
 	
@@ -311,6 +317,32 @@ impl Module {
 		}
 
 		self.read_inbound_links()
+	}
+
+	fn get_repository_path(&self) -> Option<PathBuf> {
+		let mut current_path = self.path.clone();
+
+		loop {
+			let repository_yml_path = current_path.join("repository.yml");
+
+			if repository_yml_path.exists() {
+				return Some(current_path);
+			}
+
+			if !current_path.pop() {
+				break;
+			}
+		}
+
+		None
+	}
+
+	fn subtract_paths(base: &PathBuf, absolute: &PathBuf) -> Option<PathBuf> {
+		absolute.strip_prefix(base).ok().map(|p| p.to_path_buf())
+	}
+
+	fn add_paths(base: &PathBuf, relative: &PathBuf) -> PathBuf {
+		return base.clone().join(relative);
 	}
 
 	fn add_unique_link(map: &mut HashMap<usize, Vec<Link>>, id: &usize, link: &Link) {

@@ -90,7 +90,7 @@
 		const differingSegments = segModulePath.slice(i);
 
 		let newLink: Link = {
-			path: "/" + path.join(differingSegments.join("/")),
+			path: path.join(differingSegments.join("/")),
 			module: selectedModule,
 			object: parseInt(selectedObject.split("-").pop()??"0"),
 		}
