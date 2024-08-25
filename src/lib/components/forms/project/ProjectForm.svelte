@@ -123,13 +123,13 @@
                     </div>
                     <div class="grid grid-cols-4 items-center gap-2">
                         <Label for="name" class="text-right col-span-1">Project Name</Label>
-                        <Input id="name" placeholder="My Awesome Project" bind:value={updatedProject.manifest.name}  class="col-span-3" />
+                        <Input id="name" placeholder="My Awesome Project" bind:value={updatedProject.manifest.name}  class="col-span-3" autocomplete="off"/>
                     </div>
                     <div class="grid grid-cols-4 items-center gap-2">
                         <Label for="prefix" class="text-right col-span-1">Prefix</Label>
                         <Input id="prefix" placeholder="PRJ" bind:value={updatedProject.manifest.prefix} class="col-span-1" disabled/>
                         <Label for="name" class="text-right col-span-1">Separator</Label>
-                        <Input id="name" placeholder="-" bind:value={updatedProject.manifest.separator} class="col-span-1"/>
+                        <Input id="name" placeholder="-" bind:value={updatedProject.manifest.separator} class="col-span-1" autocomplete="off"/>
                     </div>
                 {/if}
             </div>
@@ -140,7 +140,7 @@
                 </Button>
                 <div class="grow"></div>
                 <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-                <Button on:click={handleProjectUpdate}>Save Changes</Button>
+                <Button on:click={handleProjectUpdate} disabled={(updatedProject.manifest.name==="")}>Save Changes</Button>
             </Dialog.Footer>
         {/if}
     </Dialog.Content>

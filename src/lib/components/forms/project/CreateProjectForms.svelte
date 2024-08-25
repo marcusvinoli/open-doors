@@ -71,13 +71,13 @@
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Project Name</Label>
-                <Input id="name" placeholder="My Awesome Project" bind:value={projectManifest.name}  class="col-span-3" />
+                <Input id="name" placeholder="My Awesome Project" bind:value={projectManifest.name}  class="col-span-3" autocomplete="off"/>
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="prefix" class="text-right col-span-1">Prefix</Label>
-                <Input id="prefix" placeholder="PRJ" bind:value={projectManifest.prefix} class="col-span-1" />
+                <Input id="prefix" placeholder="PRJ" bind:value={projectManifest.prefix} class="col-span-1" autocomplete="off"/>
                 <Label for="name" class="text-right col-span-1">Separator</Label>
-                <Input id="name" placeholder="-" bind:value={projectManifest.separator} class="col-span-1"/>
+                <Input id="name" placeholder="-" bind:value={projectManifest.separator} class="col-span-1" autocomplete="off"/>
             </div>
             <Dialog.Description>
                 {#if (projectManifest.name !== "") && (projectManifest.prefix !== "")}
@@ -88,7 +88,7 @@
         </div>
         <Dialog.Footer>
             <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleCreateProject}>Create</Button>
+            <Button on:click={handleCreateProject} disabled={((projectManifest.name==="")||(projectManifest.prefix===""))}>Create</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

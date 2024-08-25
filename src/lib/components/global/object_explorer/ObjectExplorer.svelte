@@ -180,10 +180,10 @@
 														{#if ov.object.outboundLinks?.length??0 > 0}
 														<Tooltip.Root openDelay={200}>
 															<Tooltip.Trigger>
-																<Icon icon="ci:arrow-up-right-lg" width="15px"/>
+																<Icon icon="lucide:arrow-up-right" width="15px" stroke=3/>
 															</Tooltip.Trigger>
 															<Tooltip.Content>
-																<p>{ov.object.outboundLinks?.length??0} outbound links</p>
+																<p>{ov.object.outboundLinks?.length??0} outbound {ov.object.outboundLinks?.length === 1 ? "link" : "links"}</p>
 															</Tooltip.Content>
 														</Tooltip.Root>
 														{/if}
@@ -192,10 +192,10 @@
 														{#if ov.inboundLinks.length > 0}
 														<Tooltip.Root openDelay={200}>
 															<Tooltip.Trigger>
-																<Icon icon="ci:arrow-down-left-lg" width="15px"/>
+																<Icon icon="lucide:arrow-up-left" width="15px" stroke-width=5/>
 															</Tooltip.Trigger>
 															<Tooltip.Content>
-																<p>{ov.inboundLinks.length} outbound links</p>
+																<p>{ov.inboundLinks.length} inbound {ov.inboundLinks.length === 1 ? "link" : "links"}</p>
 															</Tooltip.Content>
 														</Tooltip.Root>
 														{/if}
@@ -206,7 +206,7 @@
 									{:else}
 										<ContextMenu.Root closeOnOutsideClick closeFocus closeOnEscape>
 											<ContextMenu.Trigger class="w-full">
-											<div class="flex flex-row">
+											<div class="flex flex-row items-center">
 												<div class="markdown min-w-[320px] grow">
 													{#if ov.object.header !== ""}
 													{@html marked(generateHashString(ov.object.level) + ov.object.level + " " + ov.object.header)}
@@ -214,27 +214,27 @@
 													{@html marked(ov.object.content)}
 												</div>
 												{#if showLinks}
-													<div class="flex flex-col justify-between">
-														<div class="text-red-500">
+													<div class="flex flex-col justify-center gap-2">
+														<div class="text-red-500 px-1">
 															{#if ov.object.outboundLinks?.length??0 > 0}
 															<Tooltip.Root openDelay={200}>
 																<Tooltip.Trigger>
-																	<Icon icon="ci:arrow-up-right-lg" width="15px"/>
+																	<Icon icon="lucide:arrow-up-right" width="15px" stroke=3/>
 																</Tooltip.Trigger>
 																<Tooltip.Content>
-																	<p>{ov.object.outboundLinks?.length??0} outbound links</p>
+																	<p>{ov.object.outboundLinks?.length??0} outbound {ov.object.outboundLinks?.length === 1 ? "link" : "links"}</p>
 																</Tooltip.Content>
 															</Tooltip.Root>
 															{/if}
 														</div>
-														<div class="text-yellow-500">
+														<div class="text-yellow-500 px-1">
 															{#if ov.inboundLinks.length > 0}
 															<Tooltip.Root openDelay={200}>
 																<Tooltip.Trigger>
-																	<Icon icon="ci:arrow-down-left-lg" width="15px"/>
+																	<Icon icon="lucide:arrow-up-left" width="15px" stroke=3/>
 																</Tooltip.Trigger>
 																<Tooltip.Content>
-																	<p>{ov.inboundLinks.length} outbound links</p>
+																	<p>{ov.inboundLinks.length} inbound {ov.inboundLinks.length === 1 ? "link" : "links"}</p>
 																</Tooltip.Content>
 															</Tooltip.Root>
 															{/if}

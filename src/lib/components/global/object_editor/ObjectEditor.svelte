@@ -1,6 +1,6 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
-    import LinkForm from "$lib/components/forms/module/LinkForm.svelte";
+    import LinkForm from "$lib/components/global/object_editor/LinkForm.svelte";
     import Separator from "$lib/components/ui/separator/separator.svelte";
     import AttributeInput from "./AttributeInput.svelte";
     import { user } from "$lib/stores/User";
@@ -18,6 +18,8 @@
     import type { ObjectView } from "$lib/components/structs/Object";
     import type { Module } from "$lib/components/structs/Module";
     import "./markdown.css";
+    import path from "path";
+    import { repository } from "$lib/stores/Repository";
     
     export let objectView: ObjectView;
     export let module: Module;
@@ -56,7 +58,9 @@
     }
 
     function handleVisitLink(event: any) {
-        goto("/module/" + encodePath(event.detail.link.path) + "#" + event.detail.link.object);
+        let linkPath = path.normalize(event.detail.link.path);
+        let repoPath = path.normalize($repository?.tree.path);
+        goto("/module/" + encodePath(path.join(repoPath, linkPath)) + "#" + event.detail.link.object);
     }
 
     $: {
@@ -103,7 +107,7 @@
                     <Input id="name" value={module.manifest.prefix+module.manifest.separator+objectView.object.id} class="col-span-3" disabled/>
                     {/if}
                     <Label for="name" class="text-right col-span-1">Level</Label>
-                    <Input id="name" bind:value={objectView.object.level} class="col-span-3" disabled={!allowChanges}/>
+                    <Input id="name" bind:value={objectView.object.level} class="col-span-3" disabled={!allowChanges} autocomplete="off"/>
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:bars-descending-align-left-arrow-down" width="15px"/>
@@ -115,7 +119,7 @@
                 </div>
                 <div class="grid grid-cols-8 items-center gap-2 px-1">
                     <Label for="name" class="text-right col-span-1">Header</Label>
-                    <Input id="name" bind:value={objectView.object.header}  class="col-span-7" disabled={!allowChanges}/>
+                    <Input id="name" bind:value={objectView.object.header}  class="col-span-7" disabled={!allowChanges} autocomplete="off"/>
                     <!-- 
                     <Button variant="secondary" class="cursor-default col-span-1">
                         <Icon icon="gravity-ui:text-indent" width="15px"/>
