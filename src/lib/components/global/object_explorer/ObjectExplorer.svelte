@@ -312,11 +312,13 @@
 						{#if !readOnly}
 						<Table.Head class="w-[30px] text-center">
 							<Table.Cell class="w-[30px]">
+								{#if !ov.object.deletedAt}
 								<Button variant="ghost" on:click={() => onEditClick(ov)}>
 									<div class="flex justify-center items-center">
 										<Icon icon="gravity-ui:pencil-to-square" width="20px"/>
 									</div>
 								</Button>
+								{/if}
 							</Table.Cell>
 						</Table.Head>
 						{/if}
