@@ -112,11 +112,8 @@ impl Module {
 				module: self.manifest.prefix.clone(),
 			};
 
-			println!("Inbound Link Path: {}", inbound_link.path.display());
-
 			for outbound_link in outbound_links {
 				let module_path: PathBuf = Module::add_paths(&repo_path, &outbound_link.path);
-				println!("Outbound Link Path: {}", repo_path.join(&outbound_link.path.clone()).display());
 				let res_module: Result<Module, ModuleError> = Module::read(&module_path);
 				if let Err(_) = res_module {
 					continue;

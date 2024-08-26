@@ -7,6 +7,7 @@ use crate::core::middleware::error::MiddlewareError;
 use crate::core::project;
 use crate::core::module;
 use crate::core::repository;
+use crate::core::utils::path_utils;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all="lowercase")]
@@ -24,6 +25,7 @@ pub enum TreeItemType {
 pub struct TreeItem {
     pub item_type: TreeItemType,
     pub name: String,
+    #[serde(with = "path_utils")]
     pub path: PathBuf,
     pub children: Vec<TreeItem>,
 }

@@ -175,8 +175,8 @@
 												</s>
 											</div>
 											{#if showLinks}
-												<div class="flex flex-col justify-between">
-													<div class="text-red-500">
+												<div class="flex flex-col justify-center gap-2 pl-2">
+													<div class="text-red-500 p1">
 														{#if ov.object.outboundLinks?.length??0 > 0}
 														<Tooltip.Root openDelay={200}>
 															<Tooltip.Trigger>
@@ -188,11 +188,11 @@
 														</Tooltip.Root>
 														{/if}
 													</div>
-													<div class="text-yellow-500">
+													<div class="text-yellow-500 p1">
 														{#if ov.inboundLinks.length > 0}
 														<Tooltip.Root openDelay={200}>
 															<Tooltip.Trigger>
-																<Icon icon="lucide:arrow-up-left" width="15px" stroke-width=5/>
+																<Icon icon="lucide:arrow-down-left" width="15px" stroke-width=5/>
 															</Tooltip.Trigger>
 															<Tooltip.Content>
 																<p>{ov.inboundLinks.length} inbound {ov.inboundLinks.length === 1 ? "link" : "links"}</p>
@@ -214,8 +214,8 @@
 													{@html marked(ov.object.content)}
 												</div>
 												{#if showLinks}
-													<div class="flex flex-col justify-center gap-2">
-														<div class="text-red-500 px-1">
+													<div class="flex flex-col justify-center gap-2 pl-2">
+														<div class="text-red-500 p1">
 															{#if ov.object.outboundLinks?.length??0 > 0}
 															<Tooltip.Root openDelay={200}>
 																<Tooltip.Trigger>
@@ -227,11 +227,11 @@
 															</Tooltip.Root>
 															{/if}
 														</div>
-														<div class="text-yellow-500 px-1">
+														<div class="text-yellow-500 p1">
 															{#if ov.inboundLinks.length > 0}
 															<Tooltip.Root openDelay={200}>
 																<Tooltip.Trigger>
-																	<Icon icon="lucide:arrow-up-left" width="15px" stroke=3/>
+																	<Icon icon="lucide:arrow-down-left" width="15px" stroke=3/>
 																</Tooltip.Trigger>
 																<Tooltip.Content>
 																	<p>{ov.inboundLinks.length} inbound {ov.inboundLinks.length === 1 ? "link" : "links"}</p>
@@ -312,11 +312,13 @@
 						{#if !readOnly}
 						<Table.Head class="w-[30px] text-center">
 							<Table.Cell class="w-[30px]">
+								{#if !ov.object.deletedAt}
 								<Button variant="ghost" on:click={() => onEditClick(ov)}>
 									<div class="flex justify-center items-center">
 										<Icon icon="gravity-ui:pencil-to-square" width="20px"/>
 									</div>
 								</Button>
+								{/if}
 							</Table.Cell>
 						</Table.Head>
 						{/if}
