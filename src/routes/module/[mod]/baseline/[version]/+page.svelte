@@ -454,11 +454,28 @@
 		}
 	}
 
+	function saveCurrentState() {
+		const scroll = getScrollPosition();
+		const currentView = JSON.parse(JSON.stringify(view))
+		const state = {
+			scrollX: scroll?.x??0,
+			scrollY: scroll?.y??0,
+			view: currentView,
+			showRowNumberFlag,
+			selectedObject,
+			editPanelFlag,
+			showLinksFlag,
+			readOnlyFlag,
+		};
+		pageState.setPageState(tabKey, state);
+	}
+
 	function setupPage() {
 		const params = $page.params;
 		const url: string = $page.url.pathname;
 		const name: string = params.mod.substring($repository?.tree.path.length);
 		const version: string = params.version;
+		saveCurrentState();
 		loadRepository();
 		loadHomeToolbar();
 		load(params.mod).then(() => {
@@ -480,21 +497,6 @@
 		setupPage();
 	})
 	
-	beforeUpdate(() => {
-		const scroll = getScrollPosition();
-		const state = {
-			scrollX: scroll?.x??0,
-			scrollY: scroll?.y??0,
-			view,
-			showRowNumberFlag,
-			selectedObject,
-			editPanelFlag,
-			showLinksFlag,
-			readOnlyFlag,
-		};
-		pageState.setPageState(tabKey, state);
-	});
-
 </script>
 
 <div class="bg-slate-50 h-full py-1">
