@@ -412,7 +412,15 @@ impl Module {
 			fn parse_level(level: &str) -> Vec<Result<i32, &str>> {
 				level
 					.split(|c| c == '.' || c == '-')
-					.map(|part| part.parse::<i32>().map_err(|_| part))
+					.filter(|part| !part.is_empty())
+					.map(|part| {
+						let part = part.trim_end_matches('0');
+						if part.is_empty() {
+							Ok(0)
+						} else {
+							part.parse::<i32>().map_err(|_| part)
+						}
+					})
 					.collect()
 			}
 		

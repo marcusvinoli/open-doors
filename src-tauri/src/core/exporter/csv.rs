@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 use csv::WriterBuilder;
+use regex::Regex;
+
 use crate::core::module::{Module, object::Object};
 
 #[cfg(windows)]
@@ -12,6 +14,7 @@ const LINE_ENDING : &'static str = "\n";
 pub struct CsvOptions {
 	default_view: bool,
 	show_deleted: bool,
+	keep_markdown: bool,
 }
 
 impl CsvOptions {
@@ -24,6 +27,7 @@ impl CsvOptions {
 pub struct CsvOptionsBuilder {
 	default_view: bool,
 	show_deleted: bool,
+	keep_markdown:bool,
 }
 
 impl CsvOptionsBuilder {
@@ -37,10 +41,16 @@ impl CsvOptionsBuilder {
 		self
 	}
 
+	pub fn keep_markdown(mut self, yes: bool) -> Self {
+		self.keep_markdown = yes;
+		self
+	}
+
 	pub fn build(self) -> CsvOptions {
 		CsvOptions { 
 			default_view: self.default_view, 
 			show_deleted: self.show_deleted,
+			keep_markdown: self.keep_markdown,
 		}
 	}
 }
@@ -64,13 +74,13 @@ struct CsvObjectInterface {
 }
 
 impl CsvObjectInterface {
-	pub fn from_objects(module: &Module, objects: Vec<Object>) -> Vec<CsvObjectInterface> {
-		objects.into_iter().map(|obj| CsvObjectInterface::from_object(&module, obj)).collect()
+	pub fn from_objects(module: &Module, objects: Vec<Object>, keep_markdown: bool) -> Vec<CsvObjectInterface> {
+		objects.into_iter().map(|obj| CsvObjectInterface::from_object(&module, obj, keep_markdown)).collect()
 	}
 
-	pub fn from_object(module: &Module, object: Object) -> CsvObjectInterface {
+	pub fn from_object(module: &Module, object: Object, keep_markdown: bool) -> CsvObjectInterface {
 		let id: String;
-		let content: String;
+		let mut content: String;
 		let active: String;
 		let requirement: String;
 		let normative: String;
@@ -89,6 +99,10 @@ impl CsvObjectInterface {
 			object.content
 		};
 
+		if !keep_markdown {
+			content = CsvObjectInterface::remove_markdown(&content);
+		} 
+
 		CsvObjectInterface {
 			id,
 			level,
@@ -100,6 +114,23 @@ impl CsvObjectInterface {
 		}
 	}
 
+	fn remove_markdown(input: &str) -> String {
+		let re_bold = Regex::new(r"\*\*(.*?)\*\*").unwrap();     // Bold: **text**
+		let re_italic = Regex::new(r"\*(.*?)\*").unwrap();        // Italic: *text*
+		let re_italic_underline = Regex::new(r"_(.*?)_").unwrap();     // Underscore Underline: _text_
+		let re_header = Regex::new(r"#+\s*(.*)").unwrap();        // Header: # Headers
+		let re_links = Regex::new(r"\[.*?\]\(.*?\)").unwrap();    // Links: [text](link)
+		let re_inline_code = Regex::new(r"`(.*?)`").unwrap();     // Code: `code`
+	
+		let result = re_bold.replace_all(input, "$1");
+		let result = re_italic.replace_all(&result, "$1");
+		let result = re_italic_underline.replace_all(&result, "$1");
+		let result = re_header.replace_all(&result, "$1");
+		let result = re_links.replace_all(&result, "$1 ($2)");
+		let result = re_inline_code.replace_all(&result, "$1");
+
+		result.to_string()
+	}
 }
 
 pub struct CsvExporter {
@@ -109,14 +140,14 @@ pub struct CsvExporter {
 impl CsvExporter {
 	pub fn export<T: Into<String> + ?Sized>(path: &PathBuf, filename: T, module: &Module, objects: Vec<Object>, options: &CsvOptions) -> bool {
 		let objects: Vec<Object> = if options.show_deleted {
-			objects.into_iter().filter(|o| o.deleted_at.is_none()).collect()
-		} else {
 			objects
+		} else {
+			objects.into_iter().filter(|o| o.deleted_at.is_none()).collect()
 		};
 		
 		let file_path: PathBuf = path.join(Into::<String>::into(filename));
 
-		let csv_int: Vec<CsvObjectInterface> = CsvObjectInterface::from_objects(module, objects);
+		let csv_int: Vec<CsvObjectInterface> = CsvObjectInterface::from_objects(module, objects, options.keep_markdown);
 
 		if let Ok(mut csv) = WriterBuilder::new()
 			.flexible(true)
@@ -134,4 +165,5 @@ impl CsvExporter {
 			}
 		false
 	}
+
 }
