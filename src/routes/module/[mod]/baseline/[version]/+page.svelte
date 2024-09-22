@@ -14,13 +14,16 @@
 	import { loadRepository } from "$lib/controllers/Repository";
 	import { beforeUpdate, onMount } from "svelte";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-	import { createDraftObject, createObject, deleteObject, readDraftObjects, readModuleFromPath, readObjects } from "$lib/controllers/Module";
+	import { createDraftObject, createObject, deleteObject, exportCSV, readDraftObjects, readModuleFromPath, readObjects } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import type { View } from "$lib/components/global/object_explorer/viewStructs";
 	import type { Module } from "$lib/components/structs/Module";
 	import type { IHash, Link, ObjectView } from "$lib/components/structs/Object";
 	import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
     import type { Template } from "$lib/components/structs/Template";
+    import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
+    import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
+    import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
 	
 	let selectedObject: ObjectView | null = null;
 	let objects: ObjectView[] = [];
@@ -93,6 +96,30 @@
 			},
 		}
 
+		let exportButton: ToolbarButtonType = {
+			type: "button",
+			tooltip: "Export module...",
+			icon: "gravity-ui:file-arrow-right-out",
+			action: () => {},
+		}
+
+		let exportExcelButton: ToolbarButtonType = {
+			type: "button",
+			tooltip: "Microsoft Excel (.xlsx)",
+			icon: "ri:file-excel-2-fill",
+			action: () => {},
+		}
+
+		let exportCSVButton: ToolbarButtonType = {
+			type: "button",
+			tooltip: "Comma-Separeted Value (.csv)",
+			icon: "ph:file-csv",
+			action: () => {
+				console.log(module.path);
+				exportCSV(module.path).then((res) => console.log(res))
+			},
+		}
+
 		let readOnlyModeButton: ToolbarButtonType = {
 			type: "button",
 			tooltip: "Toggle Edit Mode",
@@ -161,6 +188,25 @@
 			],
 			type: "dropdown",
 		}
+
+		let expGroup: ToolbarDropdownType = {
+			button: exportButton,
+			items: [
+				{
+					items: [
+						exportExcelButton,
+					],
+					type: "buttonsGroup",
+				},
+				{
+					items: [
+						exportCSVButton,
+					],
+					type: "buttonsGroup",
+				},
+			],
+			type: "dropdown"
+		}
 	
 		let navigationGroup: ToolbarGroupType = {
 			items: [homeButton],
@@ -169,6 +215,11 @@
 	
 		let newGroup: ToolbarGroupType = {
 			items: [creationGroup],
+			type: "buttonsGroup"
+		}
+		
+		let exportGroup: ToolbarGroupType = {
+			items: [expGroup],
 			type: "buttonsGroup"
 		}
 
@@ -185,6 +236,7 @@
 		addToolbarItem(navigationGroup);
 		addToolbarItem(newGroup);
 		addToolbarItem(viewGrouplView);
+		addToolbarItem(exportGroup);
 		addToolbarItem(templateButton);
 
 	}

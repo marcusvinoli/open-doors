@@ -1,3 +1,4 @@
+import { open } from '@tauri-apps/api/dialog';
 import { invoke } from "@tauri-apps/api";
 import { reloadRepository } from "./Repository";
 import type { TreeItem } from "$lib/components/structs/Tree"
@@ -76,4 +77,15 @@ export function deleteObject(modulePath: String, id: number) {
 
 export function saveTemplate(modulePath: String, template: Template) {
     return invoke('update_template', {path: modulePath, template: template})
+}
+
+export async function exportCSV(modulePath: String) {
+    const folder = await open({
+        directory: true,
+        multiple: false
+    });
+    if (folder) {
+        let path = folder as string;
+        return invoke('export_csv', {modulePath: modulePath, filePath: path})
+    }
 }

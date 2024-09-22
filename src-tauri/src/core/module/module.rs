@@ -191,7 +191,7 @@ impl Module {
 			}
 		}
 
-		Ok(objs)
+		Ok(Module::sort_by_level(objs))
 	}
 
 	pub fn read_draft_objects(&mut self) -> Result<Vec<Object>, ModuleError> {
@@ -220,7 +220,7 @@ impl Module {
 			}
 		}
 		
-		Ok(objs)
+		Ok(Module::sort_by_level(objs))
 	}
 	
 	pub fn update_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
@@ -406,4 +406,54 @@ impl Module {
 		Ok(mid::read_yml_file::<Object, _>(path, format!("{id}.yml"))?)
 	}
 
+	fn sort_by_level(mut objects: Vec<Object>) -> Vec<Object> {
+
+		fn compare_levels(a: &str, b: &str) -> i32 {
+			fn parse_level(level: &str) -> Vec<Result<i32, &str>> {
+				level
+					.split(|c| c == '.' || c == '-')
+					.map(|part| part.parse::<i32>().map_err(|_| part))
+					.collect()
+			}
+		
+			let a_parts = parse_level(a);
+			let b_parts = parse_level(b);
+		
+			let len = std::cmp::max(a_parts.len(), b_parts.len());
+		
+			for i in 0..len {
+				let a_part = a_parts.get(i);
+				let b_part = b_parts.get(i);
+		
+				if a_part.is_none() {
+					return -1;
+				}
+				if b_part.is_none() {
+					return 1;
+				}
+		
+				match (a_part.unwrap(), b_part.unwrap()) {
+					(Ok(a_num), Ok(b_num)) => {
+						if a_num != b_num {
+							return a_num - b_num;
+						}
+					}
+					(Err(a_str), Err(b_str)) => {
+						let cmp = a_str.cmp(b_str);
+						if cmp != std::cmp::Ordering::Equal {
+							return cmp as i32;
+						}
+					}
+					(Ok(_), Err(_)) => return -1,
+					(Err(_), Ok(_)) => return 1,
+				}
+			}
+
+			0
+		}
+		
+		objects.sort_by(|a, b| compare_levels(&a.level, &b.level).cmp(&0));
+
+		objects
+	}
 }

@@ -79,8 +79,8 @@ impl<'de> Visitor<'de> for SemVerVisitor {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Baseline {
-    version: SemVer,
-    description: String,
+    pub version: SemVer,
+    pub description: String,
     #[serde(skip_serializing_if="Option::is_none")]
-    commit: Option<String>,
+    pub commit: Option<String>,
 }

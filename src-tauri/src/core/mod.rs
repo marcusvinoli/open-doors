@@ -6,3 +6,4 @@ pub mod module;
 pub mod project;
 pub mod repository;
 pub mod middleware;
+pub mod exporter;
