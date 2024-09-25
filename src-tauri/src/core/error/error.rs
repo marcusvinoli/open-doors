@@ -13,8 +13,12 @@ pub enum OpenDoorsError {
     ModuleError(#[from] ModuleError),
     #[error("MIDDLEWARE ERROR: {0}")]
     TreeError(#[from] TreeError),
-    #[error("Generic middleware error! {0}")]
+    #[error("GENERIC MIDDLEWARE ERROR: {0}")]
     MiddlewareError(#[from] MiddlewareError),
+    #[error("CSV EXPORT ERROR: {0}")]
+    CsvExporterError(#[from] csv::Error),
+    #[error("XLSX EXPORT ERROR: {0}")]
+    XlsxExporterError(#[from] xlsxwriter::XlsxError),
     #[error("{0}")]
     GenericError(String)
 }

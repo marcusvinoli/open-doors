@@ -14,7 +14,7 @@
 	import { loadRepository } from "$lib/controllers/Repository";
 	import { beforeUpdate, onMount } from "svelte";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-	import { createDraftObject, createObject, deleteObject, exportCSV, readDraftObjects, readModuleFromPath, readObjects } from "$lib/controllers/Module";
+	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readDraftObjects, readModuleFromPath, readObjects } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import type { View } from "$lib/components/global/object_explorer/viewStructs";
 	import type { Module } from "$lib/components/structs/Module";
@@ -107,7 +107,9 @@
 			type: "button",
 			tooltip: "Microsoft Excel (.xlsx)",
 			icon: "ri:file-excel-2-fill",
-			action: () => {},
+			action: () => {
+				exportXlsx(module.path).then((res) => console.log(res))
+			},
 		}
 
 		let exportCSVButton: ToolbarButtonType = {
@@ -115,7 +117,6 @@
 			tooltip: "Comma-Separeted Value (.csv)",
 			icon: "ph:file-csv",
 			action: () => {
-				console.log(module.path);
 				exportCSV(module.path).then((res) => console.log(res))
 			},
 		}

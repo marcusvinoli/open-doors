@@ -7,12 +7,12 @@ use regex::Regex;
 use crate::core::module::{Module, object::Object};
 
 #[cfg(windows)]
-const LINE_ENDING : &'static str = "\r\n";
+const LINE_ENDING : &str = "\r\n";
 #[cfg(not(windows))]
-const LINE_ENDING : &'static str = "\n";
+const LINE_ENDING : &str = "\n";
 
 pub struct CsvOptions {
-	default_view: bool,
+	default_view: bool, // Reserved for future usage. 
 	show_deleted: bool,
 	keep_markdown: bool,
 }
@@ -31,8 +31,8 @@ pub struct CsvOptionsBuilder {
 }
 
 impl CsvOptionsBuilder {
-	pub fn default_view(mut self) -> Self {
-		self.default_view = true;
+	pub fn default_view(mut self, yes: bool) -> Self {
+		self.default_view = yes;
 		self
 	}
 
@@ -61,7 +61,7 @@ struct CsvObjectInterface {
 	level: String,
 	#[serde(rename="ID")]
 	id: String,
-	#[serde(rename="Content")]
+	#[serde(rename="Object Text")]
 	content: String,
 	#[serde(rename="Author")]
 	author: String,

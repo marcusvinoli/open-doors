@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-#[derive( Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
 pub enum DataType {
     #[default]
@@ -23,15 +23,15 @@ pub enum DataType {
     NullableOptions(Option<Vec<String>>), // Multiple options. Not obrigatory.
 }
 
-#[derive( Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
 pub struct Fields {
-    attribute: String,
-    kind: DataType,
-    key: String,
+    pub attribute: String,
+    pub kind: DataType,
+    pub key: String,
 }
 
-#[derive( Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
 pub struct Template {
     pub fields: Vec<Fields>

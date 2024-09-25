@@ -89,3 +89,14 @@ export async function exportCSV(modulePath: String) {
         return invoke('export_csv', {modulePath: modulePath, filePath: path})
     }
 }
+
+export async function exportXlsx(modulePath: String) {
+    const folder = await open({
+        directory: true,
+        multiple: false
+    });
+    if (folder) {
+        let path = folder as string;
+        return invoke('export_xlsx', {modulePath: modulePath, filePath: path})
+    }
+}
