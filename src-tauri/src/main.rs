@@ -36,6 +36,8 @@ fn main() {
 		od_handlers::module::create_template,
 		od_handlers::module::read_template,
 		od_handlers::module::update_template,
+		od_handlers::exporters::export_csv,
+		od_handlers::exporters::export_xlsx,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running OpenDOORS.");
