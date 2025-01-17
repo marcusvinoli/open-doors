@@ -28,7 +28,7 @@ export async function openRepository(path: string) {
 }
 
 export async function cloneRepository(path: string, remote: string) {
-    return invoke('clone_repo', {path: path, remote: remote})
+    return invoke('clone_repository', {path: path, remote: remote})
         .then((repo) => {
             saveRepository(repo as Repository);
         })
@@ -38,7 +38,7 @@ export async function cloneRepository(path: string, remote: string) {
 }
 
 export async function createRepository(path: string, name: string, remote: string | null) {
-    return invoke('create_repo', {path: path, name: name, remote: remote})
+    return invoke('create_repository', {path: path, name: name, remote: remote})
         .then((repo) => {
             saveRepository(repo as Repository);
         })
@@ -48,7 +48,7 @@ export async function createRepository(path: string, name: string, remote: strin
 }
 
 export async function reloadRepository() {
-    invoke('read_repo', {path: loadRepository().tree.path})
+    invoke('read_repository', {path: loadRepository().tree.path})
         .then((repo) => {
             saveRepository(repo as Repository)
         })
