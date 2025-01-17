@@ -19,6 +19,8 @@ pub enum OpenDoorsError {
     CsvExporterError(#[from] csv::Error),
     #[error("XLSX EXPORT ERROR: {0}")]
     XlsxExporterError(#[from] xlsxwriter::XlsxError),
+    #[error("GIT2 LIBRARY ERROR: {0}")]
+    Git2Error(#[from] git2::Error),
     #[error("{0}")]
     GenericError(String)
 }

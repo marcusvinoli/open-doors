@@ -4,14 +4,20 @@ pub mod handlers;
 pub mod core;
 pub mod git;
 
+use std::sync::Mutex; 
+use git2::Repository;
+use tauri::Manager; 
+
+type  CurrentRepository = Mutex<Option<Repository>>;
+
 use crate::handlers as od_handlers;
 
 fn main() {
 	tauri::Builder::default()
 		.invoke_handler(tauri::generate_handler![
-		od_handlers::repository::create_repo,
-		od_handlers::repository::clone_repo,
-		od_handlers::repository::read_repo,
+		od_handlers::repository::create_repository,
+		od_handlers::repository::clone_repository,
+		od_handlers::repository::read_repository,
 		od_handlers::user::get_user,
 		od_handlers::tree::read_tree,
 		od_handlers::project::create_project,
@@ -39,6 +45,10 @@ fn main() {
 		od_handlers::exporters::export_csv,
 		od_handlers::exporters::export_xlsx,
 		])
+		.setup(|app| {
+			app.manage(Mutex::new(Option::<Repository>::None));
+			Ok(())
+		})
 		.run(tauri::generate_context!())
 		.expect("Error while running OpenDOORS.");
 }
