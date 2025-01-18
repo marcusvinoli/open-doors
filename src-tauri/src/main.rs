@@ -8,7 +8,6 @@ use std::sync::Mutex;
 use git2::Repository;
 use tauri::Manager; 
 
-type  CurrentRepository = Mutex<Option<Repository>>;
 
 use crate::handlers as od_handlers;
 
