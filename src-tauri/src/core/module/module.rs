@@ -1,10 +1,10 @@
 use std::{cmp::max, collections::HashMap, path::PathBuf, vec};
 
+use git2::Repository;
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
 
-use crate::core::{error::ModuleError, middleware as mid};
-
+use crate::core::{error::ModuleError, git, middleware as mid};
 use super::{baseline::Baseline, definitions as defs, links::Link, object::Object, template::Template};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -26,7 +26,8 @@ pub struct Module{
 }
 
 impl Module {
-	pub fn create(path: &PathBuf, man: &ModuleManifest) -> Result<Module, ModuleError> {
+	pub fn create(repo: &Option<Repository>, path: &PathBuf, man: &ModuleManifest) -> Result<Module, ModuleError> {
+		let repo = repo.as_ref().ok_or(ModuleError::NoRepositoryInitialized)?;
 		let module_path = mid::create_folder(&path, &man.prefix)?;
 		let baselines: Vec<Baseline> = vec![Baseline::default()];
 		let template: Template = Template::default();
@@ -37,9 +38,23 @@ impl Module {
 		mid::create_yml_file(&module_path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
 		mid::create_yml_file(&module_path, defs::OD_LINKS_FILE_NAME, &inbound_links)?;
 
-		mid::create_folder(&module_path, defs::OD_OBJS_FOLDER_NAME)?;
-		mid::create_folder(&module_path, defs::OD_DRAFT_FOLDER_NAME)?;
-		mid::create_folder(&module_path, defs::OD_ASSETS_FOLDER_NAME)?;
+		mid::create_file(
+			&mid::create_folder(&module_path, defs::OD_OBJS_FOLDER_NAME)?,
+			defs::OD_DUMMY_FILENAME
+		)?;
+	
+		mid::create_file(
+			&mid::create_folder(&module_path, defs::OD_DRAFT_FOLDER_NAME)?,
+			defs::OD_DUMMY_FILENAME
+		)?;
+		
+		mid::create_file(
+			&mid::create_folder(&module_path, defs::OD_ASSETS_FOLDER_NAME)?,
+			defs::OD_DUMMY_FILENAME
+		)?;
+
+		git::add_folder(&repo, &module_path.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Created module `{}`.", man.prefix))?;
 
 		Ok(Module { 
 			path: module_path, 
@@ -66,17 +81,24 @@ impl Module {
 		})
 	}
 	
-	pub fn update(path: &PathBuf, man: &ModuleManifest) -> Result<ModuleManifest, ModuleError> {
+	pub fn update(repo: &Option<Repository>, path: &PathBuf, man: &ModuleManifest) -> Result<ModuleManifest, ModuleError> {
 		Module::check_for_module_folder(&path)?;
-
-		mid::update_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
-		
+		let repo = repo.as_ref().ok_or(ModuleError::NoRepositoryInitialized)?;
+		let manifest_path = mid::update_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
+		git::add_file(&repo, &manifest_path.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Updated the manifest of module `{}`.", man.prefix))?;
 		Ok(mid::read_yml_file::<ModuleManifest, _>(&path, defs::OD_MODULE_MANIFEST_FILE_NAME)?)
 	}
 	
-	pub fn delete(path: &PathBuf) -> Result<(), ModuleError> {
+	pub fn delete(repo: &Option<Repository>, path: &PathBuf) -> Result<(), ModuleError> {
+		let repo = repo.as_ref().ok_or(ModuleError::NoRepositoryInitialized)?;
+		let repo_path = PathBuf::from(repo.path());
+		let module_location = path.strip_prefix(repo_path).unwrap_or(path).to_string_lossy();
 		Module::check_for_module_folder(&path)?;
-		Ok(mid::delete_folder(&path)?)
+		mid::delete_folder(&path)?;
+		git::add_folder(&repo, &path.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Deleted module located at `{}`.", &module_location))?;
+		Ok(())
 	}
 
 	pub fn read_object(&self, id: usize) -> Result<Object, ModuleError> {

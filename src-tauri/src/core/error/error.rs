@@ -89,8 +89,12 @@ pub enum ModuleError {
 	InvalidModuleDirectory,
 	#[error("GIT ERROR {0}")]
 	GitError(#[from] crate::git::GitError),
+	#[error("Git2 Error! {0}")]
+	Git2Error(#[from] git2::Error),
 	#[error("Unknown Error!")]
 	UnknownError,
+	#[error("No repository initialized!")]
+	NoRepositoryInitialized,
 }
 
 #[derive(Debug, Error)] 

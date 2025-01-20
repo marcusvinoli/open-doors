@@ -29,6 +29,7 @@ fn main() {
 		od_handlers::folder::delete_folder,
 		od_handlers::module::create_module,
 		od_handlers::module::read_module,
+		od_handlers::module::update_module,
 		od_handlers::module::create_object,
 		od_handlers::module::create_draft_object,
 		od_handlers::module::read_object,

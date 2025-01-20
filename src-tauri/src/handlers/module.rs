@@ -1,15 +1,24 @@
-use std::path::PathBuf;
-use tauri::command; 
+use std::{path::PathBuf, sync::Mutex};
+use git2::Repository as GitRepository;
+use tauri::{command, State}; 
 
 use crate::core::{error::OpenDoorsError, module::{links::Link, object::Object, template::Template, Module, ModuleManifest}, tree::TreeItem};
 
 #[command] 
-pub fn create_module(man: ModuleManifest, parent: TreeItem) -> Result<Module, OpenDoorsError> {
-    Ok(Module::create(&parent.path, &man)?)
+pub fn create_module(state: State<'_, Mutex<Option<GitRepository>>>, man: ModuleManifest, parent: TreeItem) -> Result<Module, OpenDoorsError> {
+    let repo = state.lock().unwrap();
+    Ok(Module::create(&repo, &parent.path, &man)?)
 }
 
 #[command]
 pub fn read_module(path: PathBuf) -> Result<Module, OpenDoorsError> {
+    Ok(Module::read(&path)?)
+}
+
+#[command]
+pub fn update_module(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, man: ModuleManifest) -> Result<Module, OpenDoorsError> {
+    let repo = state.lock().unwrap();
+    Module::update(&repo, &path, &man)?;
     Ok(Module::read(&path)?)
 }
 
