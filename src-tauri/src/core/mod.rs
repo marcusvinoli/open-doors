@@ -3,6 +3,7 @@ pub mod user;
 pub mod tree;
 pub mod utils;
 pub mod error;
+pub mod folder;
 pub mod module;
 pub mod project;
 pub mod exporter;

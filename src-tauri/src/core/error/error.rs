@@ -9,6 +9,8 @@ pub enum OpenDoorsError {
 	RespositoryError(#[from] RepositoryError),
 	#[error("PROJECT ERROR: {0}")]
 	ProjectError(#[from] ProjectError),
+	#[error("FOLDER ERROR: {0}")]
+	FolderError(#[from] FolderError),
 	#[error("MODULE ERROR: {0}")]
 	ModuleError(#[from] ModuleError),
 	#[error("MIDDLEWARE ERROR: {0}")]
@@ -61,8 +63,22 @@ pub enum ProjectError {
 	ProjectCouldNotBeCreated(String, String),
 	#[error("Fail reading project {0}: {1}")]
 	ProjectCouldNotBeRead(String, String),
+	#[error("Git2 Error! {0}")]
+	Git2Error(#[from] git2::Error),
+	#[error("No repository initialized!")]
+	NoRepositoryInitialized,
 	#[error("Unknown Error!")]
 	UnknownError,
+}
+
+#[derive(Debug, Error)]
+pub enum FolderError {
+	#[error("Generic middleware error! {0}")]
+	MiddlewareError(#[from] MiddlewareError),
+	#[error("Git2 Error! {0}")]
+	Git2Error(#[from] git2::Error),
+	#[error("No repository initialized!")]
+	NoRepositoryInitialized,
 }
 
 #[derive(Debug, Error)]

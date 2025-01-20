@@ -28,7 +28,6 @@ impl Repository {
 
 		mid::create_yml_file(&repo_path, defs::MANIFEST_FILE_NAME , &manifest)?;
 		git::create_ignore_rules(&git_repository, &defs::IGNORE_RULES)?;
-
 		git::add_file(&git_repository, ".gitignore")?;
 		git::add_file(&git_repository, defs::MANIFEST_FILE_NAME)?;
 

@@ -14,4 +14,6 @@ pub enum GitError {
     RepositoryNotEmpty,
     #[error("Error from UTF-8 conversion. {0}")]
     FromUtf8Error(#[from] FromUtf8Error),
+    #[error("Generic Error: {0}")]
+    GenericError(String),
 }

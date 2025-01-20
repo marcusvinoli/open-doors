@@ -44,22 +44,24 @@ pub fn move_file(origin: &PathBuf, destination: &PathBuf, filename: &String) -> 
 	Ok(())
 }
 
-pub fn delete_folder(path: &PathBuf) -> Result<(), MiddlewareError> {
+pub fn delete_folder(path: &PathBuf) -> Result<(),  MiddlewareError> {
 	Ok(fs::remove_dir_all(path)?)
 }
 
-pub fn create_file(path: &PathBuf, file_name: &str) -> Result<(), MiddlewareError> {
-	File::create(&path.join(file_name))?;
-	Ok(())
+pub fn create_file(path: &PathBuf, file_name: &str) -> Result<PathBuf, MiddlewareError> {
+	let file_path = &path.join(file_name);
+	File::create(file_path)?;
+	Ok(file_path.into())
 }
 
-pub fn create_yml_file<T: Serialize, S: AsRef<Path>>(path: &PathBuf, file_name: S, data: T) -> Result<(), MiddlewareError> {
+pub fn create_yml_file<T: Serialize, S: AsRef<Path>>(path: &PathBuf, file_name: S, data: T) -> Result<PathBuf, MiddlewareError> {
 	let contents: String = serde_yaml::to_string(&data)?;
-	File::create(&path.join(file_name))?.write_all(&mut contents.into_bytes())?;
-	Ok(())
+	let file_path: PathBuf = PathBuf::from(&path.join(file_name));
+	File::create(&file_path)?.write_all(&mut contents.into_bytes())?;
+	Ok(file_path.into())
 }
 
-pub fn update_yml_file<T: Serialize, S: AsRef<Path>>(path: &PathBuf, file_name: S, data: T) -> Result<(), MiddlewareError> {
+pub fn update_yml_file<T: Serialize, S: AsRef<Path>>(path: &PathBuf, file_name: S, data: T) -> Result<PathBuf, MiddlewareError> {
 	create_yml_file(path, file_name, data)
 }
 

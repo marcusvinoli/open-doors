@@ -1,7 +1,9 @@
 mod definitions;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use definitions as defs;
-use git2::{self, Error, ErrorClass, ErrorCode, RemoteCallbacks, Repository};
+use git2::{self, Error, ErrorClass, ErrorCode, IndexAddOption, RemoteCallbacks, Repository};
+
+use crate::git::GitError;
 
 use super::middleware;
 
@@ -27,8 +29,31 @@ pub fn add_remote(repo: &Repository, name: &str, url: &str) -> Result<()> {
 }
 
 pub fn add_file(repo: &Repository, path: &str) -> Result<()> {
+	let mut repo_path: PathBuf = PathBuf::from(repo.path());
+	repo_path.pop();
+	let add_path: PathBuf = PathBuf::from(path);
+	let path = if let Ok(relative) = add_path.strip_prefix(&repo_path) {
+		relative
+	} else {
+		add_path.as_path()
+	};
 	let mut index = repo.index()?;
 	index.add_path(&PathBuf::from(path))?;
+	index.write()?;
+	Ok(())
+}
+
+pub  fn  add_folder(repo: &Repository, path: &str) -> Result<()> {
+	let mut repo_path: PathBuf = PathBuf::from(repo.path());
+	repo_path.pop();
+	let add_path: PathBuf = PathBuf::from(path);
+	let path = if let Ok(relative) = add_path.strip_prefix(&repo_path) {
+		relative
+	} else {
+		add_path.as_path()
+	};
+	let mut index = repo.index()?;
+	index.add_all([path].iter(), IndexAddOption::DEFAULT, None)?;
 	index.write()?;
 	Ok(())
 }

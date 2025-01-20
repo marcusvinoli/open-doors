@@ -16,6 +16,9 @@ export async function readProject(project: TreeItem) {
         .then((prj) => {
             return prj as Project;
         })
+        .catch((e) => {
+            console.log("Fail reading project" + e)
+        })
 }
 
 export async function updateProject(project: TreeItem, man: ProjectManifest) {
