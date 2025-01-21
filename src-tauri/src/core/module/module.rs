@@ -5,7 +5,7 @@ use chrono::Utc;
 use serde::{Serialize, Deserialize};
 
 use crate::core::{error::ModuleError, git, middleware as mid};
-use super::{baseline::Baseline, definitions as defs, links::Link, object::Object, template::Template};
+use super::{baseline::{Baseline, SemVer}, definitions as defs, links::Link, object::Object, template::Template};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {
@@ -323,12 +323,29 @@ impl Module {
 		Ok(self.create_template(template)?)
 	}
 
-	pub fn create_baseline(path: &PathBuf) -> Result<Vec<Baseline>, ModuleError> {
-		todo!()
-	}
+	pub fn create_baseline(&self, repo: &Option<Repository>, path: &PathBuf, semver: &str, desc: Option<&str>) -> Result<Vec<Baseline>, ModuleError> {
+		let version: String = format!("{}/{}", self.manifest.prefix.to_lowercase(), semver);
+		let description: String = desc.unwrap_or_default().to_owned();
+		let repo: &Repository = Module::repo(&repo)?;
+		let hash: String = git::create_tag(&repo, &version, &description)?;
+		
+		let baseline: Baseline = Baseline { 
+			version: SemVer::from(&version), 
+			hash: Some(hash), 
+			description, 
+		};
 
+		let mut baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
+		baselines.push(baseline);
+		let baselines_path = mid::update_yml_file(&path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
+		git::add_file(&repo, baselines_path)?;
+		git::git_commit(&repo, &format!("Baselined module `{}` at version `{}` - `{}`.", self.manifest.prefix, version, desc))?;
+		Ok(baselines)
+	}
+	
 	pub fn read_baselines(path: &PathBuf) -> Result<Vec<Baseline>, ModuleError> {
-		todo!()
+		let mut baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
+		Ok(baselines)
 	}
 
 	pub fn read_from_baseline(path: &PathBuf, baseline: Baseline) -> Result<Vec<Object>, ModuleError> {

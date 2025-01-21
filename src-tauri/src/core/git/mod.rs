@@ -114,3 +114,15 @@ pub fn git_pull(repo: &git2::Repository) -> Result<()> {
 
 	Ok(())
 }
+
+pub fn create_tag(repo: &git2::Repository, version: &str, msg: &str) -> Result<String> {
+	let obj = repo.head()?.peel(ObjectType::Commit)?;
+	let signature = repo.signature()?;
+	Ok(repo.tag(&version, &obj, &signature, &msg, false)?.to_string())
+}
+
+pub fn push_tag(repo: &git2::Repository) -> Result<(), Error> {
+    let mut remote = repo.find_remote("origin")?;
+    remote.push(&["refs/heads/main", "refs/tags/*"], None)?;
+    Ok(())
+}
