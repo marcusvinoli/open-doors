@@ -27,8 +27,8 @@ pub struct Module{
 
 impl Module {
 	pub fn create(repo: &Option<Repository>, path: &PathBuf, man: &ModuleManifest) -> Result<Module, ModuleError> {
-		let repo = repo.as_ref().ok_or(ModuleError::NoRepositoryInitialized)?;
-		let module_path = mid::create_folder(&path, &man.prefix)?;
+		let repo: &Repository = Module::repo(&repo)?;
+		let module_path: PathBuf = mid::create_folder(&path, &man.prefix)?;
 		let baselines: Vec<Baseline> = vec![Baseline::default()];
 		let template: Template = Template::default();
 		let inbound_links: HashMap<usize, Vec<Link>> = HashMap::new();
@@ -83,17 +83,17 @@ impl Module {
 	
 	pub fn update(repo: &Option<Repository>, path: &PathBuf, man: &ModuleManifest) -> Result<ModuleManifest, ModuleError> {
 		Module::check_for_module_folder(&path)?;
-		let repo = repo.as_ref().ok_or(ModuleError::NoRepositoryInitialized)?;
-		let manifest_path = mid::update_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
+		let repo: &Repository = Module::repo(&repo)?;
+		let manifest_path: PathBuf = mid::update_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
 		git::add_file(&repo, &manifest_path.to_string_lossy())?;
 		git::git_commit(&repo, &format!("Updated the manifest of module `{}`.", man.prefix))?;
 		Ok(mid::read_yml_file::<ModuleManifest, _>(&path, defs::OD_MODULE_MANIFEST_FILE_NAME)?)
 	}
 	
 	pub fn delete(repo: &Option<Repository>, path: &PathBuf) -> Result<(), ModuleError> {
-		let repo = repo.as_ref().ok_or(ModuleError::NoRepositoryInitialized)?;
-		let repo_path = PathBuf::from(repo.path());
-		let module_location = path.strip_prefix(repo_path).unwrap_or(path).to_string_lossy();
+		let repo: &Repository = Module::repo(&repo)?;
+		let repo_path: PathBuf = PathBuf::from(repo.path());
+		let module_location: std::borrow::Cow<'_, str> = path.strip_prefix(repo_path).unwrap_or(path).to_string_lossy();
 		Module::check_for_module_folder(&path)?;
 		mid::delete_folder(&path)?;
 		git::add_folder(&repo, &path.to_string_lossy())?;
@@ -120,9 +120,10 @@ impl Module {
 		};
 	}
 	
-	pub fn create_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
+	fn prepare_object(&mut self, repo: &Option<Repository>, obj: &mut Object) -> Result<String, ModuleError> {
 		let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
-		
+		let filename: String = format!("{id}.yml");
+
 		if let Some(outbound_links) = &obj.outbound_links {
 			let mut valid_links: Vec<Link> = Vec::new();
 			let repo_path: PathBuf = self.get_repository_path().unwrap_or_default();
@@ -133,15 +134,14 @@ impl Module {
 				object: id.clone(),
 				module: self.manifest.prefix.clone(),
 			};
-
 			for outbound_link in outbound_links {
 				let module_path: PathBuf = Module::add_paths(&repo_path, &outbound_link.path);
-				let res_module: Result<Module, ModuleError> = Module::read(&module_path);
-				if let Err(_) = res_module {
-					continue;
-				}
-				if let Ok(_) = res_module.unwrap().create_inbound_link(&inbound_link, &outbound_link.object) {
-					valid_links.push(outbound_link.clone());
+				match Module::read(&module_path) {
+					Err(_) => continue,
+					Ok(module) => {
+						module.create_inbound_link(repo, &inbound_link, &outbound_link.object)?;
+						valid_links.push(outbound_link.clone());
+					},
 				}
 			}
 
@@ -151,17 +151,23 @@ impl Module {
 		}
 
 		self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
-		
-		let res = mid::move_file(&self.path.join(defs::OD_DRAFT_FOLDER_NAME),
-			&self.path.join(defs::OD_OBJS_FOLDER_NAME), &format!("{id}.yml"));
-		
-		if let Err(_) = res {
+
+		let origin = &self.path.join(defs::OD_DRAFT_FOLDER_NAME);
+		let destination = &self.path.join(defs::OD_OBJS_FOLDER_NAME);
+		if let Err(_) = mid::move_file(origin, destination, &filename) {
 			mid::create_folder(&self.path, defs::OD_OBJS_FOLDER_NAME)?;
-			mid::move_file(&self.path.join(defs::OD_DRAFT_FOLDER_NAME),
-			&self.path.join(defs::OD_OBJS_FOLDER_NAME), &format!("{id}.yml"))?;
+			mid::move_file(origin, destination, &filename)?;
 		}
 		
-		Ok(self.read_object(id)?)
+		Ok(destination.join(filename).to_string_lossy().into())
+	}
+
+	pub fn create_object(&mut self, repo: &Option<Repository>, obj: &mut Object) -> Result<Object, ModuleError> {
+		let obj_path = self.prepare_object(&repo, obj)?;
+		let repo: &Repository = Module::repo(&repo)?;
+		git::add_file(&repo, &obj_path)?;
+		git::git_commit(&repo, &format!("Created object `{}:{}`.", self.manifest.prefix, obj.id()))?;
+		Ok(self.read_object(obj.id())?)
 	}
 	
 	pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
@@ -169,11 +175,11 @@ impl Module {
 		Ok(self.read_draft_object(id)?)
 	}
 
-	pub fn create_objects(&mut self, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
+	pub fn create_objects(&mut self, repo: &Option<Repository>, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
 		let mut res: Vec<Object> = Vec::new();
 		for obj in objs {
 			let mut obj = obj.clone();
-			res.push(self.create_object(&mut obj)?);
+			res.push(self.create_object(repo, &mut obj)?);
 		}
 		Ok(res)
 	}
@@ -245,8 +251,11 @@ impl Module {
 		Ok(Module::sort_by_level(objs))
 	}
 	
-	pub fn update_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
-		let obj = self.create_object(obj)?;
+	pub fn update_object(&mut self, repo: &Option<Repository>, obj: &mut Object) -> Result<Object, ModuleError> {
+		let obj_path = self.prepare_object(&repo, obj)?;
+		let repo = Module::repo(&repo)?;
+		git::add_file(&repo, &obj_path)?;
+		git::git_commit(&repo, &format!("Updated object `{}:{}`.", self.manifest.prefix, obj.id()))?;
 		Ok(self.read_object(obj.id())?)
 	}
 	
@@ -254,10 +263,27 @@ impl Module {
 		self.create_draft_object(obj)
 	}
 
-	pub fn delete_object(&mut self, id: usize) -> Result<Object, ModuleError> {
+	pub fn delete_object(&mut self, repo: &Option<Repository>, id: usize) -> Result<Object, ModuleError> {
 		let mut obj = self.find_object(id)?;
 		obj.deleted_at = Some(Utc::now());
-		Ok(self.update_object(&mut obj)?)
+		let obj_path = self.prepare_object(&repo, &mut obj)?;
+		let repo_path = self.get_repository_path().ok_or(ModuleError::NoRepositoryInitialized)?;
+		if let Some(outbound_links) = &obj.outbound_links {
+			let inbound_link: Link = Link { 
+				path: self.path.strip_prefix(&repo_path).unwrap_or(&self.path).into(),
+				object: obj.id(),
+				module: self.manifest.prefix.clone(),
+			};
+			println!("{:?}", inbound_link);
+			for outbound_link in outbound_links {
+				let dest_mod: Module = Module::read(&repo_path.join(&outbound_link.path))?;
+				dest_mod.delete_inbound_link(&repo, &inbound_link)?;
+			}
+		}
+		let repo = Module::repo(&repo)?;
+		git::add_file(&repo, &obj_path)?;
+		git::git_commit(&repo, &format!("Deleted object `{}:{}`.", self.manifest.prefix, obj.id()))?;
+		Ok(self.read_object(obj.id())?)
 	}
 
 	pub fn create_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
@@ -309,20 +335,24 @@ impl Module {
 		todo!()
 	}
 
+	pub fn create_inbound_link(&self, repo: &Option<Repository>, link: &Link, id: &usize) -> Result<(), ModuleError> {
+		let repo: &Repository = Module::repo(repo)?;
+		let mut links: HashMap<usize, Vec<Link>> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
+		if Module::add_unique_link(&mut links, &id, &link) {
+			git::add_file(&repo, &mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?.to_string_lossy())?;
+			git::git_commit(&repo, &format!("Create link of `{}:{}` to `{}:{}`.", self.manifest.prefix, id, link.module, link.object))?;
+		}
+		Ok(())
+	}
+
 	pub fn read_inbound_links(&self) -> Result<HashMap<usize, Vec<Link>>, ModuleError> {
 		Ok(mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?)
 	}
 
-	pub fn create_inbound_link(&self, link: &Link, id: &usize) -> Result<HashMap<usize, Vec<Link>>, ModuleError> {
-		let mut links: HashMap<usize, Vec<Link>> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
-		Module::add_unique_link(&mut links, &id, &link);
-		mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?;
-		self.read_inbound_links()
-	}
-
-	pub fn delete_inbound_link(&self, link: &Link) -> Result<HashMap<usize, Vec<Link>>, ModuleError> {
+	pub fn delete_inbound_link(&self, repo: &Option<Repository>, link: &Link) -> Result<HashMap<usize, Vec<Link>>, ModuleError> {
 		let mut links: HashMap<usize, Vec<Link>> = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
 		let mut empty_keys: Vec<usize> = Vec::new();
+		let repo: &Repository = Module::repo(repo)?;
 
 		for (id, links) in links.iter_mut() {
 			links.retain(|x| x != link);
@@ -331,9 +361,12 @@ impl Module {
 			}
 		}
 
-		for id in empty_keys {
+		for id in &empty_keys {
 			links.remove(&id);
 		}
+
+		git::add_file(&repo, &mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Deleted link of `{}:{:?}` to `{}:{}`.", self.manifest.prefix, &empty_keys, link.module, link.object))?;
 
 		self.read_inbound_links()
 	}
@@ -364,12 +397,14 @@ impl Module {
 		return base.clone().join(relative);
 	}
 
-	fn add_unique_link(map: &mut HashMap<usize, Vec<Link>>, id: &usize, link: &Link) {
-		map.entry(id.clone())
-			.or_insert_with(Vec::new)
-			.iter()
-			.position(|x| *x == link.clone())
-			.map_or_else(|| map.get_mut(&id).unwrap().push(link.clone()), |_| {});
+	fn add_unique_link(map: &mut HashMap<usize, Vec<Link>>, id: &usize, link: &Link) -> bool {
+		let entry = map.entry(id.clone()).or_insert_with(Vec::new);
+		if entry.iter().any(|l| *l == *link) {
+			false
+		} else {
+			entry.push(link.clone());
+			true		
+		}
 	}
 
 	fn check_for_module_folder(path: &PathBuf) -> Result<(), ModuleError> {
@@ -485,5 +520,9 @@ impl Module {
 		objects.sort_by(|a, b| compare_levels(&a.level, &b.level).cmp(&0));
 
 		objects
+	}
+
+	fn repo(repo: &Option<Repository>) -> Result<&Repository, ModuleError> {
+		repo.as_ref().ok_or(ModuleError::NoRepositoryInitialized)
 	}
 }
