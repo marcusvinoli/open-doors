@@ -1,7 +1,7 @@
 mod definitions;
 use std::path::{PathBuf, Path};
 use definitions as defs;
-use git2::{self, Error, ErrorClass, ErrorCode, IndexAddOption, RemoteCallbacks, Repository};
+use git2::{self, Error, ErrorClass, ErrorCode, IndexAddOption, ObjectType, RemoteCallbacks, Repository};
 
 use crate::git::GitError;
 
@@ -121,7 +121,7 @@ pub fn create_tag(repo: &git2::Repository, version: &str, msg: &str) -> Result<S
 	Ok(repo.tag(&version, &obj, &signature, &msg, false)?.to_string())
 }
 
-pub fn push_tag(repo: &git2::Repository) -> Result<(), Error> {
+pub fn push_tag(repo: &git2::Repository) -> Result<()> {
     let mut remote = repo.find_remote("origin")?;
     remote.push(&["refs/heads/main", "refs/tags/*"], None)?;
     Ok(())

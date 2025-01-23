@@ -338,8 +338,8 @@ impl Module {
 		let mut baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
 		baselines.push(baseline);
 		let baselines_path = mid::update_yml_file(&path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
-		git::add_file(&repo, baselines_path)?;
-		git::git_commit(&repo, &format!("Baselined module `{}` at version `{}` - `{}`.", self.manifest.prefix, version, desc))?;
+		git::add_file(&repo, &baselines_path.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Baselined module `{}` at version `{}` - `{}`.", self.manifest.prefix, version, desc.unwrap_or_default()))?;
 		Ok(baselines)
 	}
 	
