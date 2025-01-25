@@ -2,7 +2,7 @@ use std::{path::PathBuf, sync::Mutex};
 use git2::Repository as GitRepository;
 use tauri::{command, State}; 
 
-use crate::core::{error::OpenDoorsError, module::{links::Link, object::Object, template::Template, Module, ModuleManifest}, tree::TreeItem};
+use crate::core::{error::OpenDoorsError, module::{object::Object, template::Template, Module, ModuleManifest}, tree::TreeItem};
 
 #[command] 
 pub fn create_module(state: State<'_, Mutex<Option<GitRepository>>>, man: ModuleManifest, parent: TreeItem) -> Result<Module, OpenDoorsError> {
