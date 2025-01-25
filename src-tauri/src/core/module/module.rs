@@ -310,8 +310,11 @@ impl Module {
 		todo!()
 	}
 
-	pub fn create_template(&self, template: Template) -> Result<Template, ModuleError> {
-		mid::create_yml_file(&self.path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
+	pub fn create_template(&self, repo: &Option<Repository>, template: Template) -> Result<Template, ModuleError> {
+		let repo = Module::repo(&repo)?;
+		let template_path = mid::create_yml_file(&self.path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
+		git::add_file(&repo, &template_path.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Created Module Template file for module {}.", self.manifest.prefix))?;
 		Ok(self.read_template()?)
 	}
 	
@@ -319,8 +322,12 @@ impl Module {
 		Ok(mid::read_yml_file::<Template,_>(&self.path, defs::OD_TEMPLATE_FILE_NAME)?)
 	}
 	
-	pub fn update_template(&self, template: Template) -> Result<Template, ModuleError> {
-		Ok(self.create_template(template)?)
+	pub fn update_template(&self, repo: &Option<Repository>, template: Template) -> Result<Template, ModuleError> {
+		let repo = Module::repo(&repo)?;
+		let template_path = mid::create_yml_file(&self.path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
+		git::add_file(&repo, &template_path.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Updated Module Template file for module {}.", self.manifest.prefix))?;
+		Ok(self.read_template()?)
 	}
 
 	pub fn create_baseline(&self, repo: &Option<Repository>, path: &PathBuf, semver: &str, desc: Option<&str>) -> Result<Vec<Baseline>, ModuleError> {

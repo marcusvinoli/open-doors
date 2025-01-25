@@ -82,9 +82,10 @@ pub fn delete_object(state: State<'_, Mutex<Option<GitRepository>>>, path: PathB
 }
 
 #[command]
-pub fn create_template(path: PathBuf, template: Template) -> Result<Template, OpenDoorsError> {
+pub fn create_template(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, template: Template) -> Result<Template, OpenDoorsError> {
+	let repo = state.lock().unwrap();
 	let module = Module::read(&path)?;
-	Ok(module.create_template(template)?)
+	Ok(module.create_template(&repo, template)?)
 }
 
 #[command]
@@ -94,7 +95,8 @@ pub fn read_template(path: PathBuf) -> Result<Template, OpenDoorsError> {
 }
 
 #[command]
-pub fn update_template(path: PathBuf, template: Template) -> Result<Template, OpenDoorsError> {
+pub fn update_template(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, template: Template) -> Result<Template, OpenDoorsError> {
+	let repo = state.lock().unwrap();
 	let module = Module::read(&path)?;
-	Ok(module.update_template(template)?)
+	Ok(module.update_template(&repo, template)?)
 }
