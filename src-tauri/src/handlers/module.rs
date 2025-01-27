@@ -2,7 +2,7 @@ use std::{path::PathBuf, sync::Mutex};
 use git2::Repository as GitRepository;
 use tauri::{command, State}; 
 
-use crate::core::{error::OpenDoorsError, module::{object::Object, template::Template, Module, ModuleManifest}, tree::TreeItem};
+use crate::core::{error::OpenDoorsError, module::{baseline::Baseline, object::Object, template::Template, Module, ModuleManifest}, tree::TreeItem};
 
 #[command] 
 pub fn create_module(state: State<'_, Mutex<Option<GitRepository>>>, man: ModuleManifest, parent: TreeItem) -> Result<Module, OpenDoorsError> {
@@ -49,7 +49,7 @@ pub fn read_draft_object(path: PathBuf, id: usize) -> Result<Object, OpenDoorsEr
 
 #[command]
 pub fn read_objects(path: PathBuf) -> Result<Vec<Object>, OpenDoorsError> {
-	let mut module = Module::read(&path)?;
+	let module = Module::read(&path)?;
 	Ok(module.read_objects()?)
 }
 
@@ -99,4 +99,12 @@ pub fn update_template(state: State<'_, Mutex<Option<GitRepository>>>, path: Pat
 	let repo = state.lock().unwrap();
 	let module = Module::read(&path)?;
 	Ok(module.update_template(&repo, template)?)
+}
+
+#[command]
+pub fn create_baseline(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, baseline: Baseline) -> Result<(), OpenDoorsError> {
+	let repo = state.lock().unwrap();
+	let module = Module::read(&path)?;
+	module.create_baseline(&repo, &baseline.version.to_string(), &baseline.description)?;
+	Ok(())
 }

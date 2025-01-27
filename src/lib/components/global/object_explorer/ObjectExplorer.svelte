@@ -116,7 +116,7 @@
 					{#each view.items as attributes}
 						{#if attributes.show}
 						<Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-							<ContextMenu.Root>
+							<ContextMenu.Root >
 								<ContextMenu.Trigger>
 									<div class={tableHeaderClass}>
 										{attributes.attribute}
@@ -243,7 +243,7 @@
 												{/if}
 											</div>
 											</ContextMenu.Trigger>
-											<ContextMenu.Content>
+											<ContextMenu.Content hidden={readOnly}>
 												{#if ov.isDraft}
 												<ContextMenu.Item on:click={() => {handleCommit(ov)}}>Commit changes</ContextMenu.Item>
 												{/if}

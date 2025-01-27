@@ -5,10 +5,10 @@
 	import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
-    import { user } from "$lib/stores/User";
+	import { user } from "$lib/stores/User";
 	import { addTab } from "$lib/stores/Tabs";
 	import { confirm } from '@tauri-apps/api/dialog';
-	import { pageState } from "./store";
+	import { pageState } from "../../store";
 	import { repository } from "$lib/stores/Repository";
 	import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
 	import { loadRepository } from "$lib/controllers/Repository";
@@ -20,17 +20,17 @@
 	import type { Module } from "$lib/components/structs/Module";
 	import type { IHash, Link, ObjectView } from "$lib/components/structs/Object";
 	import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
-    import type { Template } from "$lib/components/structs/Template";
-    import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
-    import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
-    import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
+	import type { Template } from "$lib/components/structs/Template";
+	import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
+	import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
+	import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
 	
 	let selectedObject: ObjectView | null = null;
 	let objects: ObjectView[] = [];
 	let module: Module;
 
 	let templateFlag: boolean = false;
-	let readOnlyFlag: boolean = false;
+	let readOnlyFlag: boolean = true;
 	let editPanelFlag: boolean = false;
 	let treePanelFlag: boolean = false;
 	let showLinksFlag: boolean = true;
@@ -58,41 +58,6 @@
 			icon: "gravity-ui:layout-header-side-content",
 			action: () => {
 				treePanelFlag = !treePanelFlag;
-			},
-		}
-
-		let templateManager: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Custom Attributes",
-			icon: "gravity-ui:shapes-3",
-			action: () => {
-				templateFlag = !templateFlag;
-			}
-		}
-		
-		let newButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "New...",
-			icon: "gravity-ui:circle-plus",
-			action: () => {},
-		}
-	
-		let newBaselineButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "New Baseline",
-			icon: "gravity-ui:tag",
-			action: () => {},
-		}
-	
-		let newObjectButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "New Object",
-			icon: "gravity-ui:square-chart-bar",
-			action: () => {
-				if(!editPanelFlag) {
-					selectedObject = createEmptyObject();
-					editPanelFlag = true;
-				}
 			},
 		}
 
@@ -130,22 +95,6 @@
 			},
 		}
 
-		let editModeButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Toggle Read-Only Mode",
-			icon: "lucide:pencil",
-			action: () => {
-				readOnlyFlag = false;
-			},
-		}
-
-		let viewModeButton: ToolbarToggleType = {
-			type: "toggle",
-			buttonOn: editModeButton,
-			buttonOff: readOnlyModeButton,
-			status: readOnlyFlag,
-		}
-
 		let showDeletionsButton: ToolbarButtonType = {
 			type: "button",
 			tooltip: "Show deletions",
@@ -169,25 +118,6 @@
 			buttonOn: showDeletionsButton,
 			buttonOff: dontShowDeletionsButton,
 			status: showDeletionsFlag,
-		}
-		
-		let creationGroup: ToolbarDropdownType = {
-			button: newButton,
-			items: [
-				{
-					items: [
-						newObjectButton,
-					],
-					type: "buttonsGroup",
-				},
-				{
-					items: [
-						newBaselineButton,
-					],
-					type: "buttonsGroup",
-				}
-			],
-			type: "dropdown",
 		}
 
 		let expGroup: ToolbarDropdownType = {
@@ -213,67 +143,54 @@
 			items: [homeButton],
 			type: "buttonsGroup"
 		}
-	
-		let newGroup: ToolbarGroupType = {
-			items: [creationGroup],
-			type: "buttonsGroup"
-		}
-		
+			
 		let exportGroup: ToolbarGroupType = {
 			items: [expGroup],
 			type: "buttonsGroup"
 		}
 
 		let viewGrouplView: ToolbarGroupType = {
-			items: [showTree, viewModeButton, deletionsModeButton],
-			type: "buttonsGroup"
-		}
-
-		let templateButton: ToolbarGroupType = {
-			items: [templateManager],
+			items: [showTree, deletionsModeButton],
 			type: "buttonsGroup"
 		}
 	
 		addToolbarItem(navigationGroup);
-		addToolbarItem(newGroup);
 		addToolbarItem(viewGrouplView);
 		addToolbarItem(exportGroup);
-		addToolbarItem(templateButton);
-
 	}
 
 	function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
-        template.fields.forEach((field) => {
-            if (!customFields[field.key]) {
-                customFields[field.key] = "";
-            }
-        })
-    }
+		template.fields.forEach((field) => {
+			if (!customFields[field.key]) {
+				customFields[field.key] = "";
+			}
+		})
+	}
 
 	function createEmptyObject(): ObjectView {
-        let customFields: IHash = {};
-        createCustomFieldHashFromTemplate(module.template, customFields);
-        return {
-            object: {
-                id: 0,
-                header: "",
-                content: "",
-                author: $user.toString()!,
-                isActive: true,
-                isNormative: false,
-                isRequirement: false,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deletedAt: null,
-                customFields: customFields,
-                level: "",
-                outboundLinks: [],
-            },
-            inboundLinks: [],
-            isDraft: false,
-            hasChanges: false,
-        }
-    }
+		let customFields: IHash = {};
+		createCustomFieldHashFromTemplate(module.template, customFields);
+		return {
+			object: {
+				id: 0,
+				header: "",
+				content: "",
+				author: $user.toString()!,
+				isActive: true,
+				isNormative: false,
+				isRequirement: false,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				deletedAt: null,
+				customFields: customFields,
+				level: "",
+				outboundLinks: [],
+			},
+			inboundLinks: [],
+			isDraft: false,
+			hasChanges: false,
+		}
+	}
 
 	function handleObjectCreation(event: any) {
 		let obj = event.detail.objectView.object;
@@ -566,10 +483,10 @@
 			<Resizable.Pane order={2}>
 				{#if module}
 					<ObjectExplorer 
+						readOnly={true} 
 						bind:view={view} 
 						bind:module={module} 
 						bind:objects={objects} 
-						bind:readOnly={readOnlyFlag} 
 						bind:showLinks={showLinksFlag} 
 						bind:showRowNumber={showRowNumberFlag} 
 						bind:showDeleted={showDeletionsFlag}
@@ -586,9 +503,9 @@
 			<Resizable.Pane class="h-full" defaultSize={50} order={3}>
 				{#if selectedObject}
 				<ObjectEditor 
+				readOnlyMode={true}
 				bind:objectView={selectedObject} 
 				bind:module={module} 
-				bind:readOnlyMode={readOnlyFlag}
 				on:save={handleObjectCreation} 
 				on:close={handleCloseEditPanel} 
 				on:delete={handleObjectExclusion}

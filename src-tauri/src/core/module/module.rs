@@ -1,4 +1,4 @@
-use std::{cmp::max, collections::HashMap, path::PathBuf, vec};
+use std::{cmp::max, collections::HashMap, path::PathBuf, str, vec};
 
 use git2::Repository;
 use chrono::Utc;
@@ -29,7 +29,7 @@ impl Module {
 	pub fn create(repo: &Option<Repository>, path: &PathBuf, man: &ModuleManifest) -> Result<Module, ModuleError> {
 		let repo: &Repository = Module::repo(&repo)?;
 		let module_path: PathBuf = mid::create_folder(&path, &man.prefix)?;
-		let baselines: Vec<Baseline> = vec![Baseline::default()];
+		let baselines: Vec<Baseline> = Vec::new();
 		let template: Template = Template::default();
 		let inbound_links: HashMap<usize, Vec<Link>> = HashMap::new();
 		
@@ -193,7 +193,7 @@ impl Module {
 		Ok(res)
 	}
 	
-	pub fn read_objects(&mut self) -> Result<Vec<Object>, ModuleError> {
+	pub fn read_objects(&self) -> Result<Vec<Object>, ModuleError> {
 		let mut objs: Vec<Object> = Vec::new();
 		let entries = mid::read_folder(&self.path.join(defs::OD_OBJS_FOLDER_NAME));
 
@@ -330,12 +330,12 @@ impl Module {
 		Ok(self.read_template()?)
 	}
 
-	pub fn create_baseline(&self, repo: &Option<Repository>, path: &PathBuf, semver: &str, desc: Option<&str>) -> Result<Vec<Baseline>, ModuleError> {
+	pub fn create_baseline(&self, repo: &Option<Repository>, semver: &str, desc: &str) -> Result<Vec<Baseline>, ModuleError> {
 		let version: String = format!("{}/{}", self.manifest.prefix.to_lowercase(), semver);
-		let description: String = desc.unwrap_or_default().to_owned();
+		let description: String = desc.to_owned();
 		let repo: &Repository = Module::repo(&repo)?;
 		let hash: String = git::create_tag(&repo, &version, &description)?;
-		
+		let path = self.path.clone();
 		let baseline: Baseline = Baseline { 
 			version: SemVer::from(&version), 
 			hash: Some(hash), 
@@ -346,7 +346,7 @@ impl Module {
 		baselines.push(baseline);
 		let baselines_path = mid::update_yml_file(&path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
 		git::add_file(&repo, &baselines_path.to_string_lossy())?;
-		git::git_commit(&repo, &format!("Baselined module `{}` at version `{}` - `{}`.", self.manifest.prefix, version, desc.unwrap_or_default()))?;
+		git::git_commit(&repo, &format!("Baselined module `{}` at version `{}` - `{}`.", self.manifest.prefix, version, desc))?;
 		Ok(baselines)
 	}
 	
@@ -355,8 +355,16 @@ impl Module {
 		Ok(baselines)
 	}
 
-	pub fn read_from_baseline(path: &PathBuf, baseline: Baseline) -> Result<Vec<Object>, ModuleError> {
-		todo!()
+	pub fn read_from_baseline(&mut self, repo: &Option<Repository>, path: &PathBuf, baseline: Baseline) -> Result<Vec<Object>, ModuleError> {
+		let repo: &Repository = Module::repo(repo)?;
+		if let Some(spec) = baseline.hash {
+			let tree = repo.revparse_single(&spec)?.peel_to_commit()?.tree()?;
+			let entry = tree.get_path(&path)?;
+			let blob = repo.find_blob(entry.id())?;
+			let content = unsafe { str::from_boxed_utf8_unchecked(blob.content().into()) };
+			println!("Baseline Content: {}, ", content);
+		}
+		return self.read_objects();
 	}
 
 	pub fn create_inbound_link(&self, repo: &Option<Repository>, link: &Link, id: &usize) -> Result<(), ModuleError> {
@@ -448,7 +456,7 @@ impl Module {
 	fn next_file_number(dir: &PathBuf) -> Result<usize, ModuleError> {
 		let mut max_number = 0;
 		let entries = mid::read_folder(dir);
-		
+
 		if entries.is_err() {
 			return Ok(max_number);
 		}
@@ -513,14 +521,15 @@ impl Module {
 			for i in 0..len {
 				let a_part = a_parts.get(i);
 				let b_part = b_parts.get(i);
-		
+
 				if a_part.is_none() {
 					return -1;
 				}
+
 				if b_part.is_none() {
 					return 1;
 				}
-		
+
 				match (a_part.unwrap(), b_part.unwrap()) {
 					(Ok(a_num), Ok(b_num)) => {
 						if a_num != b_num {

@@ -18,12 +18,11 @@
     import type { ObjectView } from "$lib/components/structs/Object";
     import type { Module } from "$lib/components/structs/Module";
     import "./markdown.css";
-    import path from "path";
     import { repository } from "$lib/stores/Repository";
     
     export let objectView: ObjectView;
     export let module: Module;
-    export let readOnlyMode: boolean = false;
+    export let readOnlyMode: boolean = true;
     let allowChanges: boolean;
     
     const dispatch = createEventDispatcher();

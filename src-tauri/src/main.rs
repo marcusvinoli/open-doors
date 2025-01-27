@@ -42,6 +42,7 @@ fn main() {
 		od_handlers::module::create_template,
 		od_handlers::module::read_template,
 		od_handlers::module::update_template,
+		od_handlers::module::create_baseline,
 		od_handlers::exporters::export_csv,
 		od_handlers::exporters::export_xlsx,
 		])

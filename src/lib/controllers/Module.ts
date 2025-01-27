@@ -2,7 +2,7 @@ import { open } from '@tauri-apps/api/dialog';
 import { invoke } from "@tauri-apps/api";
 import { reloadRepository } from "./Repository";
 import type { TreeItem } from "$lib/components/structs/Tree"
-import type { ModuleManifest, Module } from "$lib/components/structs/Module"
+import type { ModuleManifest, Module, Baseline } from "$lib/components/structs/Module"
 import type { ObjectView, Object } from "$lib/components/structs/Object";
 import type { Template } from "$lib/components/structs/Template";
 
@@ -77,6 +77,10 @@ export function deleteObject(modulePath: String, id: number) {
 
 export function saveTemplate(modulePath: String, template: Template) {
     return invoke('update_template', {path: modulePath, template: template})
+}
+
+export async function createBaseline(modulePath: String, baseline: Baseline) {
+    return invoke('create_baseline', {path: modulePath, baseline})
 }
 
 export async function exportCSV(modulePath: String) {
