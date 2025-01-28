@@ -108,3 +108,17 @@ pub fn create_baseline(state: State<'_, Mutex<Option<GitRepository>>>, path: Pat
 	module.create_baseline(&repo, &baseline.version.to_string(), &baseline.description)?;
 	Ok(())
 }
+
+#[command]
+pub fn read_object_from_baseline(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, id: usize, version: String) -> Result<Object, OpenDoorsError> {
+	let repo = state.lock().unwrap();
+	let module = Module::read(&path.into())?;
+	Ok(module.read_object_from_baseline(&repo, &id, &version)?)
+}
+
+#[command]
+pub fn read_objects_from_baseline(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, version: String) -> Result<Vec<Object>, OpenDoorsError> {
+	let repo = state.lock().unwrap();
+	let module = Module::read(&path.into())?;
+	Ok(module.read_objects_from_baseline(&repo, &version)?)
+}

@@ -14,16 +14,13 @@
 	import { loadRepository } from "$lib/controllers/Repository";
 	import { beforeUpdate, onMount } from "svelte";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readDraftObjects, readModuleFromPath, readObjects } from "$lib/controllers/Module";
+	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readBaselinedObjects, readModuleFromPath } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import type { View } from "$lib/components/global/object_explorer/viewStructs";
 	import type { Module } from "$lib/components/structs/Module";
 	import type { IHash, Link, ObjectView } from "$lib/components/structs/Object";
 	import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
-	import type { Template } from "$lib/components/structs/Template";
-	import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
-	import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
-	import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
+	import type { Template } from "$lib/components/structs/Template";;
 	
 	let selectedObject: ObjectView | null = null;
 	let objects: ObjectView[] = [];
@@ -83,15 +80,6 @@
 			icon: "ph:file-csv",
 			action: () => {
 				exportCSV(module.path).then((res) => console.log(res))
-			},
-		}
-
-		let readOnlyModeButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Toggle Edit Mode",
-			icon: "lucide:pencil-off",
-			action: () => {
-				readOnlyFlag = true;
 			},
 		}
 
@@ -158,83 +146,7 @@
 		addToolbarItem(viewGrouplView);
 		addToolbarItem(exportGroup);
 	}
-
-	function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
-		template.fields.forEach((field) => {
-			if (!customFields[field.key]) {
-				customFields[field.key] = "";
-			}
-		})
-	}
-
-	function createEmptyObject(): ObjectView {
-		let customFields: IHash = {};
-		createCustomFieldHashFromTemplate(module.template, customFields);
-		return {
-			object: {
-				id: 0,
-				header: "",
-				content: "",
-				author: $user.toString()!,
-				isActive: true,
-				isNormative: false,
-				isRequirement: false,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				deletedAt: null,
-				customFields: customFields,
-				level: "",
-				outboundLinks: [],
-			},
-			inboundLinks: [],
-			isDraft: false,
-			hasChanges: false,
-		}
-	}
-
-	function handleObjectCreation(event: any) {
-		let obj = event.detail.objectView.object;
-		createObject(module.path, obj)
-			.then(() => {
-				selectedObject = createEmptyObject();
-				editPanelFlag = false;
-				loadAllObjects(module.path);
-			})
-			.catch((err) => {
-				console.log(err);
-			})
-	}
-	
-	function handleObjectDraftCreation(event: any) {
-		let obj = event.detail.objectView.object;
-		createDraftObject(module.path, obj)
-			.then((objs) => {
-				selectedObject = createEmptyObject();
-				editPanelFlag = false;
-				loadAllObjects(module.path);
-			})
-			.catch((err) => {
-				console.log(err);
-			})
-	}
-	
-	async function handleObjectExclusion(event: any) {
-		let obj = event.detail.objectView.object;
-		const confirmed = await confirm('Do you really want to delete this Object?', 'Deleting object ' + module.manifest.prefix + module.manifest.separator + obj.id );
-		if (!confirmed) {
-			return;
-		}
-		deleteObject(module.path, obj.id)
-			.then(() => {
-				editPanelFlag = false;
-				selectedObject = createEmptyObject();
-				loadAllObjects(module.path);
-			})
-			.catch((err) => {
-				console.log(err);
-			})
-	}
-	
+		
 	function handleCloseEditPanel(event: any) {
 		editPanelFlag = false;
 	}
@@ -334,22 +246,6 @@
 		return currentLevel;
 	} 
 
-	function handleCreateObjectBelow(event: any) {
-		let currObj = event.detail.objectView as ObjectView;
-		let currentLevel = currObj.object.level;
-		selectedObject = createEmptyObject();
-		selectedObject.object.level = getNewLevel(currentLevel, 'sameLevel');
-		handleObjectSelect(undefined);
-	}
-
-	function handleCreateObjectNextLevel(event: any) {
-		let currObj = event.detail.objectView as ObjectView;
-		let currentLevel = currObj.object.level;
-		selectedObject = createEmptyObject();
-		selectedObject.object.level = getNewLevel(currentLevel, 'belowLevel');
-		handleObjectSelect(undefined);
-	}
-
 	function sortItems(items: ObjectView[]): ObjectView[] {
 		return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
 	}
@@ -366,47 +262,19 @@
 		return ret;
 	}
 
-	async function loadAllObjects(modPath: string) {
-		let retObjects = await readObjects(modPath);
-		let retDraftObjects = await readDraftObjects(modPath);
-		let newObjects: ObjectView[] = [];
-
-		retObjects.forEach((obj) => {
-			let dob = {
-				object: obj,
-				isDraft: false,
-				hasChanges: false,
-				inboundLinks: getLinks(module.inboundLinks, obj.id),
-			}
-			newObjects.push(dob);
-		});
-
-		retDraftObjects.forEach((dobj) => {
-			let index = newObjects.findIndex((ob) => {return (ob.object.id === dobj.id)});
-			let dob = {
-				object: dobj,
-				isDraft: true,
-				hasChanges: false,
-				inboundLinks: getLinks(module.inboundLinks, dobj.id),
-			}
-
-			if (index < 0) {
-				newObjects.push(dob);
-			} else {
-				newObjects[index] = dob;
-			}
-		});
-		newObjects = sortItems(newObjects);
-		objects = newObjects;
+	async function loadAllObjects(modPath: string, version: string) {
+		objects = await readBaselinedObjects(modPath, version) as ObjectView[];
+		console.log("Lodaded.", objects);
 	}
 
 	async function loadModule(modPath: string) {
-		module = await readModuleFromPath(modPath);
+		// Maybe there must be a "readBaselinedModuleFromPath(modPath, version)..."
+		module = await readModuleFromPath(modPath); 
 	}
 
-	async function load(modPath: string) {
+	async function load(modPath: string, version: string) {
 		await loadModule(modPath);
-		await loadAllObjects(modPath);
+		await loadAllObjects(modPath, version);
 	}
 
 	function generateKey(input: string): string {
@@ -448,7 +316,7 @@
 		saveCurrentState();
 		loadRepository();
 		loadHomeToolbar();
-		load(params.mod).then(() => {
+		load(params.mod, version).then(() => {
 			updateState(params.mod, params.version);
 			const hash = $page.url.hash;
 			if(hash && hash !== "") {
@@ -467,6 +335,11 @@
 		setupPage();
 	})
 	
+
+
+    function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
+        throw new Error("Function not implemented.");
+    }
 </script>
 
 <div class="bg-slate-50 h-full py-1">
@@ -491,10 +364,7 @@
 						bind:showRowNumber={showRowNumberFlag} 
 						bind:showDeleted={showDeletionsFlag}
 						on:click={handleObjectSelect} 
-						on:create={handleObjectSelect}
-						on:commit={handleObjectCreation} 
-						on:delete={handleObjectExclusion} 
-						on:createBelow={handleCreateObjectBelow} 
+						on:create={handleObjectSelect} 
 					/>
 				{/if}
 			</Resizable.Pane>
@@ -505,11 +375,8 @@
 				<ObjectEditor 
 				readOnlyMode={true}
 				bind:objectView={selectedObject} 
-				bind:module={module} 
-				on:save={handleObjectCreation} 
-				on:close={handleCloseEditPanel} 
-				on:delete={handleObjectExclusion}
-				on:saveDraft={handleObjectDraftCreation} 
+				bind:module={module}
+				on:close={handleCloseEditPanel}
 				/>
 				{/if}
 			</Resizable.Pane>

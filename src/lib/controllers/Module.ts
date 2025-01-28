@@ -43,6 +43,15 @@ export function readModuleFromPath(path: string) {
         })
 }
 
+export function readBaselinedObject(path: string, id: number, version: string) {
+    return invoke('read_object_from_baseline', {path, id, version});
+ 
+}
+
+export function readBaselinedObjects(path: string, version: string) {
+    return invoke('read_objects_from_baseline', {path, version});
+}
+
 export function createObject(modulePath: String, object: Object | ObjectView) {
     return invoke('create_object', {path: modulePath, object: object})
         .then((mod) => {

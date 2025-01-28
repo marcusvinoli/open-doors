@@ -33,6 +33,8 @@ fn main() {
 		od_handlers::module::create_object,
 		od_handlers::module::create_draft_object,
 		od_handlers::module::read_object,
+		od_handlers::module::read_object_from_baseline,
+		od_handlers::module::read_objects_from_baseline,
 		od_handlers::module::read_draft_object,
 		od_handlers::module::read_objects,
 		od_handlers::module::read_draft_objects,

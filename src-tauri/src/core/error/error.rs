@@ -95,6 +95,12 @@ pub enum ModuleError {
 	UnknownError,
 	#[error("No repository initialized!")]
 	NoRepositoryInitialized,
+	#[error("No baseline tagged {0}.")]
+	BaselineNotFound(String),
+	#[error("Baseline not commited.")]
+	BaselineNotCommited,
+	#[error("Serialization error: {0}.")]
+	SerdeYamlError(#[from] serde_yaml::Error)
 }
 
 #[derive(Debug, Error)] 
