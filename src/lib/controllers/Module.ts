@@ -84,6 +84,10 @@ export function deleteObject(modulePath: String, id: number) {
     return invoke('delete_object', {path: modulePath, id: id})
 }
 
+export function restoreObject(modulePath: String, id: number) {
+	return invoke('restore_object', {path: modulePath, id: id})
+}
+
 export function saveTemplate(modulePath: String, template: Template) {
     return invoke('update_template', {path: modulePath, template: template})
 }

@@ -14,7 +14,7 @@
 	import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
 	import { loadRepository } from "$lib/controllers/Repository";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readDraftObjects, readModuleFromPath, readObjects } from "$lib/controllers/Module";
+	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readDraftObjects, readModuleFromPath, readObjects, restoreObject } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import type { View } from "$lib/components/global/object_explorer/viewStructs";
 	import type { Module } from "$lib/components/structs/Module";
@@ -307,7 +307,7 @@
 	
 	async function handleObjectExclusion(event: any) {
 		let obj = event.detail.objectView.object;
-		const confirmed = await confirm('Do you really want to delete this Object?', 'Deleting object ' + module.manifest.prefix + module.manifest.separator + obj.id );
+		const confirmed = await confirm('Do you really want to delete this Object?', 'Deleting object ' + module.manifest.prefix + module.manifest.separator + obj.id);
 		if (!confirmed) {
 			return;
 		}
@@ -319,6 +319,22 @@
 			})
 			.catch((err) => {
 				console.log(err);
+			})
+	}
+
+	async function handleObjectRestoring(event: any) {
+		let obj = event.detail.objectView.object;
+		const confirmed = await confirm('Do you really want to restore this Object?', 'Restoring object ' + module.manifest.prefix + module.manifest.separator + obj.id);
+		if (!confirmed) {
+			return;
+		}
+		restoreObject(module.path, obj.id)
+			.then(() => {
+				editPanelFlag = true;
+				loadAllObjects(module.path);
+			})
+			.catch((err) => {
+				console.error(err);
 			})
 	}
 	
@@ -598,6 +614,7 @@
 				on:save={handleObjectCreation} 
 				on:close={handleCloseEditPanel} 
 				on:delete={handleObjectExclusion}
+				on:retore={handleObjectRestoring}
 				on:saveDraft={handleObjectDraftCreation} 
 				/>
 				{/if}

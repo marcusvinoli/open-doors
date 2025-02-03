@@ -81,6 +81,13 @@ pub fn delete_object(state: State<'_, Mutex<Option<GitRepository>>>, path: PathB
 	Ok(module.delete_object(&repo, id)?)
 }
 
+#[command] 
+pub fn restore_object(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, id: usize) -> Result<Object, OpenDoorsError> {
+	let repo = state.lock().unwrap();
+	let mut module = Module::read(&path)?;
+	Ok(module.restore_object(&repo, id)?)
+}
+
 #[command]
 pub fn create_template(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, template: Template) -> Result<Template, OpenDoorsError> {
 	let repo = state.lock().unwrap();

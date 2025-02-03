@@ -286,6 +286,16 @@ impl Module {
 		Ok(self.read_object(obj.id())?)
 	}
 
+	pub fn restore_object(&mut self, repo: &Option<Repository>, id: usize) -> Result<Object, ModuleError> {
+		let mut obj = self.find_object(id)?;
+		obj.deleted_at = None;
+		let obj_path = self.prepare_object(&repo, &mut obj)?;
+		let repo = Module::repo(&repo)?;
+		git::add_file(&repo, &obj_path)?;
+		git::git_commit(&repo, &format!("Restored object `{}:{}`.", self.manifest.prefix, obj.id()))?;
+		Ok(self.read_object(obj.id())?)
+	}
+
 	pub fn create_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
 		todo!()
 	}

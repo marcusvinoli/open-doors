@@ -56,6 +56,10 @@
         dispatch('delete', {objectView: objectView})
     }
 
+	function restoreObj() {
+		dispatch('retore', {objectView: objectView});
+	}
+
     function handleVisitLink(event: any) {
         let linkPath = event.detail.link.path;
         let repoPath = $repository?.tree.path;
@@ -243,6 +247,13 @@
                 <Button variant="destructive" class="px-5" on:click={deleteObj}>
                     <Icon icon="ci:close-square" width="20px"/>
                     <p class="pl-2">Delete Object</p>
+                </Button>
+            </div>
+			{:else}
+            <div class="grid wrap pag-2 mt-3">
+                <Button variant="secondary" class="px-5" on:click={restoreObj}>
+                    <Icon icon="ci:arrow-reload-02" width="20px"/>
+                    <p class="pl-2">Restore Object</p>
                 </Button>
             </div>
             {/if}

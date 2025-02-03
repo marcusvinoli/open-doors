@@ -41,6 +41,7 @@ fn main() {
 		od_handlers::module::update_object,
 		od_handlers::module::update_draft_object,
 		od_handlers::module::delete_object,
+		od_handlers::module::restore_object,
 		od_handlers::module::create_template,
 		od_handlers::module::read_template,
 		od_handlers::module::update_template,
