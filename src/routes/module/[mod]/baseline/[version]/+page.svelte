@@ -150,6 +150,14 @@
 		editPanelFlag = false;
 	}
 
+	function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
+		template.fields.forEach((field) => {
+			if (!customFields[field.key]) {
+				customFields[field.key] = "";
+			}
+		})
+	}
+
 	function handleObjectSelect(event: any) {
 		if (event) { 
 			selectedObject = event.detail.objectView; 
@@ -158,6 +166,7 @@
 		createCustomFieldHashFromTemplate(module.template, customFields)
 		selectedObject!.object.customFields! = customFields;
 		editPanelFlag = true;
+		console.log("Open...")
 	}
 
 	function handleScrollIntoView(event: any) {
@@ -343,9 +352,6 @@
 		//setupPage();
 	})
 	
-    function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
-        throw new Error("Function not implemented.");
-    }
 </script>
 
 <div class="bg-slate-50 h-full py-1">
