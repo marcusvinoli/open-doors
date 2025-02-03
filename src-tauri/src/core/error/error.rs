@@ -1,3 +1,5 @@
+use core::str;
+
 use thiserror::Error;
 use crate::core::middleware::error::MiddlewareError;
 
@@ -95,12 +97,16 @@ pub enum ModuleError {
 	UnknownError,
 	#[error("No repository initialized!")]
 	NoRepositoryInitialized,
-	#[error("No baseline tagged {0}.")]
+	#[error("No baseline tagged {0}")]
 	BaselineNotFound(String),
 	#[error("Baseline not commited.")]
 	BaselineNotCommited,
-	#[error("Serialization error: {0}.")]
-	SerdeYamlError(#[from] serde_yaml::Error)
+	#[error("Serialization error: {0}")]
+	SerdeYamlError(#[from] serde_yaml::Error),
+	#[error("Error: {0}")]
+	GenericError(String),
+	#[error("Convertion into UTF8 failed: {0}")]
+	Utf8Error(#[from] str::Utf8Error)
 }
 
 #[derive(Debug, Error)] 

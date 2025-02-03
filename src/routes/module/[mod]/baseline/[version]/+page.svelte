@@ -5,18 +5,17 @@
 	import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
-	import { user } from "$lib/stores/User";
 	import { addTab } from "$lib/stores/Tabs";
-	import { confirm } from '@tauri-apps/api/dialog';
+	import { onMount } from "svelte";
 	import { pageState } from "../../store";
 	import { repository } from "$lib/stores/Repository";
 	import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
 	import { loadRepository } from "$lib/controllers/Repository";
-	import { beforeUpdate, onMount } from "svelte";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readBaselinedObjects, readModuleFromPath } from "$lib/controllers/Module";
+	import { exportCSV, exportXlsx, readBaselinedObjects, readModuleFromPath } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import type { View } from "$lib/components/global/object_explorer/viewStructs";
+	import type { Object } from "$lib/components/structs/Object";
 	import type { Module } from "$lib/components/structs/Module";
 	import type { IHash, Link, ObjectView } from "$lib/components/structs/Object";
 	import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
@@ -263,8 +262,17 @@
 	}
 
 	async function loadAllObjects(modPath: string, version: string) {
-		objects = await readBaselinedObjects(modPath, version) as ObjectView[];
-		console.log("Lodaded.", objects);
+		let objs = await readBaselinedObjects(modPath, version) as Object[];
+		objects = [];
+		objs.forEach((obj) => {
+			let dob: ObjectView = {
+				object: obj as Object,
+				isDraft: false,
+				hasChanges: false,
+				inboundLinks: getLinks(module.inboundLinks, obj.id),
+			};
+			objects.push(dob);
+		})
 	}
 
 	async function loadModule(modPath: string) {
@@ -332,11 +340,9 @@
 	}
 	
 	onMount(async () => {
-		setupPage();
+		//setupPage();
 	})
 	
-
-
     function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
         throw new Error("Function not implemented.");
     }

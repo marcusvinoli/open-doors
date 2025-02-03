@@ -1,9 +1,9 @@
-use core::hash;
-use std::{cmp::max, collections::HashMap, path::{Path, PathBuf}, str::{self, FromStr}};
+use core::str;
+use std::{cmp::max, collections::HashMap, path::{Path, PathBuf}};
 
-use git2::{Repository, Tree, TreeEntry, TreeIter};
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
+use git2::{Repository, Tree, TreeEntry, ObjectType};
 
 use crate::core::{error::ModuleError, git, middleware as mid};
 use super::{baseline::{Baseline, SemVer}, definitions as defs, links::Link, object::Object, template::Template};
@@ -275,7 +275,6 @@ impl Module {
 				object: obj.id(),
 				module: self.manifest.prefix.clone(),
 			};
-			println!("{:?}", inbound_link);
 			for outbound_link in outbound_links {
 				let dest_mod: Module = Module::read(&repo_path.join(&outbound_link.path))?;
 				dest_mod.delete_inbound_link(&repo, &inbound_link)?;
@@ -370,6 +369,20 @@ impl Module {
 		folder_path.to_string_lossy().into()
 	}
 
+	fn module_relative_path(&self, repo: &Option<Repository>) -> Result<String, ModuleError> {
+		let module_path: &PathBuf = &self.path.clone();
+		let repo: &Repository = Module::repo(repo)?;
+		let mut repo_path: PathBuf = PathBuf::from(repo.path());
+		repo_path.pop();
+		let rel_path: PathBuf = PathBuf::from(module_path);
+		let path = if let Ok(relative) = rel_path.strip_prefix(&repo_path) {
+			relative
+		} else {
+			rel_path.as_path()
+		};
+		Ok(path.to_string_lossy().into())
+	}
+
 	fn object_relative_path(&self, repo: &Option<Repository>, id: &usize) -> Result<String, ModuleError> {
 		let file_name: String = format!("{}.yml", id);
 		let object_path: &PathBuf = &self.path.join(defs::OD_OBJS_FOLDER_NAME).join(file_name);
@@ -391,37 +404,62 @@ impl Module {
 		Ok(tree.get_path(&PathBuf::from(&path))?)
 	}
 
+	fn find_subtree<'a>(&self, repo: &'a Repository, mut tree: Tree<'a>, path: &'a str) -> Result<Tree<'a>, ModuleError> {
+		let path = Path::new(path);
+		for component in path.components() {
+			let component_str = component.as_os_str().to_str().ok_or(ModuleError::GenericError("Error handling module path.".into()))?;
+			let mut found = None;
+			for entry in tree.iter() {
+				if entry.name() == Some(component_str) && entry.kind() == Some(ObjectType::Tree) {
+					found = Some(entry.id());
+					break;
+				}
+			}
+			let subtree_id = found.ok_or(ModuleError::GenericError(format!("Diretório '{}' não encontrado", component_str)))?;
+			tree = repo.find_tree(subtree_id)?;
+		}
+		Ok(tree)
+	}
+	
+	pub fn read_files_from_tag_at_path(&self, repo: &Repository, hash: &Option<String>, folder_path: &str) -> Result<Vec<String>, ModuleError> {
+		let hash = hash.as_ref().ok_or(ModuleError::BaselineNotCommited)?;
+		let tag_obj = repo.revparse_single(&hash)?;
+		let tag_commit = tag_obj.peel_to_commit()?;
+		let root_tree = tag_commit.tree()?;
+		let subtree = self.find_subtree(repo, root_tree, folder_path)?;
+		let mut results = Vec::new();
+		for entry in subtree.iter() {
+			if entry.kind() == Some(ObjectType::Blob) {
+				if let Some(name) = entry.name() {
+					if name.ends_with(".yml") {
+						let blob = repo.find_blob(entry.id())?;
+						let content = str::from_utf8(blob.content())?;
+						results.push(content.to_string());
+					}
+				}
+			}
+		}
+		Ok(results)
+	}
+
 	pub fn read_object_from_baseline(&self, repo: &Option<Repository>, id: &usize, version: &str) -> Result<Object, ModuleError> {
 		let baseline: Baseline = self.baseline_hash(version)?;
 		let path: String = self.object_relative_path(&repo, &id)?;
 		let repo: &Repository = Module::repo(repo)?;
 		let entry = self.tree_entry(&repo, &baseline.hash, &path)?;
 		let blob = repo.find_blob(entry.id())?;
-		let content = unsafe { std::str::from_boxed_utf8_unchecked(blob.content().into()) };
+		let content = str::from_utf8(blob.content().into())?;
 		Ok(serde_yaml::from_str(&content)?)
 	}
 
 	pub fn read_objects_from_baseline(&self, repo: &Option<Repository>, version: &str) -> Result<Vec<Object>, ModuleError> {
+		let folder_path = PathBuf::from(self.module_relative_path(&repo)?).join(defs::OD_OBJS_FOLDER_NAME);
 		let baseline: Baseline = self.baseline_hash(version)?;
 		let repo: &Repository = Module::repo(repo)?;
-		let hash = baseline.hash.ok_or(ModuleError::BaselineNotCommited)?;
-		let tree = &repo.revparse_single(&hash)?.peel_to_commit()?.tree()?;
-		let files: Vec<_> = tree.iter()
-			.filter(|entry| {
-				if let Some(entry_path) = entry.name() {
-					let full_path = Path::new(entry_path).join(&self.object_relative_folder());
-					full_path.starts_with(defs::OD_OBJS_FOLDER_NAME) && full_path.extension() == Some("yml".as_ref())
-				} else {
-					false
-				}
-			})
-			.collect()
-		;
+		let files: Vec<String> = self.read_files_from_tag_at_path(&repo, &baseline.hash, &folder_path.to_string_lossy())?;
 		let mut objs: Vec<Object> = Vec::new();
 		for file in files {
-			let blob = repo.find_blob(file.id())?;
-			let content = unsafe { str::from_boxed_utf8_unchecked(blob.content().into()) };
-			objs.push(serde_yaml::from_str(&content)?);	
+			objs.push(serde_yaml::from_str(&file)?);
 		}
 		Ok(Module::sort_by_level(objs))
 	}

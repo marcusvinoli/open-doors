@@ -7,12 +7,12 @@
 	import { page } from "$app/stores";
 	import { user } from "$lib/stores/User";
 	import { addTab } from "$lib/stores/Tabs";
+	import { onMount } from "svelte";
 	import { confirm } from '@tauri-apps/api/dialog';
 	import { pageState } from "./store";
 	import { repository } from "$lib/stores/Repository";
 	import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
 	import { loadRepository } from "$lib/controllers/Repository";
-	import { beforeUpdate, onMount } from "svelte";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
 	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readDraftObjects, readModuleFromPath, readObjects } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
@@ -541,6 +541,7 @@
 			if(hash && hash !== "") {
 				scrollIntoView(hash.slice(1));
 			}
+			console.log(objects);
 		})
 		addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
 	}
