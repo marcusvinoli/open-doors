@@ -19,6 +19,7 @@
     import type { Module } from "$lib/components/structs/Module";
     import "./markdown.css";
     import { repository } from "$lib/stores/Repository";
+    import { object } from "zod";
     
     export let objectView: ObjectView;
     export let module: Module;
@@ -241,21 +242,16 @@
                     {/if}
                 </div>
             </div>
-            {#if objectView.object.id !== 0 && allowChanges}
-            <Separator/>
-            <div class="grid wrap pag-2 mt-3">
+            {#if objectView.object.id !== 0 && !readOnlyMode}
+            <div class="grid wrap pag-2 my-3">
+                {#if !objectView.object.deletedAt}
                 <Button variant="destructive" class="px-5" on:click={deleteObj}>
                     <Icon icon="ci:close-square" width="20px"/>
                     <p class="pl-2">Delete Object</p>
                 </Button>
+                {/if}
             </div>
-			{:else}
-            <div class="grid wrap pag-2 mt-3">
-                <Button variant="secondary" class="px-5" on:click={restoreObj}>
-                    <Icon icon="ci:arrow-reload-02" width="20px"/>
-                    <p class="pl-2">Restore Object</p>
-                </Button>
-            </div>
+            <Separator/>
             {/if}
         </ScrollArea>
     </div>
@@ -283,6 +279,12 @@
                 <p class="pl-2">Close</p>
             </Button>
             <div class="grow"></div>
+            {#if objectView.object.deletedAt && !readOnlyMode }
+                <Button variant="secondary" class="px-5" on:click={restoreObj}>
+                    <Icon icon="ci:arrow-reload-02" width="20px"/>
+                    <p class="pl-2">Restore Object</p>
+                </Button>
+            {/if}
         {/if}
     </div>
 </div>
