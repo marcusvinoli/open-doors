@@ -34,6 +34,17 @@ jobs:
         # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
         # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
 
+      - name: install openssl 1.1
+        if: matrix.platform == 'macos-latest'
+        run: | 
+          wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz
+          tar -xvf openssl-1.1.1w.tar.gz
+          cd openssl-1.1.1w
+          ./config --prefix=/usr/local/openssl
+          make
+          sudo make install
+          export PATH=/usr/local/openssl/bin:$PATH
+          
       - name: setup node
         uses: actions/setup-node@v4
         with:
