@@ -166,7 +166,6 @@
 		createCustomFieldHashFromTemplate(module.template, customFields)
 		selectedObject!.object.customFields! = customFields;
 		editPanelFlag = true;
-		console.log("Open...")
 	}
 
 	function handleScrollIntoView(event: any) {
@@ -347,11 +346,6 @@
 		const { mod, version } = $page.params;
 		setupPage();
 	}
-	
-	onMount(async () => {
-		//setupPage();
-	})
-	
 </script>
 
 <div class="bg-slate-50 h-full py-1">

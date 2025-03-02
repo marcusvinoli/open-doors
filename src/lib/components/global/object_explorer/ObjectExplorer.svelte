@@ -76,7 +76,6 @@
 				}
 			})
 		}
-		console.log('objs', objs)
 	}
 
 	let tableHeaderClass: string = ""

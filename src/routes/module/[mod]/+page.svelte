@@ -557,7 +557,6 @@
 			if(hash && hash !== "") {
 				scrollIntoView(hash.slice(1));
 			}
-			console.log(objects);
 		})
 		addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
 	}
@@ -566,11 +565,6 @@
 		const { mod, version } = $page.params;
 		setupPage();
 	}
-	
-	onMount(async () => {
-		setupPage();
-	})
-	
 </script>
 
 <div class="bg-slate-50 h-full py-1">
