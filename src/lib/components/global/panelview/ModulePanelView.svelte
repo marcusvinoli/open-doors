@@ -1,6 +1,5 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
-    import { getBaselineStatus, getBaselineStatusIcon, getBaselineStatusIconColor } from "$lib/utils/BaselineInformations";
     import type { Baseline, Module, ModuleManifest } from "$lib/components/structs/Module";
     import type { TreeItem } from "$lib/components/structs/Tree";
     import { readModule } from "$lib/controllers/Module";
@@ -9,10 +8,12 @@
     import { Button } from "$lib/components/ui/button";
     import { goto } from "$app/navigation";
     import { encodePath } from "$lib/utils/pathHandler";
+    import { createEventDispatcher } from "svelte";
 
     export let moduleTree: TreeItem;
 
     let module: Module;
+    let dispatch = createEventDispatcher();
 
     function loadData() {
         readModule(moduleTree)
@@ -20,6 +21,14 @@
                 module = mod;
             })
     }
+
+    function openBaseline(baseline: string) {
+        dispatch('openBaseline', baseline);
+    }
+
+/*     function editBaseline(baseline: string) {
+        dispatch('editBaseline', baseline)
+    } */
 
     $: {
         if(moduleTree) {
@@ -29,10 +38,9 @@
 
 </script>
 
-{#if module}
+{#if module && module.baselines.length > 0}
 <Table.Root>
     <Table.Header>
-        <Table.Head class="w-[80px]">Status</Table.Head>
         <Table.Head class="w-[100px]">Version</Table.Head>
         <Table.Head>Description</Table.Head>
         <Table.Head></Table.Head>
@@ -40,16 +48,6 @@
     <Table.Body>
         {#each module.baselines.reverse() as baseline, index}
         <Table.Row class="h-10px">
-            <Table.Cell class="text-center">
-                <Tooltip.Root openDelay={100}>
-                    <Tooltip.Trigger>
-                        <Icon icon={getBaselineStatusIcon(getBaselineStatus(baseline))} width="15px" color={getBaselineStatusIconColor(getBaselineStatus(baseline))}/>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content>
-                        <p>{getBaselineStatus(baseline)}</p>
-                    </Tooltip.Content>
-                </Tooltip.Root>
-            </Table.Cell>
             <Table.Cell>
                 <span class="px-2">{baseline.version}</span>
             </Table.Cell>
@@ -64,28 +62,33 @@
                 <div class="flex flex-row-reverse gap-2">
                     <Tooltip.Root openDelay={300}>
                         <Tooltip.Trigger>
-                            <Button variant="ghost" on:click={() => {goto("/module/" + encodePath(module.path) + "/baseline/" + baseline.version )}}>
+                            <Button variant="ghost" on:click={() => {openBaseline(baseline.version)}}>
                                 <Icon icon="gravity-ui:arrow-up-right-from-square" width="20px" color=""/>
                             </Button>
                         </Tooltip.Trigger>
                         <Tooltip.Content>
-                            <p>Open in new tab</p>
+                            <p>Open baselined module</p>
                         </Tooltip.Content>
                     </Tooltip.Root>
-                    <Tooltip.Root openDelay={300}>
+                    <!-- <Tooltip.Root openDelay={300}>
                         <Tooltip.Trigger>
-                            <Button variant="ghost">
+                            <Button variant="ghost" on:click={() => {editBaseline(baseline.version)}}>
                                 <Icon icon="gravity-ui:pencil-to-square" width="20px" color=""/>
                             </Button>
                         </Tooltip.Trigger>
                         <Tooltip.Content>
-                            <p>Edit details...</p>
+                            <p>Edit baseline details</p>
                         </Tooltip.Content>
-                    </Tooltip.Root>
+                    </Tooltip.Root> -->
                 </div>
             </Table.Cell>
         </Table.Row>
         {/each}
     </Table.Body>
 </Table.Root>
+{:else}
+<div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
+    <Icon icon="gravity-ui:tag" width="50px"/>
+    <h1 class="text-xl font-semibold my-1">NO BASELINE YET</h1>
+</div>
 {/if}

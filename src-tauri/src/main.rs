@@ -4,14 +4,19 @@ pub mod handlers;
 pub mod core;
 pub mod git;
 
+use std::sync::Mutex; 
+use git2::Repository;
+use tauri::Manager; 
+
+
 use crate::handlers as od_handlers;
 
 fn main() {
 	tauri::Builder::default()
 		.invoke_handler(tauri::generate_handler![
-		od_handlers::repository::create_repo,
-		od_handlers::repository::clone_repo,
-		od_handlers::repository::read_repo,
+		od_handlers::repository::create_repository,
+		od_handlers::repository::clone_repository,
+		od_handlers::repository::read_repository,
 		od_handlers::user::get_user,
 		od_handlers::tree::read_tree,
 		od_handlers::project::create_project,
@@ -24,21 +29,30 @@ fn main() {
 		od_handlers::folder::delete_folder,
 		od_handlers::module::create_module,
 		od_handlers::module::read_module,
+		od_handlers::module::update_module,
 		od_handlers::module::create_object,
 		od_handlers::module::create_draft_object,
 		od_handlers::module::read_object,
+		od_handlers::module::read_object_from_baseline,
+		od_handlers::module::read_objects_from_baseline,
 		od_handlers::module::read_draft_object,
 		od_handlers::module::read_objects,
 		od_handlers::module::read_draft_objects,
 		od_handlers::module::update_object,
 		od_handlers::module::update_draft_object,
 		od_handlers::module::delete_object,
+		od_handlers::module::restore_object,
 		od_handlers::module::create_template,
 		od_handlers::module::read_template,
 		od_handlers::module::update_template,
+		od_handlers::module::create_baseline,
 		od_handlers::exporters::export_csv,
 		od_handlers::exporters::export_xlsx,
 		])
+		.setup(|app| {
+			app.manage(Mutex::new(Option::<Repository>::None));
+			Ok(())
+		})
 		.run(tauri::generate_context!())
 		.expect("Error while running OpenDOORS.");
 }

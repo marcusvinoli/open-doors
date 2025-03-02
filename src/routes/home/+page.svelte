@@ -19,6 +19,7 @@
     import CreateModuleForms from '$lib/components/forms/module/CreateModuleForms.svelte';
     import { addTab } from '$lib/stores/Tabs';
     import { loadAuthorInformation } from '$lib/controllers/User';
+    import { getIconFromTreeItemType } from '$lib/utils/getIconFromTreeItemType';
 
 
     let newProjectDialog: boolean = false;
@@ -39,11 +40,6 @@
 
     function goHome() {
         goto("/home");
-    }
-
-    function updateTreeView(event: any) {
-        let currentSelection = event.detail.item as TreeItem;
-        goIn(currentSelection);
     }
 
     function loadHomeToolbar() {
@@ -124,6 +120,14 @@
         addToolbarItem(newGroup);
     }
 
+    function updateFromPanel(event: any) {
+        goIn(event.detail);
+    }
+
+    function updateFromTree(event: any) {
+        goIn(event.detail.item);
+    }
+
     onMount(() => {
         reloadRepository();
         loadHomeToolbar();
@@ -140,7 +144,7 @@
     <Resizable.PaneGroup direction="horizontal">
         <Resizable.Pane defaultSize={20} minSize={5}>
             <ScrollArea class="h-full">
-                <Tree treeItems={$repository?.tree} on:itemSelected={updateTreeView}/>
+                <Tree treeItems={$repository?.tree} on:itemSelected={updateFromTree}/>
             </ScrollArea>
         </Resizable.Pane>
         <Resizable.Handle withHandle/>
@@ -148,21 +152,26 @@
         {#if $repository?.tree.children.length > 0}
             <div class="flex flex-col h-full text-sm">
                 {#if $currentItem}
-                    <PanelView currentItem={$currentItem} treeHistory={$treeHistory} on:deleted={goBack}/>
+                    <PanelView currentItem={$currentItem} treeHistory={$treeHistory} on:deleted={goBack} on:itemSelected={updateFromPanel}/>
                 {/if}
             </div>
         {:else}
-            <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
+            <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
+                <Icon icon={getIconFromTreeItemType($repository?.tree, true)} width="50px"/>
+                <h1 class="text-xl font-semibold my-1">EMPTY REPOSITORY</h1>
+            </div>
+            <!-- <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
             <div class="my-5">
                 <Icon icon="gravity-ui:folder-exclamation" width="50px"/>
             </div>
+            
             <h1 class="font-semibold ">It seems that there is no project on this Repository...</h1>
             <h2 class="font-regular pb-3">Let's create the first one!</h2>
             <Button on:click={openNewProjectDialog}>
                 <Icon icon="gravity-ui:folder-plus" width="20px"/>
                 <p class="pl-2">New Project</p>
             </Button>
-            </div>
+            </div>-->
         {/if}
         </Resizable.Pane>
     </Resizable.PaneGroup> 
