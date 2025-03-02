@@ -30,7 +30,7 @@
 
     let currentParent: TreeItem;
 
-    let currentProject: Project;
+    let currentProject: Project | null;
     let updatedProject: Project;
 
     function closeDialog() {
@@ -50,7 +50,7 @@
             }
 
             if (currentParent.path !== parent.path) {
-                const projectFolder = path.basename(currentProject.tree.path);
+                const projectFolder = path.basename(currentProject?.tree.path);
                 const newPath = path.join(parent.path, projectFolder);
                 await updateFolder(currentProject.tree.path, newPath);
             }
@@ -81,8 +81,9 @@
     }
     
     async function loadData() {
-        console.log("Loading data...")
+        console.log("Loading data...");
         if ($repository && (project.itemType === "project")) {
+            console.log("Loading data... 2");
             let retProject = await readProject(project);
             currentProject = retProject;
             updatedProject = JSON.parse(JSON.stringify(currentProject));
@@ -109,10 +110,10 @@
         {:else}
             <div class="grid gap-4 py-4 min-h-42">
                 {#if updatedProject}
-                <Dialog.Header>
-                    <Dialog.Title>{currentProject.manifest.name}</Dialog.Title>
-                    <Dialog.Description>{currentProject.manifest.prefix}</Dialog.Description>
-                </Dialog.Header>
+                    <Dialog.Header>
+                        <Dialog.Title>{currentProject.manifest.name}</Dialog.Title>
+                        <Dialog.Description>{currentProject.manifest.prefix}</Dialog.Description>
+                    </Dialog.Header>
                     <div class="grid grid-cols-4 items-center gap-2">
                         <Label for="name" class="text-right col-span-1">Parent</Label>
                         <div class="col-span-3">
@@ -140,7 +141,9 @@
                 </Button>
                 <div class="grow"></div>
                 <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-                <Button on:click={handleProjectUpdate} disabled={(updatedProject.manifest.name==="")}>Save Changes</Button>
+                {#if updatedProject}
+                    <Button on:click={handleProjectUpdate} disabled={(updatedProject.manifest.name==="")}>Save Changes</Button>
+                {/if}
             </Dialog.Footer>
         {/if}
     </Dialog.Content>

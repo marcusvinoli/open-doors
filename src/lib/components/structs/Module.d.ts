@@ -10,7 +10,7 @@ export interface ModuleManifest {
 export interface Baseline {
     version: string,
     description: string,
-    commit: string | null,
+    hash: string | null,
 }
 
 export interface Module {

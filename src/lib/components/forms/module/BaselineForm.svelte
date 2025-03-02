@@ -1,106 +1,104 @@
 <script lang="ts">
-    import Icon from "@iconify/svelte";
     import Loading from '../../ui/loading/Loading.svelte';
-    import ComboboxAllRecipientsOnRepository from '../utils/ComboboxAllRecipientsOnRepository.svelte';
-    import { confirm } from '@tauri-apps/api/dialog';
     import { Input } from "$lib/components/ui/input/index.js";
+    import * as RadioGroup from "$lib/components/ui/radio-group";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
     import { repository } from "$lib/stores/Repository";
-    import { createModule, deleteModule, readModule, updateModuleManifest } from '$lib/controllers/Module';
-    import { reloadRepository } from "$lib/controllers/Repository";
-    import { createProject, readProject } from '$lib/controllers/Project';
-    import { createEventDispatcher, onMount } from 'svelte';
-    import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
-    import * as path from 'path';
+    import { createBaseline, readModuleFromPath } from '$lib/controllers/Module';
+    import { createEventDispatcher } from 'svelte';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import type { TreeItem } from '../../structs/Tree';
-    import type { ModuleManifest } from "$lib/components/structs/Module";
-    import { listAllRecipientsExceptChildren, listRelatives } from '$lib/utils/lists';
-    import { updateFolder } from "$lib/controllers/Folder";
+    import type { Baseline, Module } from "$lib/components/structs/Module";
 
     const dispatch = createEventDispatcher();
 
     export let openDialog: boolean = false;
-    export let module: TreeItem;
+    export let modulePath: string;
 
     let loading: boolean = false;
     let loadingMessage: string = "Reading module information...";
-
-    let parent: TreeItem;
-    let currentParent: TreeItem;
-    let possibleParents: TreeItem[];
     
-    let currentModule: ModuleManifest;
-    let updatedModule: ModuleManifest;
+    let newBaseline: Baseline;
+    let currentBaseline: Baseline | null;
+    let baselines: Baseline[];
+    let currentModule: Module;
+    let selectedType: string = "major";
+    let fixString: string = "";
+    let errorMessage: string | null = null;
 
     function closeDialog() {
         loading = false;
         openDialog = false;
     }
 
-    async function handleModuleUpdate() {
-        loadingMessage = "Updating module...";
-        loading = true;
-        let updated = false;
-
-        if((module) && (currentParent) && (currentModule) && (updatedModule)){
-            if (updatedModule.title !== currentModule.title ||
-                updatedModule.description !== currentModule.description ||
-                updatedModule.separator !== currentModule.separator
-            ) {
-                await updateModuleManifest(module, updatedModule)
-                currentModule = (await readModule(module)).manifest;
-                updated = true;
-            }
-            
-            if (currentParent.path !== parent.path) {
-                const moduleFolder = path.basename(module.path);
-                const newPath = path.join(parent.path, moduleFolder);
-                await updateFolder(module.path, newPath);
-                updated = true;
-            }
-        }
-
-        if(updated) {
-            dispatch('updated', {module: currentModule});
-            reloadRepository();
-        }
-
-        closeDialog();
-    }
-
-    async function handleModuleDelete() {
-        const confirmed = await confirm('Do you really want to delete this Module? All its content will be delete!', 'Deleting module ' + currentModule.title );
-        if (!confirmed) {
-            return;
-        }
-        loading = true;
-        deleteModule(module)
-            .then(() => {
-                reloadRepository();
-                dispatch('deleted', {module: module});
-            })
-            .finally(() => {
-                closeDialog();
-            })
-    }
-    
     async function loadData() {
-        console.log("Loading data...")
-        if ($repository && (module.itemType === "module")) {
-            let retModule = (await readModule(module)).manifest;
-            currentModule = retModule;
-            updatedModule = JSON.parse(JSON.stringify(retModule));
-            possibleParents = listAllRecipientsExceptChildren($repository!.tree, module);
-            parent = listRelatives($repository?.tree, $repository?.tree, module).pop()??$repository?.tree;
-            currentParent = parent;
+        if ($repository) {
+            currentModule = (await readModuleFromPath(modulePath)) as unknown as Module;
+            baselines = JSON.parse(JSON.stringify(currentModule.baselines));
+            currentBaseline = baselines[0];
+            newBaseline = JSON.parse(JSON.stringify(currentBaseline)) ;
+            newBaseline.version = newMajor(newBaseline.version);
             loading = false;
+        }
+    }
+
+    function newMinor(version: string) {
+        let values = version.split(".");
+        values[1] = (parseInt(values[1]) + 1).toString();
+        values[2] = "0";
+        return values.join(".");
+    }
+
+    function newMajor(version: string) {
+        let values = version.split(".");
+        values[0] = (parseInt(values[0]) + 1).toString();
+        values[1] = "0";
+        values[2] = "0";
+        return values.join(".");
+    }
+
+    function newFix(version: string) {
+        let values = version.split(".");
+        values[2] = "";
+        return values.join(".");
+    }
+
+    function isUnique(version: string) {
+        currentModule.baselines.forEach(bl => {
+            if (bl.version === version) {
+                return false;
+            }
+        })
+        return true;
+    }
+
+    async function handleCreateBaseline() {
+        if (newBaseline && currentBaseline) {
+            if (selectedType == "major") {
+                newBaseline.version = newMajor(currentBaseline.version);
+            } else if (selectedType == "minor") {
+                newBaseline.version = newMinor(currentBaseline.version);
+            } else {
+                newBaseline.version = newFix(currentBaseline.version) + fixString;
+            }
+            loading = true;
+            console.log(newBaseline)
+            createBaseline(currentModule.path, newBaseline)
+                .then(() => {
+                    loading = false;
+                    openDialog = false;
+                })
+                .catch(e => {
+                    errorMessage = e;
+                })
+            console.log(newBaseline);
         }
     }
 
     $: if (openDialog) {
         loadData();
+        console.log("Loading...");
     }
     
 </script>
@@ -114,46 +112,51 @@
             </div> 
         {:else}
             <div class="grid gap-4 py-4 min-h-42">
-            {#if updatedModule}
+            {#if currentBaseline}
                 <Dialog.Header>
-                    <Dialog.Title>{currentModule.title}</Dialog.Title>
+                    <Dialog.Title>
+                        New Baseline for {currentModule.manifest.prefix}
+                    </Dialog.Title>
                     <Dialog.Description>
-                        {currentModule.description}
+                        {currentModule.manifest.description}
                     </Dialog.Description>
                 </Dialog.Header>
                 <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="name" class="text-right col-span-1">Parent</Label>
-                    <div class="col-span-3">
-                    {#if $repository}
-                        <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={parent} />
-                    {/if}
-                    </div>
+                    <Label for="name" class="text-right col-span-1">Version</Label>
+                    <RadioGroup.Root bind:value={selectedType} class="col-span-3 grid grid-cols-4">
+                        <div class="flex items-center space-x-2 col-span-1">
+                          <RadioGroup.Item value="major" id="major-opt" />
+                          <Label for="major-opt">{newMajor(currentBaseline.version)}</Label>
+                        </div>
+                        <div class="flex items-center space-x-2 col-span-1">
+                          <RadioGroup.Item value="minor" id="minor-opt" />
+                          <Label for="minor-opt">{newMinor(currentBaseline.version)}</Label>
+                        </div>
+                        <div class="flex items-center space-x-2 col-span-2">
+                          <RadioGroup.Item value="fix" id="fix-opt" />
+                          <Label for="fix-opt" class="flex items-center">
+                            {newFix(currentBaseline.version)}
+                            <Input multiple id="desc" bind:value={fixString} placeholder="bugfix" class="py-1"/>
+                          </Label>
+                        </div>
+                    </RadioGroup.Root>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="name" class="text-right col-span-1">Module name</Label>
-                    <Input id="name" placeholder="Module" bind:value={updatedModule.title}  class="col-span-3" />
-                </div>
-                <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="desc" class="text-right col-span-1">Module description</Label>
-                    <Input multiple id="desc" placeholder="Module Description" bind:value={updatedModule.description}  class="col-span-3" />
-                </div>
-                <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="prefix" class="text-right col-span-1">Prefix</Label>
-                    <Input id="prefix" placeholder="PRJ" bind:value={updatedModule.prefix} class="col-span-1" disabled/>
-                    <Label for="name" class="text-right col-span-1">Separator</Label>
-                    <Input id="name" placeholder="-" bind:value={updatedModule.separator} class="col-span-1"/>
+                    <Label for="desc" class="text-right col-span-1">Description</Label>
+                    <Input multiple id="desc" bind:value={newBaseline.description}  class="col-span-3" />
                 </div>
             {/if}
             </div>
         {/if}
+        {#if errorMessage}
+            <div class="rounded bg-red-200">
+                {errorMessage}
+            </div>
+        {/if}
         <Dialog.Footer>
-            <Button variant="destructive" on:click={handleModuleDelete}>
-                <Icon icon="gravity-ui:trash-bin" width="15px"/>
-                <p class="pl-2">Delete</p>
-            </Button>
             <div class="grow"></div>
             <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleModuleUpdate}>Save Changes</Button>
+            <Button on:click={handleCreateBaseline}>Create Baseline</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

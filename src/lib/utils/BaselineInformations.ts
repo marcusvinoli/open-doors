@@ -10,9 +10,9 @@ export function getBaselineStatusIcon(status: string): string {
 }
 
 export function getBaselineStatus(baseline: Baseline, current: boolean = false): string {
-    if (current && baseline.commit) {
+    if (current && baseline.hash) {
         return "Current Baseline";
-    } else if (baseline.commit) {
+    } else if (baseline.hash) {
         return "Deprecated";
     }
     return "Work in Progress";

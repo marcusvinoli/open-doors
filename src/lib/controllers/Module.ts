@@ -2,7 +2,7 @@ import { open } from '@tauri-apps/api/dialog';
 import { invoke } from "@tauri-apps/api";
 import { reloadRepository } from "./Repository";
 import type { TreeItem } from "$lib/components/structs/Tree"
-import type { ModuleManifest, Module } from "$lib/components/structs/Module"
+import type { ModuleManifest, Module, Baseline } from "$lib/components/structs/Module"
 import type { ObjectView, Object } from "$lib/components/structs/Object";
 import type { Template } from "$lib/components/structs/Template";
 
@@ -43,6 +43,15 @@ export function readModuleFromPath(path: string) {
         })
 }
 
+export function readBaselinedObject(path: string, id: number, version: string) {
+    return invoke('read_object_from_baseline', {path, id, version});
+ 
+}
+
+export function readBaselinedObjects(path: string, version: string) {
+    return invoke('read_objects_from_baseline', {path, version});
+}
+
 export function createObject(modulePath: String, object: Object | ObjectView) {
     return invoke('create_object', {path: modulePath, object: object})
         .then((mod) => {
@@ -75,8 +84,16 @@ export function deleteObject(modulePath: String, id: number) {
     return invoke('delete_object', {path: modulePath, id: id})
 }
 
+export function restoreObject(modulePath: String, id: number) {
+	return invoke('restore_object', {path: modulePath, id: id})
+}
+
 export function saveTemplate(modulePath: String, template: Template) {
     return invoke('update_template', {path: modulePath, template: template})
+}
+
+export async function createBaseline(modulePath: String, baseline: Baseline) {
+    return invoke('create_baseline', {path: modulePath, baseline})
 }
 
 export async function exportCSV(modulePath: String) {

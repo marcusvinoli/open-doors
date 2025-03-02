@@ -1,13 +1,17 @@
-use std::path::PathBuf;
-use tauri::command; 
+use std::{path::PathBuf, sync::Mutex};
 
-use crate::{core::{error::OpenDoorsError, user::User}, git};
+use git2::{Repository as GitRepository, Signature};
+use tauri::{command, State}; 
+
+use crate::core::{error::OpenDoorsError, user::User};
 
 #[command] 
-pub fn get_user(path: PathBuf) -> Result<User, OpenDoorsError> {
+pub fn get_user(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf) -> Result<User, OpenDoorsError> {
     let mut user: User = User { name: String::new(), email: String::new() };
-    user.name = git::get_user_name(path.to_str().unwrap())?;
-    user.email = git::get_user_email(path.to_str().unwrap())?;
-    
+    if let Some(ref repo) = *state.lock().unwrap() {
+        let sig: Signature<'_> = repo.signature()?;
+        user.name = sig.name().unwrap_or_default().into();
+        user.email = sig.email().unwrap_or_default().into();
+    }
     Ok(user)
 }

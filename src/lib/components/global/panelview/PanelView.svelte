@@ -1,20 +1,23 @@
 <script lang="ts">
   import Icon from "@iconify/svelte";
+  import {createEventDispatcher} from 'svelte';
   import Button from "$lib/components/ui/button/button.svelte";
   import CreateFolderForms from "$lib/components/forms/folder/CreateFolderForms.svelte";
   import CreateProjectForms from "$lib/components/forms/project/CreateProjectForms.svelte";
   import CreateModuleForms from "$lib/components/forms/module/CreateModuleForms.svelte";
   import ProjectForm from "$lib/components/forms/project/ProjectForm.svelte";
   import FolderForm from "$lib/components/forms/folder/FolderForm.svelte";
-  import { goIn } from "$lib/stores/PanelView";
   import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
   import { getIconFromTreeItemType } from "$lib/utils/getIconFromTreeItemType";
   import * as Tooltip from "$lib/components/ui/tooltip";
   import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js"; 
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import type { TreeItem } from "$lib/components/structs/Tree";
-    import ModulePanelView from "./ModulePanelView.svelte";
-    import ModuleForm from "$lib/components/forms/module/ModuleForm.svelte";
+  import ModulePanelView from "./ModulePanelView.svelte";
+  import ModuleForm from "$lib/components/forms/module/ModuleForm.svelte";
+  import BaselineForm from "$lib/components/forms/module/BaselineForm.svelte";
+  import { goto } from "$app/navigation";
+  import { encodePath } from "$lib/utils/pathHandler";
   
   export let currentItem: TreeItem;
   export let treeHistory: TreeItem[];
@@ -22,8 +25,23 @@
   let projectFormDialog: boolean = false;
   let folderFormDialog: boolean = false;
   let moduleFormDialog: boolean = false;
-  
+  let baselineDialog: boolean = false;
   let editDialog: boolean = false;
+  
+  const dispatch = createEventDispatcher();
+
+  function handleItemSelection(hist: any) {
+    dispatch('itemSelected', hist);
+  }
+
+  function openCurrent() {
+    goto("/module/" + encodePath(currentItem.path))
+  }
+
+  function openBaseline(event: any) {
+    let baseline = event.detail;
+    goto("/module/" + encodePath(currentItem.path) + "/baseline/" + baseline);
+  }
   
 </script>
 
@@ -41,7 +59,7 @@
         <Breadcrumb.List>
           {#each treeHistory as hist, index}
           <Breadcrumb.Item>
-            <button on:click={() => {goIn(hist)}}>
+            <button on:click={() => handleItemSelection(hist)}>
               {hist.name}
             </button>
           </Breadcrumb.Item>
@@ -56,6 +74,7 @@
         <h1 class="text-lg font-bold py-1 pl-2">{currentItem.name}</h1>
         <p class="text-sm pl-2 font-light">/ {currentItem.itemType}</p>
         <div class="grow flex flex-row-reverse p-1 gap-1">
+          {#if currentItem.itemType !== 'module'}
           <DropdownMenu.Root closeOnItemClick closeOnOutsideClick>
             <DropdownMenu.Trigger>
                 <Tooltip.Root openDelay={200}>
@@ -70,7 +89,7 @@
                 </Tooltip.Root>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
-              {#if currentItem.itemType !== "module"}
+              <!-- {#if currentItem.itemType !== "module"} -->
                 <DropdownMenu.Item on:click={() => {projectFormDialog = true}} class="min-w-[150px]">
                   <Icon icon="gravity-ui:folder-fill" width="15px"/>
                   <p class="pl-3">New Project</p>
@@ -85,14 +104,15 @@
                   <p class="pl-3">New Module</p>
                 </DropdownMenu.Item>
                 {/if}
-              {:else}
-                <DropdownMenu.Item on:click={() => {}} class="min-w-[150px]">
+              <!-- {:else}
+                <DropdownMenu.Item on:click={() => {baselineDialog = true}} class="min-w-[150px]">
                   <Icon icon="gravity-ui:tag" width="15px"/>
                   <p class="pl-3">New Baseline</p>
                 </DropdownMenu.Item>
-              {/if}
+              {/if} -->
             </DropdownMenu.Content>
           </DropdownMenu.Root>
+          {/if}
           <Tooltip.Root openDelay={200}>
             <Tooltip.Trigger>
               <Button variant="secondary" size="sm" on:click={() => {editDialog = true}}>
@@ -100,9 +120,21 @@
               </Button>
             </Tooltip.Trigger>
             <Tooltip.Content>
-              <p>Edit</p>
+              <p>Edit details</p>
             </Tooltip.Content>
           </Tooltip.Root>
+          {#if currentItem.itemType == 'module'}
+          <Tooltip.Root openDelay={200}>
+            <Tooltip.Trigger>
+              <Button variant="secondary" size="sm" on:click={openCurrent}>
+                <Icon icon="gravity-ui:arrow-up-right-from-square" width="20px"/>
+              </Button>
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              <p>Open current version</p>
+            </Tooltip.Content>
+          </Tooltip.Root>
+          {/if}
         </div>
         <CreateProjectForms bind:openDialog={projectFormDialog} selectedParent={currentItem}/>
         <CreateFolderForms bind:openDialog={folderFormDialog} selectedParent={currentItem}/>
@@ -112,7 +144,7 @@
       {#if currentItem.children.length > 0}
       <ScrollArea class="grow pl-2">
         {#each currentItem.children??[] as child}
-        <button class="flex items-center py-2 hover:bg-slate-200 px-4 w-full" on:click={() => goIn(child)}>
+        <button class="flex items-center py-2 hover:bg-slate-200 px-4 w-full" on:click={() => handleItemSelection(child)}>
           <Icon icon={getIconFromTreeItemType(child)} width="20px"/>
           <span class="px-2">{child.name}</span>
         </button>
@@ -126,7 +158,7 @@
           </div>
         {/if}
       {:else}
-        <ModulePanelView moduleTree={currentItem} />
+        <ModulePanelView moduleTree={currentItem} on:openBaseline={openBaseline}/>
       {/if}
   {/if}
 </div>

@@ -116,7 +116,7 @@
 					{#each view.items as attributes}
 						{#if attributes.show}
 						<Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
-							<ContextMenu.Root>
+							<ContextMenu.Root >
 								<ContextMenu.Trigger>
 									<div class={tableHeaderClass}>
 										{attributes.attribute}
@@ -154,7 +154,7 @@
 			<Table.Body class="w-full min-w-96">
 				{#each objs as ov, index}
 				{#if !(ov.object.deletedAt && showDeleted)}
-					<Table.Row class={(ov.object.deletedAt ? "bg-rose-50 hover:bg-red-200" : "")} id={"row-" + ov.object.id.toString()} on:click={() => {handleRowClick(ov)}}>
+					<Table.Row class={(ov.object.deletedAt ? "bg-rose-50 hover:bg-red-200" : "")} id={"row-" + ov.object.id.toString()}>
 						{#if showRowNumber}
 							<Table.Cell class={tableCellClass}>{index + 1}</Table.Cell>
 						{/if}
@@ -243,19 +243,24 @@
 												{/if}
 											</div>
 											</ContextMenu.Trigger>
-											<ContextMenu.Content>
+											<ContextMenu.Content hidden={readOnly} class="w-48">
 												{#if ov.isDraft}
-												<ContextMenu.Item on:click={() => {handleCommit(ov)}}>Commit changes</ContextMenu.Item>
+												<ContextMenu.Item on:click={() => {handleCommit(ov)}} disabled={readOnly}>Commit changes</ContextMenu.Item>
 												{/if}
-												<ContextMenu.Item on:click={() => {handleDelete(ov)}}>Delete</ContextMenu.Item>
+												<ContextMenu.Item on:click={() => {handleRowClick(ov)}}>Properties</ContextMenu.Item>
 												<ContextMenu.Separator />
+												<ContextMenu.Item on:click={() => {handleDelete(ov)}} disabled={readOnly}>Delete</ContextMenu.Item>
+												{#if readOnly}
+												<ContextMenu.Item on:click={() => {handleDelete(ov)}} disabled={readOnly}>New...</ContextMenu.Item>
+												{:else}
 												<ContextMenu.Sub>
-													<ContextMenu.SubTrigger class="w-48">New...</ContextMenu.SubTrigger>
+													<ContextMenu.SubTrigger disabled={readOnly}>New...</ContextMenu.SubTrigger>
 													<ContextMenu.SubContent>
-														<ContextMenu.Item on:click={() => {handleCreate(ov)}}>Object</ContextMenu.Item>
-														<ContextMenu.Item on:click={() => {handleCreateBelow(ov)}}>Object below</ContextMenu.Item>
+														<ContextMenu.Item on:click={() => {handleCreate(ov)}} disabled={readOnly}>Object</ContextMenu.Item>
+														<ContextMenu.Item on:click={() => {handleCreateBelow(ov)}} disabled={readOnly}>Object below</ContextMenu.Item>
 													</ContextMenu.SubContent>
 												</ContextMenu.Sub>
+												{/if}
 											</ContextMenu.Content>
 										</ContextMenu.Root>	
 									{/if}	
@@ -313,7 +318,7 @@
 						<Table.Head class="w-[30px] text-center">
 							<Table.Cell class="w-[30px]">
 								{#if !ov.object.deletedAt}
-								<Button variant="ghost" on:click={() => onEditClick(ov)}>
+								<Button variant="ghost" on:click={() => handleRowClick(ov)}>
 									<div class="flex justify-center items-center">
 										<Icon icon="gravity-ui:pencil-to-square" width="20px"/>
 									</div>
