@@ -37,10 +37,11 @@ jobs:
       - name: install openssl 1.1 (macos only)
         if: ${{matrix.platform == 'macos-latest' && matrix.args == '--target x86_64-apple-darwin'}}
         run: | 
-          brew install openssl@1.1 # Install 
+          sudo port install openssl
           export OPENSSL_DIR=#$(brew --prefix openssl@1.1)
-          export OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@1.1)/include
-          export OPENSSL_LIB_DIR=$(brew --prefix openssl@1.1)/lib
+          echo 'OpenSSL DIR: ' + $OPENSSL_DIR
+          export OPENSSL_INCLUDE_DIR=/opt/local/include/
+          export OPENSSL_LIB_DIR=/opt/local/lib
         # wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz
         # tar -xvf openssl-1.1.1w.tar.gz
         # cd openssl-1.1.1w
