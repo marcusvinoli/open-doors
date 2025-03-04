@@ -9,12 +9,12 @@
 	import { onMount } from "svelte";
 	import { pageState } from "../../store";
 	import { repository } from "$lib/stores/Repository";
-	import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
+	import { defaultView } from "$lib/controllers/View";
 	import { loadRepository } from "$lib/controllers/Repository";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
 	import { exportCSV, exportXlsx, readBaselinedObjects, readModuleFromPath } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
-	import type { View } from "$lib/components/global/object_explorer/viewStructs";
+	import type { View } from "$lib/components/structs/View";
 	import type { Object } from "$lib/components/structs/Object";
 	import type { Module } from "$lib/components/structs/Module";
 	import type { IHash, Link, ObjectView } from "$lib/components/structs/Object";

@@ -3,16 +3,16 @@
     import CustomFieldCell from "./CustomFieldCell.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import { marked } from "marked";
-	import { defaultView, parseTemplate } from "./viewMethods";
+	import { defaultView, parseTemplate } from "../../../controllers/View";
 	import { createEventDispatcher, onMount } from "svelte";
 	import * as Table from "$lib/components/ui/table";
 	import * as Tooltip from "$lib/components/ui/tooltip";
 	import * as ContextMenu from "$lib/components/ui/context-menu/index.js";
-	import type { View } from "./viewStructs";
+	import type { View } from "../../structs/View";
 	import type { Module } from "$lib/components/structs/Module";
 	import type { ObjectView, Object } from "$lib/components/structs/Object";
-	import "./markdown.css";
-	import "./flashing.css";
+	import "$lib/assets/markdown.css";
+	import "$lib/assets/flashing.css";
 
 	export let objects: ObjectView[] = [];
 	export let module: Module;

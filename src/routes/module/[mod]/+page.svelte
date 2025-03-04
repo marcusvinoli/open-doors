@@ -11,12 +11,12 @@
 	import { confirm } from '@tauri-apps/api/dialog';
 	import { pageState } from "./store";
 	import { repository } from "$lib/stores/Repository";
-	import { defaultView } from "$lib/components/global/object_explorer/viewMethods";
+	import { defaultView } from "$lib/controllers/View";
 	import { loadRepository } from "$lib/controllers/Repository";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
 	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readDraftObjects, readModuleFromPath, readObjects, restoreObject } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
-	import type { View } from "$lib/components/global/object_explorer/viewStructs";
+	import type { View } from "$lib/components/structs/View";
 	import type { Module } from "$lib/components/structs/Module";
 	import type { IHash, Link, ObjectView } from "$lib/components/structs/Object";
 	import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";

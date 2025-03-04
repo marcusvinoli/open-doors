@@ -1,6 +1,6 @@
-import type { Template } from "$lib/components/structs/Template"
+import type { Template } from "$lib/components/structs/Template";
 import { show } from "@tauri-apps/api/app";
-import type { View, ViewItem } from "./viewStructs"
+import type { View, ViewItem } from "../components/structs/View";
 
 export const parseTemplate = (template: Template, show: boolean = false) : ViewItem[] => {
     let temp: ViewItem[] = [];
