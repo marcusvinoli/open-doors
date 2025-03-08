@@ -13,6 +13,7 @@
 	import type { ObjectView, Object } from "$lib/components/structs/Object";
 	import "$lib/assets/markdown.css";
 	import "$lib/assets/flashing.css";
+    import Header from "../object_table/Header.svelte";
 
 	export let objects: ObjectView[] = [];
 	export let module: Module;
@@ -90,6 +91,7 @@
 </script>
 
 <div class="h-full w-full flex flex-col">
+	<!-- <Header view={view.items} /> -->
 	{#if objects.length > 0 && view}
 		<Table.Root class="w-full relative" id="scroll-table">
 			<Table.Header class="w-full min-w-96" id="scroll-table-header">
@@ -112,7 +114,7 @@
 							</ContextMenu.Content>
 						</ContextMenu.Root>
 					</Table.Head>
-					{/if}
+					{/if}s
 					{#each view.items as attributes}
 						{#if attributes.show}
 						<Table.Head class="sticky top-0 bg-slate-50 shadow-sm">
@@ -339,3 +341,22 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+.resizer {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 5px;
+	cursor: col-resize;
+	user-select: none;
+}
+
+.resizer:hover,
+.resizing {
+	border-right: 2px solid blue;
+}
+
+
+
+</style>

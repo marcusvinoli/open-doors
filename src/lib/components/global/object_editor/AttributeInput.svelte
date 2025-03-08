@@ -6,7 +6,7 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import type { Field } from "$lib/components/structs/Template";
-	
+
 	export let value: any;
 	export let field: Field;
 	export let type = Object.keys(field.kind)[0];
