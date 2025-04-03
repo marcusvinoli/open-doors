@@ -15,7 +15,7 @@
     }
 </script>
 
-<ContextMenu.Trigger>
+<ContextMenu.Root>
     <ContextMenu.Trigger>
         <slot />
     </ContextMenu.Trigger>
@@ -40,4 +40,4 @@
             {(showLinks)? "Hide" : "Show"} Object Links
         </ContextMenu.Item>
     </ContextMenu.Content>
-</ContextMenu.Trigger>
+</ContextMenu.Root>
