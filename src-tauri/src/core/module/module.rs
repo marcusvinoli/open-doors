@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use git2::{Repository, Tree, TreeEntry, ObjectType};
 
 use crate::core::{error::ModuleError, git, middleware as mid};
-use super::{baseline::{Baseline, SemVer}, definitions as defs, links::Link, object::Object, template::Template};
+use super::{definitions as defs, Baseline, BaselineStatus, Link, Links, Object, Metadata, ObjectStatus, SemVer, Template};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {
@@ -23,7 +23,7 @@ pub struct Module{
 	pub manifest: ModuleManifest,
 	pub template: Template,
 	pub baselines: Vec<Baseline>,
-	pub inbound_links: HashMap<usize, Vec<Link>>,
+	pub links: Links
 }
 
 impl Module {
@@ -32,12 +32,12 @@ impl Module {
 		let module_path: PathBuf = mid::create_folder(&path, &man.prefix)?;
 		let baselines: Vec<Baseline> = Vec::new();
 		let template: Template = Template::default();
-		let inbound_links: HashMap<usize, Vec<Link>> = HashMap::new();
+		let links: Links = Links::default();
 		
 		mid::create_yml_file(&module_path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
 		mid::create_yml_file(&module_path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
 		mid::create_yml_file(&module_path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
-		mid::create_yml_file(&module_path, defs::OD_LINKS_FILE_NAME, &inbound_links)?;
+		mid::create_yml_file(&module_path, defs::OD_LINKS_FILE_NAME, &links)?;
 
 		mid::create_file(
 			&mid::create_folder(&module_path, defs::OD_OBJS_FOLDER_NAME)?,
@@ -62,7 +62,7 @@ impl Module {
 			manifest: man.clone(), 
 			template,
 			baselines,
-			inbound_links,
+			links,
 		})
 	}
 	
@@ -71,14 +71,14 @@ impl Module {
 		let manifest: ModuleManifest = mid::read_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME)?;
 		let template: Template = mid::read_yml_file(&path, defs::OD_TEMPLATE_FILE_NAME)?;
 		let baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
-		let inbound_links: HashMap<usize, Vec<Link>> = mid::read_yml_file(&path, defs::OD_LINKS_FILE_NAME)?;
+		let links: Links = mid::read_yml_file(&path, defs::OD_LINKS_FILE_NAME)?;
 		
 		Ok(Module { 
 			path: path.clone(), 
 			manifest, 
 			template, 
 			baselines,
-			inbound_links,
+			links,
 		})
 	}
 	
@@ -107,7 +107,9 @@ impl Module {
 	}
 
 	pub fn read_draft_object(&self, id: usize) -> Result<Object, ModuleError> {
-		Ok(Module::open_object(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), id)?)
+		let mut obj: Object = self.read_object(id)?;
+		self.add_metadata(&mut obj, Some(ObjectStatus::Draft));
+		Ok(obj)
 	}
 
 	pub fn find_object(&self, id: usize) -> Result<Object, ModuleError> {
@@ -121,59 +123,33 @@ impl Module {
 		};
 	}
 	
-	fn prepare_object(&mut self, repo: &Option<Repository>, obj: &mut Object) -> Result<String, ModuleError> {
+	fn prepare_object(&mut self, obj: &mut Object) -> Result<String, ModuleError> {
 		let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
 		let filename: String = format!("{id}.yml");
-
-		if let Some(outbound_links) = &obj.outbound_links {
-			let mut valid_links: Vec<Link> = Vec::new();
-			let repo_path: PathBuf = self.get_repository_path().unwrap_or_default();
-			let rel_path: PathBuf = Module::subtract_paths(&repo_path, &self.path).unwrap_or(self.path.clone());
-
-			let inbound_link: Link = Link { 
-				path: rel_path,
-				object: id.clone(),
-				module: self.manifest.prefix.clone(),
-			};
-			for outbound_link in outbound_links {
-				let module_path: PathBuf = Module::add_paths(&repo_path, &outbound_link.path);
-				match Module::read(&module_path) {
-					Err(_) => continue,
-					Ok(module) => {
-						module.create_inbound_link(repo, &inbound_link, &outbound_link.object)?;
-						valid_links.push(outbound_link.clone());
-					},
-				}
-			}
-
-			if valid_links.is_empty() {
-				obj.outbound_links = None;
-			}
-		}
-
-		self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
-
 		let origin = &self.path.join(defs::OD_DRAFT_FOLDER_NAME);
 		let destination = &self.path.join(defs::OD_OBJS_FOLDER_NAME);
 		if let Err(_) = mid::move_file(origin, destination, &filename) {
 			mid::create_folder(&self.path, defs::OD_OBJS_FOLDER_NAME)?;
 			mid::move_file(origin, destination, &filename)?;
 		}
-		
 		Ok(destination.join(filename).to_string_lossy().into())
 	}
 
 	pub fn create_object(&mut self, repo: &Option<Repository>, obj: &mut Object) -> Result<Object, ModuleError> {
-		let obj_path = self.prepare_object(&repo, obj)?;
+		let obj_path: String = self.prepare_object(obj)?;
 		let repo: &Repository = Module::repo(&repo)?;
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Created object `{}:{}`.", self.manifest.prefix, obj.id()))?;
-		Ok(self.read_object(obj.id())?)
+		let mut obj: Object = self.read_object(obj.id())?;
+		self.add_metadata(&mut obj, Some(ObjectStatus::Updated));
+		Ok(obj)
 	}
 	
 	pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
 		let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
-		Ok(self.read_draft_object(id)?)
+		let mut obj: Object = self.read_draft_object(id)?;
+		self.add_metadata(&mut obj, Some(ObjectStatus::Draft));
+		Ok(obj)
 	}
 
 	pub fn create_objects(&mut self, repo: &Option<Repository>, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
@@ -214,7 +190,9 @@ impl Module {
 	
 				if let Some(number_str) = file_name_str.strip_suffix(".yml") {
 					if let Ok(number) = number_str.parse::<usize>() {
-						objs.push(self.read_object(number)?)
+						let mut obj = self.read_object(number)?;
+						self.add_metadata(&mut obj, None);
+						objs.push(obj);
 					}
 				}
 			}
@@ -253,11 +231,13 @@ impl Module {
 	}
 	
 	pub fn update_object(&mut self, repo: &Option<Repository>, obj: &mut Object) -> Result<Object, ModuleError> {
-		let obj_path = self.prepare_object(&repo, obj)?;
+		let obj_path = self.prepare_object(obj)?;
 		let repo = Module::repo(&repo)?;
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Updated object `{}:{}`.", self.manifest.prefix, obj.id()))?;
-		Ok(self.read_object(obj.id())?)
+		let mut obj: Object = elf.read_object(obj.id())?;
+		self.add_metadata(&mut obj, Some(ObjectStatus::Updated));
+		Ok(obj)
 	}
 	
 	pub fn update_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
@@ -267,33 +247,25 @@ impl Module {
 	pub fn delete_object(&mut self, repo: &Option<Repository>, id: usize) -> Result<Object, ModuleError> {
 		let mut obj = self.find_object(id)?;
 		obj.deleted_at = Some(Utc::now());
-		let obj_path = self.prepare_object(&repo, &mut obj)?;
-		let repo_path = self.get_repository_path().ok_or(ModuleError::NoRepositoryInitialized)?;
-		if let Some(outbound_links) = &obj.outbound_links {
-			let inbound_link: Link = Link { 
-				path: self.path.strip_prefix(&repo_path).unwrap_or(&self.path).into(),
-				object: obj.id(),
-				module: self.manifest.prefix.clone(),
-			};
-			for outbound_link in outbound_links {
-				let dest_mod: Module = Module::read(&repo_path.join(&outbound_link.path))?;
-				dest_mod.delete_inbound_link(&repo, &inbound_link)?;
-			}
-		}
+		let obj_path = self.prepare_object(&mut obj)?;
 		let repo = Module::repo(&repo)?;
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Deleted object `{}:{}`.", self.manifest.prefix, obj.id()))?;
-		Ok(self.read_object(obj.id())?)
+		let mut obj: Object = self.read_object(obj.id())?;
+		self.add_metadata(&mut obj, None);
+		Ok(obj)
 	}
 
 	pub fn restore_object(&mut self, repo: &Option<Repository>, id: usize) -> Result<Object, ModuleError> {
 		let mut obj = self.find_object(id)?;
 		obj.deleted_at = None;
-		let obj_path = self.prepare_object(&repo, &mut obj)?;
+		let obj_path = self.prepare_object(&mut obj)?;
 		let repo = Module::repo(&repo)?;
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Restored object `{}:{}`.", self.manifest.prefix, obj.id()))?;
-		Ok(self.read_object(obj.id())?)
+		let mut obj: Object = self.read_object(obj.id())?;
+		self.add_metadata(&mut obj, Some(ObjectStatus::Updated));
+		Ok(obj)
 	}
 
 	pub fn create_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
@@ -348,8 +320,12 @@ impl Module {
 		let path = self.path.clone();
 		let baseline: Baseline = Baseline { 
 			version: SemVer::from(&version), 
+			created_at: Utc::now(),
 			hash: Some(hash), 
 			description, 
+			deleted_at: None,
+			deleted_by: None,
+			status: BaselineStatus::Latest,
 		};
 
 		let mut baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
@@ -361,8 +337,7 @@ impl Module {
 	}
 	
 	pub fn read_baselines(path: &PathBuf) -> Result<Vec<Baseline>, ModuleError> {
-		let mut baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
-		Ok(baselines)
+		Ok(mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?)
 	}
 
 	fn baseline_hash(&self, version: &str) -> Result<Baseline, ModuleError> {
@@ -508,6 +483,26 @@ impl Module {
 		git::git_commit(&repo, &format!("Deleted link of `{}:{:?}` to `{}:{}`.", self.manifest.prefix, &empty_keys, link.module, link.object))?;
 
 		self.read_inbound_links()
+	}
+
+	fn add_metadata(&self, obj: &mut Object, status: Option<ObjectStatus>) {
+		let inbound_links = self.links.inbound_links.get(&obj.id()).cloned();
+		let outbound_links = self.links.outbound_links.get(&obj.id()).cloned();
+		let status = if let Some(st) = status {
+			if obj.deleted_at.is_some() {
+				ObjectStatus::Deleted
+			} else {
+				st
+			}
+		} else {
+			ObjectStatus::Draft
+		};
+		let metadata: Metadata = Metadata { 
+			status, 
+			inbound_links, 
+			outbound_links, 
+		};
+		obj.metadata = Some(metadata);
 	}
 
 	fn get_repository_path(&self) -> Option<PathBuf> {

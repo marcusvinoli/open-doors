@@ -4,19 +4,18 @@ use chrono::{DateTime, Utc};
 
 use crate::core::user::User;
 
-use super::links::Link;
+use super::Metadata;
+
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
 pub struct Object {
     id: usize,
-    pub level: String,
+    pub parent_level: usize,
+    pub index_level: usize,
     pub header: String,
     pub content: String,
     pub author: User,
-    pub is_active: bool,
-    pub is_normative: bool,
-    pub is_requirement: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     #[serde(skip_serializing_if="Option::is_none")]
@@ -24,7 +23,7 @@ pub struct Object {
     #[serde(skip_serializing_if="Option::is_none")]
     pub custom_fields: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if="Option::is_none")]
-    pub outbound_links: Option<Vec<Link>>,
+    pub metadata: Option<Metadata>,
 }
 
 impl Object {

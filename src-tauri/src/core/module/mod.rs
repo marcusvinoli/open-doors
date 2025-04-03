@@ -2,7 +2,13 @@ pub mod definitions;
 pub mod baseline;
 pub mod template;
 pub mod module;
-pub mod object;
-pub mod links;
+pub mod view;
 
-pub use module::*;
+pub mod links;
+pub mod objects;
+
+pub use view::View;
+pub use links::{Link, Links};
+pub use template::Template;
+pub use baseline::{Baseline, SemVer, BaselineStatus};
+pub use objects::{Object, Metadata, ObjectStatus, Attribute, AttributeKind};
