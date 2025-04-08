@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, os::macos::raw::stat};
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 
-use crate::core::user::User;
+use crate::core::{user::User, Link, Links};
 
-use super::Metadata;
+use super::{Metadata, ObjectStatus};
 
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -35,5 +35,48 @@ impl Object {
 
     pub fn id(&self) -> usize {
         self.id
+    }
+
+    pub fn add_metadata(&mut self, status: &ObjectStatus, links: &Links) {
+        if let Some(links) = links.inbound_links.get(&self.id) {
+            self.add_inbound_links(Some(links.to_owned()));
+        }
+        if let Some(links) = links.outbound_links.get(&self.id) {
+            self.add_outbound_links(Some(links.to_owned()));
+        }
+        self.set_status(status.to_owned());
+    }
+
+    pub fn set_status(&mut self, status: ObjectStatus) {
+        if let Some(meta) = self.metadata.as_mut() {
+            meta.status = status.to_owned();
+        } else {
+            let mut metadata: Metadata = Metadata::default();
+            metadata.status = status.to_owned();
+        }
+    }
+
+    pub fn add_inbound_links(&mut self, links: Option<Vec<Link>>) {
+        if let Some(meta) = self.metadata.as_mut() {
+            meta.inbound_links = links
+        } else {
+            let mut metadata: Metadata = Metadata::default();
+            metadata.inbound_links = links;
+            self.metadata = Some(metadata);
+        }
+    }
+
+    pub fn add_outbound_links(&mut self, links: Option<Vec<Link>>) {
+        if let Some(meta) = self.metadata.as_mut() {
+            meta.outbound_links = links
+        } else {
+            let mut metadata: Metadata = Metadata::default();
+            metadata.outbound_links = links;
+            self.metadata = Some(metadata);
+        }
+    }
+
+    pub fn delete_metadata(&mut self) {
+        self.metadata = None;
     }
 }

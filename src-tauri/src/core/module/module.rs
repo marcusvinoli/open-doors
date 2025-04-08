@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use git2::{Repository, Tree, TreeEntry, ObjectType};
 
 use crate::core::{error::ModuleError, git, middleware as mid, User};
-use super::{definitions as defs, Baseline, BaselineStatus, Link, Links, Object, Metadata, ObjectStatus, SemVer, Template};
+use super::{definitions as defs, Baseline, BaselineStatus, Link, Links, Object, ObjectStatus, SemVer, Template};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {
@@ -102,53 +102,23 @@ impl Module {
 		Ok(())
 	}
 
-	pub fn read_object(&self, id: usize) -> Result<Object, ModuleError> {
-		Ok(Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id)?)
-	}
-
-	pub fn read_draft_object(&self, id: usize) -> Result<Object, ModuleError> {
-		let mut obj: Object = self.read_object(id)?;
-		self.add_metadata(&mut obj, Some(ObjectStatus::Draft));
-		Ok(obj)
-	}
-
-	pub fn find_object(&self, id: usize) -> Result<Object, ModuleError> {
-		match Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id) {
-			Ok(obj) => {
-				return Ok(obj)
-			},
-			Err(_) => {
-				return Module::open_object(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), id)
-			}
-		};
-	}
-	
 	pub fn create_object(&mut self, repo: &Option<Repository>, obj: &mut Object) -> Result<Object, ModuleError> {
 		let obj_path: String = self.prepare_object(obj)?;
 		let repo: &Repository = Module::repo(&repo)?;
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Created object `{}:{}`.", self.manifest.prefix, obj.id()))?;
 		let mut obj: Object = self.read_object(obj.id())?;
-		self.add_metadata(&mut obj, Some(ObjectStatus::Updated));
+		obj.set_status(ObjectStatus::Updated);
 		Ok(obj)
 	}
 	
 	pub fn create_draft_object(&mut self, obj: &mut Object) -> Result<Object, ModuleError> {
 		let id: usize = self.save_object(defs::OD_DRAFT_FOLDER_NAME, obj)?;
 		let mut obj: Object = self.read_draft_object(id)?;
-		self.add_metadata(&mut obj, Some(ObjectStatus::Draft));
+		obj.set_status(ObjectStatus::Draft);
 		Ok(obj)
 	}
 
-	pub fn create_objects(&mut self, repo: &Option<Repository>, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
-		let mut res: Vec<Object> = Vec::new();
-		for obj in objs {
-			let mut obj = obj.clone();
-			res.push(self.create_object(repo, &mut obj)?);
-		}
-		Ok(res)
-	}
-	
 	pub fn create_draft_objects(&mut self, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
 		let mut res: Vec<Object> = Vec::new();
 		for obj in objs {
@@ -157,7 +127,19 @@ impl Module {
 		}
 		Ok(res)
 	}
-	
+
+	pub fn read_object(&self, id: usize) -> Result<Object, ModuleError> {
+		let mut obj = Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id)?;
+		obj.add_metadata(&ObjectStatus::Updated, &self.links);
+		Ok(obj)
+	}
+
+	pub fn read_draft_object(&self, id: usize) -> Result<Object, ModuleError> {
+		let mut obj: Object = self.read_object(id)?;
+		obj.add_metadata(&ObjectStatus::Draft, &self.links);
+		Ok(obj)
+	}
+
 	pub fn read_objects(&self) -> Result<Vec<Object>, ModuleError> {
 		let mut objs: Vec<Object> = Vec::new();
 		let entries = mid::read_folder(&self.path.join(defs::OD_OBJS_FOLDER_NAME));
@@ -179,7 +161,7 @@ impl Module {
 				if let Some(number_str) = file_name_str.strip_suffix(".yml") {
 					if let Ok(number) = number_str.parse::<usize>() {
 						let mut obj = self.read_object(number)?;
-						self.add_metadata(&mut obj, None);
+						obj.add_metadata(&ObjectStatus::Updated, &self.links);
 						objs.push(obj);
 					}
 				}
@@ -217,7 +199,7 @@ impl Module {
 		
 		Ok(Module::sort_by_level(objs))
 	}
-	
+
 	pub fn update_object(&mut self, repo: &Option<Repository>, obj: &mut Object) -> Result<Object, ModuleError> {
 		let obj_path = self.prepare_object(obj)?;
 		let repo = Module::repo(&repo)?;
@@ -240,7 +222,6 @@ impl Module {
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Deleted object `{}:{}`.", self.manifest.prefix, obj.id()))?;
 		let mut obj: Object = self.read_object(obj.id())?;
-		self.add_metadata(&mut obj, None);
 		Ok(obj)
 	}
 
@@ -254,6 +235,17 @@ impl Module {
 		let mut obj: Object = self.read_object(obj.id())?;
 		self.add_metadata(&mut obj, Some(ObjectStatus::Updated));
 		Ok(obj)
+	}
+
+	fn find_object(&self, id: usize) -> Result<Object, ModuleError> {
+		match Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id) {
+			Ok(obj) => {
+				return Ok(obj)
+			},
+			Err(_) => {
+				return Module::open_object(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), id)
+			}
+		};
 	}
 
 	pub fn create_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
@@ -291,7 +283,7 @@ impl Module {
 	pub fn read_template(&self) -> Result<Template, ModuleError> {
 		Ok(mid::read_yml_file::<Template,_>(&self.path, defs::OD_TEMPLATE_FILE_NAME)?)
 	}
-	
+
 	pub fn update_template(&self, repo: &Option<Repository>, template: Template) -> Result<Template, ModuleError> {
 		let repo = Module::repo(&repo)?;
 		let template_path = mid::create_yml_file(&self.path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
@@ -393,6 +385,27 @@ impl Module {
 		}
 		Ok(tree)
 	}
+
+	fn read_file_from_tag_(&self, repo: &Repository, hash: &Option<String>, folder_path: &str, file_name: &str) -> Result<String, ModuleError> {
+		let hash = hash.as_ref().ok_or(ModuleError::BaselineNotCommited)?;
+		let tag_obj = repo.revparse_single(&hash)?;
+		let tag_commit = tag_obj.peel_to_commit()?;
+		let root_tree = tag_commit.tree()?;
+		let subtree = self.find_subtree(repo, root_tree, folder_path)?;
+		let mut results = String::new();
+		for entry in subtree.iter() {
+			if entry.kind() == Some(ObjectType::Blob) {
+				if let Some(name) = entry.name() {
+					if name == file_name {
+						let blob = repo.find_blob(entry.id())?;
+						let content = str::from_utf8(blob.content())?;
+						results = content.to_string();
+					}
+				}
+			}
+		}
+		Ok(results)
+	}
 	
 	pub fn read_files_from_tag_at_path(&self, repo: &Repository, hash: &Option<String>, folder_path: &str) -> Result<Vec<String>, ModuleError> {
 		let hash = hash.as_ref().ok_or(ModuleError::BaselineNotCommited)?;
@@ -423,15 +436,18 @@ impl Module {
 		let blob = repo.find_blob(entry.id())?;
 		let content = str::from_utf8(blob.content().into())?;
 		let mut obj: Object = serde_yaml::from_str::<Object>(&content)?.to_owned();
-		self.add_metadata(&mut obj, Some(ObjectStatus::Baselined));
+		
+		add_metadata(&mut obj, Some(ObjectStatus::Baselined));
 		Ok(serde_yaml::from_str(&content)?)
 	}
 
 	pub fn read_objects_from_baseline(&self, repo: &Option<Repository>, version: &str) -> Result<Vec<Object>, ModuleError> {
 		let folder_path = PathBuf::from(self.module_relative_path(&repo)?).join(defs::OD_OBJS_FOLDER_NAME);
+		let links_path: PathBuf = PathBuf::from(self.module_relative_path(&repo)?).join(defs::OD_LINKS_FILE_NAME);
 		let baseline: Baseline = self.baseline_hash(version)?;
 		let repo: &Repository = Module::repo(repo)?;
 		let files: Vec<String> = self.read_files_from_tag_at_path(&repo, &baseline.hash, &folder_path.to_string_lossy())?;
+		let links: Vec<String> = self.read_files_from_tag_at_path(&repo, &baseline.hash, &links_path.to_string_lossy())?;
 		let mut objs: Vec<Object> = Vec::new();
 		for file in files {
 			let mut obj: Object = serde_yaml::from_str::<Object>(&file)?.to_owned();
@@ -517,26 +533,6 @@ impl Module {
 		Ok(destination.join(filename).to_string_lossy().into())
 	}
 
-	fn add_metadata(&self, obj: &mut Object, status: Option<ObjectStatus>) {
-		let inbound_links = self.links.inbound_links.get(&obj.id()).cloned();
-		let outbound_links = self.links.outbound_links.get(&obj.id()).cloned();
-		let status = if let Some(st) = status {
-			if obj.deleted_at.is_some() {
-				ObjectStatus::Deleted
-			} else {
-				st
-			}
-		} else {
-			ObjectStatus::Draft
-		};
-		let metadata: Metadata = Metadata { 
-			status, 
-			inbound_links, 
-			outbound_links, 
-		};
-		obj.metadata = Some(metadata);
-	}
-
 	fn get_repository_path(&self) -> Option<PathBuf> {
 		let mut current_path = self.path.clone();
 		loop {
@@ -612,7 +608,10 @@ impl Module {
 	}
 
 	fn save_object(&self, folder: &str, obj: &mut Object) -> Result<usize, ModuleError> {
-		obj.assign_id(self.get_next_available_id()?);
+		obj.metadata = None;
+		if obj.id() == 0 {
+			obj.assign_id(self.get_next_available_id()?);
+		}
 		if let Err(_) = mid::create_yml_file(&self.path.join(folder), format!("{}.yml", obj.id()), &obj) {
 			mid::create_folder(&self.path, folder)?;
 			mid::create_yml_file(&self.path.join(folder), format!("{}.yml", obj.id()), &obj)?;
