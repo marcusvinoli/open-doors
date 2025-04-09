@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use csv::WriterBuilder;
 use regex::Regex;
 
-use crate::core::module::{Module, object::Object};
+use crate::core::module::{Module, Object};
 
 #[cfg(windows)]
 const LINE_ENDING : &str = "\r\n";
@@ -57,20 +57,9 @@ impl CsvOptionsBuilder {
 
 #[derive(Serialize, Deserialize)]
 struct CsvObjectInterface {
-	#[serde(rename="Level")]
-	level: String,
-	#[serde(rename="ID")]
 	id: String,
-	#[serde(rename="Object Text")]
 	content: String,
-	#[serde(rename="Author")]
 	author: String,
-	#[serde(rename="Is Active?")]
-	active: String,
-	#[serde(rename="Is Normative?")]
-	normative: String,
-	#[serde(rename="Is Requirement?")]
-	requirement: String,
 }
 
 impl CsvObjectInterface {
@@ -81,17 +70,9 @@ impl CsvObjectInterface {
 	pub fn from_object(module: &Module, object: Object, keep_markdown: bool) -> CsvObjectInterface {
 		let id: String;
 		let mut content: String;
-		let active: String;
-		let requirement: String;
-		let normative: String;
 		let author: String;
-		let level: String;
 		
-		level = format!("{}", object.level);
 		id = format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id());
-		active = if object.is_active {String::from("Yes")} else {String::from("No")};
-		requirement = if object.is_requirement {String::from("Yes")} else {String::from("No")};
-		normative = if object.is_normative {String::from("Yes")} else {String::from("No")};
 		author = format!("{} <{}>", object.author.name, object.author.email);
 		content = if object.header != String::from("") {
 			format!("{}{}{}", object.header, LINE_ENDING, object.content)
@@ -105,11 +86,7 @@ impl CsvObjectInterface {
 
 		CsvObjectInterface {
 			id,
-			level,
 			content,
-			active,
-			requirement,
-			normative,
 			author,
 		}
 	}

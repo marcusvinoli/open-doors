@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use tauri::command;
 
-use crate::core::{error::OpenDoorsError, exporter::{csv::{CsvExporter, CsvOptions}, xlsx::{XlsxExporter, XlsxOptions}}, module::{object::Object, Module}};
+use crate::core::{error::OpenDoorsError, exporter::{csv::{CsvExporter, CsvOptions}, xlsx::{XlsxExporter, XlsxOptions}}, module::{Object, Module}};
 
 #[command] 
 pub fn export_csv(module_path: PathBuf, file_path: PathBuf) -> Result<bool, OpenDoorsError> {

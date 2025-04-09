@@ -26,7 +26,7 @@ pub struct TreeItem {
 	pub item_type: TreeItemType,
 	pub name: String,
 	#[serde(with = "path_utils")]
-	pub path: PathBuf,
+	pub path: String,
 	pub children: Vec<TreeItem>,
 }
 
@@ -67,10 +67,10 @@ impl TreeItem {
 			.and_then(|name| name.to_str())
 			.unwrap_or("")
 			.to_string();
-
+		let path = path.to_str().unwrap_or_default().into();
 		Ok(TreeItem {
 			name,
-			path: path.clone(),
+			path,
 			item_type,
 			children,
 		})

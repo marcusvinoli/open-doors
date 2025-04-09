@@ -9,14 +9,14 @@ pub struct Folder{}
 impl Folder {
 	pub fn create_folder(repo: &Option<Repository>, name: &str, parent: &TreeItem) -> Result<TreeItem, FolderError> {
 		let repo = repo.as_ref().ok_or(FolderError::NoRepositoryInitialized)?;
-		let path = mid::create_folder(&parent.path, &name)?;
+		let path = mid::create_folder(&PathBuf::from(&parent.path), &name)?;
 		let dummy_file = mid::create_file(&path, defs::OD_FOLDER_DUMMY_FILENAME)?;
 		git::add_file(&repo, &dummy_file.to_string_lossy())?;
 		git::git_commit(&repo, &format!("Created folder `{}`.", name))?;
 		Ok(TreeItem::from_path(&path)?)
 	}
 	pub fn read(folder: &TreeItem) -> Result<TreeItem, FolderError> {
-		Ok(TreeItem::from_path(&folder.path)?)
+		Ok(TreeItem::from_path(&PathBuf::from(&folder.path))?)
 	}
 
 	pub fn update(repo: &Option<Repository>, origin: &PathBuf, destination: &PathBuf) -> Result<TreeItem, FolderError> {

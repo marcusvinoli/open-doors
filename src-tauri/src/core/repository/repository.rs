@@ -38,10 +38,10 @@ impl Repository {
 		}
 
 		*repo = Some(git_repository);
-
+		let path: String = repo_path.to_str().unwrap_or_default().into();
 		let tree: TreeItem = TreeItem {
+			path,
 			name: name.into(),
-			path: repo_path.into(),
 			item_type: TreeItemType::Repository,
 			children: Vec::new(),
 		};

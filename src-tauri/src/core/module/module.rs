@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use git2::{Repository, Tree, TreeEntry, ObjectType};
 
 use crate::core::{error::ModuleError, git, middleware as mid, User};
-use super::{definitions as defs, Baseline, BaselineStatus, Link, Links, Object, ObjectStatus, SemVer, Template};
+use super::{definitions as defs, view, Baseline, BaselineStatus, Link, Links, Object, ObjectStatus, SemVer, Template, View};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {
@@ -22,6 +22,7 @@ pub struct Module{
 	pub path: PathBuf,
 	pub manifest: ModuleManifest,
 	pub template: Template,
+	pub views: Vec<View>,
 	pub baselines: Vec<Baseline>,
 	pub links: Links
 }
@@ -32,11 +33,13 @@ impl Module {
 		let module_path: PathBuf = mid::create_folder(&path, &man.prefix)?;
 		let baselines: Vec<Baseline> = Vec::new();
 		let template: Template = Template::default();
+		let views: Vec<View> = Vec::new();
 		let links: Links = Links::default();
 		
 		mid::create_yml_file(&module_path, defs::OD_MODULE_MANIFEST_FILE_NAME, &man)?;
 		mid::create_yml_file(&module_path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
 		mid::create_yml_file(&module_path, defs::OD_TEMPLATE_FILE_NAME, &template)?;
+		mid::create_yml_file(&module_path, defs::OD_VIEWS_FILE_NAME, &views)?;
 		mid::create_yml_file(&module_path, defs::OD_LINKS_FILE_NAME, &links)?;
 
 		mid::create_file(
@@ -61,6 +64,7 @@ impl Module {
 			path: module_path, 
 			manifest: man.clone(), 
 			template,
+			views,
 			baselines,
 			links,
 		})
@@ -71,12 +75,14 @@ impl Module {
 		let manifest: ModuleManifest = mid::read_yml_file(&path, defs::OD_MODULE_MANIFEST_FILE_NAME)?;
 		let template: Template = mid::read_yml_file(&path, defs::OD_TEMPLATE_FILE_NAME)?;
 		let baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
+		let views: Vec<View> = mid::read_yml_file(&path, defs::OD_VIEWS_FILE_NAME)?;
 		let links: Links = mid::read_yml_file(&path, defs::OD_LINKS_FILE_NAME)?;
 		
 		Ok(Module { 
 			path: path.clone(), 
-			manifest, 
-			template, 
+			manifest,
+			template,
+			views, 
 			baselines,
 			links,
 		})
@@ -319,7 +325,7 @@ impl Module {
 		let baselines_path = mid::update_yml_file(&path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
 		self.baselines = baselines;
 		git::add_file(&repo, &baselines_path.to_string_lossy())?;
-		git::git_commit(&repo, &format!("Baselined module `{}` at version `{}` - `{}`.", self.manifest.prefix, version, desc))?;
+		git::git_commit(&repo, &format!("Module `{}` baselined at version `{}` - `{}`.", self.manifest.prefix, version, desc))?;
 		Ok(self.baselines.to_owned())
 	}
 	
@@ -331,7 +337,7 @@ impl Module {
 	pub fn delete_baselines(&mut self, repo: &Option<Repository>, version: &SemVer) -> Result<Vec<Baseline>, ModuleError> {
 		let repo: &Repository = Module::repo(&repo)?;
 		let user: User = User::from_repository(&repo)?;
-		self.baselines.iter_mut().map(|bl| {
+		self.baselines.iter_mut().for_each(|bl| {
 			if bl.version == *version {
 				bl.deleted_at = Some(Utc::now());
 				bl.deleted_by = Some(user.to_owned());
@@ -663,9 +669,9 @@ impl Module {
 		Ok(mid::read_yml_file::<Object, _>(path, format!("{id}.yml"))?)
 	}
 
-	fn sort_by_level(mut objects: Vec<Object>) -> Vec<Object> {
+	fn sort_by_level(objects: Vec<Object>) -> Vec<Object> {
 
-		fn compare_levels(a: &str, b: &str) -> i32 {
+		/* fn compare_levels(a: &str, b: &str) -> i32 {
 			fn parse_level(level: &str) -> Vec<Result<i32, &str>> {
 				level
 					.split(|c| c == '.' || c == '-')
@@ -718,8 +724,8 @@ impl Module {
 			0
 		}
 		
-		//objects.sort_by(|a, b| compare_levels(&a.level, &b.level).cmp(&0));
-
+		objects.sort_by(|a, b| compare_levels(&a.level, &b.level).cmp(&0));
+		 */
 		objects
 	}
 

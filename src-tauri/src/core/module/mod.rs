@@ -8,6 +8,7 @@ pub mod links;
 pub mod objects;
 
 pub use view::View;
+pub use module::{Module, ModuleManifest};
 pub use links::{Link, Links};
 pub use template::Template;
 pub use baseline::{Baseline, SemVer, BaselineStatus};

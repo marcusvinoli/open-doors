@@ -2,12 +2,12 @@ use std::{path::PathBuf, sync::Mutex};
 use git2::Repository as GitRepository;
 use tauri::{command, State}; 
 
-use crate::core::{error::OpenDoorsError, module::{baseline::Baseline, object::Object, template::Template, Module, ModuleManifest}, tree::TreeItem};
+use crate::core::{error::OpenDoorsError, module::{Baseline, Object, Template, Module, ModuleManifest}, tree::TreeItem};
 
 #[command] 
 pub fn create_module(state: State<'_, Mutex<Option<GitRepository>>>, man: ModuleManifest, parent: TreeItem) -> Result<Module, OpenDoorsError> {
 	let repo = state.lock().unwrap();
-	Ok(Module::create(&repo, &parent.path, &man)?)
+	Ok(Module::create(&repo, &parent.path.into(), &man)?)
 }
 
 #[command]
@@ -111,7 +111,7 @@ pub fn update_template(state: State<'_, Mutex<Option<GitRepository>>>, path: Pat
 #[command]
 pub fn create_baseline(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, baseline: Baseline) -> Result<(), OpenDoorsError> {
 	let repo = state.lock().unwrap();
-	let module = Module::read(&path)?;
+	let mut module = Module::read(&path)?;
 	module.create_baseline(&repo, &baseline.version.to_string(), &baseline.description)?;
 	Ok(())
 }

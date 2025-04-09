@@ -1,12 +1,13 @@
 pub mod path_utils {
 	use serde::{Serializer, Deserialize, Deserializer};
-	use std::{borrow::Cow, path::PathBuf};
+	use std::{borrow::Cow, path::{Path, PathBuf}};
 
 	pub fn serialize<S>(p: &String, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: Serializer,
 	{
 		// Convert the path to a Unix-style string
+		let p = PathBuf::from(p);
 		let unix_style_path = p.to_str()
 			.unwrap_or("")
 			.replace(std::path::MAIN_SEPARATOR, "/");

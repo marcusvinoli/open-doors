@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::PathBuf};
 use regex::Regex;
 use xlsxwriter::{Format, Workbook, Worksheet, XlsxError};
 
-use crate::core::module::{object::Object, template::{self, Template}, Module};
+use crate::core::module::{Attribute, Module, Object, Template};
 
 pub struct XlsxOptions {
 	sheet_name: Option<String>,
@@ -85,8 +85,8 @@ impl XlsxExporter {
 		let mut col: u16 = 6;
 		let mut has_error: bool = false;
 
-		<Vec<template::Fields> as Clone>::clone(&template.fields).into_iter().for_each(|field| {
-			has_error |= ws.write_string(0, col, &field.attribute, Some(Format::new().set_bold())).is_err();
+		<Vec<Attribute> as Clone>::clone(&template.fields).into_iter().for_each(|field| {
+			has_error |= ws.write_string(0, col, &field.name, Some(Format::new().set_bold())).is_err();
 			col += 1;
 		});
 
@@ -102,7 +102,8 @@ impl XlsxExporter {
 			let format: Option<&Format> = if object.header.is_empty() {
 				None
 			} else {
-				fmt = Format::new().set_bold().set_font_size(XlsxExporter::get_font_size_from_level(&object.level)).to_owned();
+				// fmt = Format::new().set_bold().set_font_size(XlsxExporter::get_font_size_from_level(&object.level)).to_owned();
+				fmt = Format::new();
 				Some(&fmt)
 			};
 
@@ -114,13 +115,10 @@ impl XlsxExporter {
 
 			ws.write_string(row, 0, &format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id()), format.clone())?;
 			ws.write_string(row, 2, &format!("{} <{}>", object.author.name, object.author.email), None)?;
-			ws.write_string(row, 3, if object.is_active {"Yes"} else {"No"}, None)?;
-			ws.write_string(row, 4, if object.is_normative {"Yes"} else {"No"}, None)?;
-			ws.write_string(row, 5, if object.is_requirement {"Yes"} else {"No"}, None)?;
 
-			<Vec<template::Fields> as Clone>::clone(&template.fields).into_iter().for_each(|field| {
+			<Vec<Attribute> as Clone>::clone(&template.fields).into_iter().for_each(|field| {
 				ws.write_string(row, col, 
-					&<Option<HashMap<String, String>> as Clone>::clone(&object.custom_fields)
+					&<Option<HashMap<String, String>> as Clone>::clone(&object.attributes)
 						.unwrap_or_default()
 						.get(&field.key)
 						.unwrap_or(&String::new()), 
@@ -157,7 +155,7 @@ impl XlsxExporter {
 
 	fn get_font_size_from_level(level: &String) -> f64 {
 		let levels: Vec<&str> = level.split(|s| s == '.' || s == '-').collect();
-		return match level.len() {
+		return match levels.len() {
 			1 => { 16.0 },
 			2 => { 14.0 },
 			3 => { 12.0 },
