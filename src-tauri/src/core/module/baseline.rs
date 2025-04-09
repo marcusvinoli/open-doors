@@ -81,7 +81,7 @@ impl<'de> Visitor<'de> for SemVerVisitor {
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
-#[serde(rename_all="lowercase")]
+#[serde(rename_all="camelCase")]
 pub enum BaselineStatus {
 	#[default]
 	WorkInProgress,
@@ -91,6 +91,7 @@ pub enum BaselineStatus {
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[serde(rename_all="camelCase")]
 pub struct Baseline {
 	pub version: SemVer,
 	pub description: String,

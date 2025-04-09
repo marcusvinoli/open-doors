@@ -1,5 +1,5 @@
-import type Author from "$lib/components/structs/Author";
-import { User } from "$lib/components/structs/User";
+import type Author from "$lib/components/structs/User";
+import User from "$lib/components/structs/User";
 import { user } from "$lib/stores/User";
 import { repository } from "$lib/stores/Repository";
 import { invoke } from "@tauri-apps/api";
@@ -9,8 +9,8 @@ export function loadAuthorInformation() {
     let repo = get(repository);
     if(repo) {
         invoke('get_user', {path: repo.tree.path})
-            .then(usr => {
-                user.set(User.fromString(usr as string));
+            .then(usr as User => {
+                user.set(User.fromString(usr));
             })
             .catch(err => {
                 console.log(err);

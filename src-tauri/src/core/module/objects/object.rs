@@ -1,4 +1,4 @@
-use std::{collections::HashMap, os::macos::raw::stat};
+use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 
@@ -21,7 +21,7 @@ pub struct Object {
     #[serde(skip_serializing_if="Option::is_none")]
     pub deleted_at: Option<DateTime<Utc>>,
     #[serde(skip_serializing_if="Option::is_none")]
-    pub custom_fields: Option<HashMap<String, String>>,
+    pub attributes: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub metadata: Option<Metadata>,
 }

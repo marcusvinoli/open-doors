@@ -1,4 +1,4 @@
-export class User {
+export interface User {
     name: string;
     email: string;
 
@@ -19,4 +19,4 @@ export class User {
         const [_, name, email] = match;
         return new User(name, email);
     }
-}
+};
