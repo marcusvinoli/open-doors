@@ -1,3 +1,4 @@
+use git2::{Repository as GitRepository, Error as GitError};
 use serde::{Serialize, Serializer, Deserialize, Deserializer};
 use serde::de::{self, Visitor};
 use std::fmt;
@@ -6,6 +7,16 @@ use std::fmt;
 pub struct User {
     pub name: String,
     pub email: String,
+}
+
+impl User {
+    pub fn from_repository(repo: &GitRepository) -> Result<User, GitError> {
+        let mut user: User = User { name: String::new(), email: String::new() };
+        let sig  = repo.signature()?;
+        user.name = sig.name().unwrap_or_default().into();
+        user.email = sig.email().unwrap_or_default().into();
+        Ok(user)
+    }
 }
 
 impl Serialize for User {

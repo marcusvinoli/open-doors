@@ -2,7 +2,7 @@ pub mod path_utils {
 	use serde::{Serializer, Deserialize, Deserializer};
 	use std::{borrow::Cow, path::PathBuf};
 
-	pub fn serialize<S>(p: &PathBuf, serializer: S) -> Result<S::Ok, S::Error>
+	pub fn serialize<S>(p: &String, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: Serializer,
 	{
@@ -13,12 +13,12 @@ pub mod path_utils {
 		serializer.serialize_str(&unix_style_path)
 	}
 	
-	pub fn deserialize<'de, D>(deserializer: D) -> Result<PathBuf, D::Error>
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<String, D::Error>
 	where
 		D: Deserializer<'de>,
 	{
 		let s: Cow<'de, str> = Deserialize::deserialize(deserializer)?;
 		let path_str = s.replace("/", &std::path::MAIN_SEPARATOR.to_string());
-		Ok(PathBuf::from(path_str))
+		Ok(path_str)
 	}
 }

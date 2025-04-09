@@ -130,7 +130,7 @@ impl Module {
 
 	pub fn read_object(&self, id: usize) -> Result<Object, ModuleError> {
 		let mut obj = Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id)?;
-		obj.add_metadata(&ObjectStatus::Updated, &self.links);
+		
 		Ok(obj)
 	}
 
@@ -196,7 +196,6 @@ impl Module {
 				}
 			}
 		}
-		
 		Ok(Module::sort_by_level(objs))
 	}
 
@@ -206,7 +205,7 @@ impl Module {
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Updated object `{}:{}`.", self.manifest.prefix, obj.id()))?;
 		let mut obj: Object = self.read_object(obj.id())?;
-		self.add_metadata(&mut obj, Some(ObjectStatus::Updated));
+		obj.add_metadata(&ObjectStatus::Updated, &self.links);
 		Ok(obj)
 	}
 	
@@ -222,6 +221,7 @@ impl Module {
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Deleted object `{}:{}`.", self.manifest.prefix, obj.id()))?;
 		let mut obj: Object = self.read_object(obj.id())?;
+		obj.add_metadata(&ObjectStatus::Deleted, &self.links);
 		Ok(obj)
 	}
 
@@ -233,7 +233,7 @@ impl Module {
 		git::add_file(&repo, &obj_path)?;
 		git::git_commit(&repo, &format!("Restored object `{}:{}`.", self.manifest.prefix, obj.id()))?;
 		let mut obj: Object = self.read_object(obj.id())?;
-		self.add_metadata(&mut obj, Some(ObjectStatus::Updated));
+		obj.add_metadata(&ObjectStatus::Updated, &self.links);
 		Ok(obj)
 	}
 
@@ -292,32 +292,56 @@ impl Module {
 		Ok(self.read_template()?)
 	}
 
-	pub fn create_baseline(&self, repo: &Option<Repository>, semver: &str, desc: &str, user: &User) -> Result<Vec<Baseline>, ModuleError> {
+	pub fn create_baseline(&mut self, repo: &Option<Repository>, semver: &str, desc: &str) -> Result<Vec<Baseline>, ModuleError> {
 		let version: String = format!("{}/{}", self.manifest.prefix.to_lowercase(), semver);
 		let description: String = desc.to_owned();
 		let repo: &Repository = Module::repo(&repo)?;
+		let user: User = User::from_repository(&repo)?;
 		let hash: String = git::create_tag(&repo, &version, &description)?;
 		let path = self.path.clone();
 		let baseline: Baseline = Baseline { 
 			version: SemVer::from(&version), 
 			created_at: Utc::now(),
-			created_by: user.clone(),
-			description, 
+			created_by: user,
+			description,
 			hash: Some(hash),
 			deleted_at: None,
 			deleted_by: None,
 			status: BaselineStatus::Latest,
 		};
 		let mut baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
+		baselines.iter_mut().map(|bl| {
+			if bl.status == BaselineStatus::Latest {
+				bl.status = BaselineStatus::Historical
+			}
+		});
 		baselines.push(baseline);
 		let baselines_path = mid::update_yml_file(&path, defs::OD_BASELINE_FILE_NAME, &baselines)?;
+		self.baselines = baselines;
 		git::add_file(&repo, &baselines_path.to_string_lossy())?;
 		git::git_commit(&repo, &format!("Baselined module `{}` at version `{}` - `{}`.", self.manifest.prefix, version, desc))?;
-		Ok(baselines)
+		Ok(self.baselines.to_owned())
 	}
 	
-	pub fn read_baselines(path: &PathBuf) -> Result<Vec<Baseline>, ModuleError> {
-		Ok(mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?)
+	pub fn read_baselines(&mut self) -> Result<Vec<Baseline>, ModuleError> {
+		self.baselines = mid::read_yml_file(&self.path, defs::OD_BASELINE_FILE_NAME)?;
+		Ok(self.baselines.to_owned())
+	}
+
+	pub fn delete_baselines(&mut self, repo: &Option<Repository>, version: &SemVer) -> Result<Vec<Baseline>, ModuleError> {
+		let repo: &Repository = Module::repo(&repo)?;
+		let user: User = User::from_repository(&repo)?;
+		self.baselines.iter_mut().map(|bl| {
+			if bl.version == *version {
+				bl.deleted_at = Some(Utc::now());
+				bl.deleted_by = Some(user.to_owned());
+				bl.status = BaselineStatus::Deleted;
+			}
+		});
+		let baselines_path = mid::update_yml_file(&self.path, defs::OD_BASELINE_FILE_NAME, &self.baselines)?;
+		git::add_file(&repo, &baselines_path.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Baseline deleted `{}` at version `{}`.", self.manifest.prefix, version.to_string()))?;
+		self.read_baselines()
 	}
 
 	fn baseline_hash(&self, version: &str) -> Result<Baseline, ModuleError> {
@@ -386,7 +410,7 @@ impl Module {
 		Ok(tree)
 	}
 
-	fn read_file_from_tag_(&self, repo: &Repository, hash: &Option<String>, folder_path: &str, file_name: &str) -> Result<String, ModuleError> {
+	fn read_file_from_tag_at_path(&self, repo: &Repository, hash: &Option<String>, folder_path: &str, file_name: &str) -> Result<String, ModuleError> {
 		let hash = hash.as_ref().ok_or(ModuleError::BaselineNotCommited)?;
 		let tag_obj = repo.revparse_single(&hash)?;
 		let tag_commit = tag_obj.peel_to_commit()?;
@@ -400,6 +424,7 @@ impl Module {
 						let blob = repo.find_blob(entry.id())?;
 						let content = str::from_utf8(blob.content())?;
 						results = content.to_string();
+						break;
 					}
 				}
 			}
@@ -428,30 +453,45 @@ impl Module {
 		Ok(results)
 	}
 
+	pub fn read_links_from_baseline(&self, repo: &Option<Repository>, version: &str) -> Result<Links, ModuleError> {
+		let repo: &Repository = Module::repo(repo)?;
+		let baseline: Baseline = self.baseline_hash(version)?;
+		let links: String = self.read_file_from_tag_at_path(repo, &baseline.hash, &self.path.to_string_lossy(), defs::OD_LINKS_FILE_NAME)?;
+		let links: Links = serde_yaml::from_str(&links)?;
+		Ok(links)
+	}
+
 	pub fn read_object_from_baseline(&self, repo: &Option<Repository>, id: &usize, version: &str) -> Result<Object, ModuleError> {
 		let baseline: Baseline = self.baseline_hash(version)?;
 		let path: String = self.object_relative_path(&repo, &id)?;
+		let links: Links = self.read_links_from_baseline(&repo, version)?;
 		let repo: &Repository = Module::repo(repo)?;
 		let entry = self.tree_entry(&repo, &baseline.hash, &path)?;
 		let blob = repo.find_blob(entry.id())?;
 		let content = str::from_utf8(blob.content().into())?;
 		let mut obj: Object = serde_yaml::from_str::<Object>(&content)?.to_owned();
-		
-		add_metadata(&mut obj, Some(ObjectStatus::Baselined));
+		if obj.deleted_at.is_none() {
+			obj.add_metadata( &ObjectStatus::Baselined, &links);
+		} else {
+			obj.add_metadata( &ObjectStatus::Deleted, &links);
+		}
 		Ok(serde_yaml::from_str(&content)?)
 	}
 
 	pub fn read_objects_from_baseline(&self, repo: &Option<Repository>, version: &str) -> Result<Vec<Object>, ModuleError> {
 		let folder_path = PathBuf::from(self.module_relative_path(&repo)?).join(defs::OD_OBJS_FOLDER_NAME);
-		let links_path: PathBuf = PathBuf::from(self.module_relative_path(&repo)?).join(defs::OD_LINKS_FILE_NAME);
+		let links: Links = self.read_links_from_baseline(&repo, &version)?;
 		let baseline: Baseline = self.baseline_hash(version)?;
 		let repo: &Repository = Module::repo(repo)?;
 		let files: Vec<String> = self.read_files_from_tag_at_path(&repo, &baseline.hash, &folder_path.to_string_lossy())?;
-		let links: Vec<String> = self.read_files_from_tag_at_path(&repo, &baseline.hash, &links_path.to_string_lossy())?;
 		let mut objs: Vec<Object> = Vec::new();
 		for file in files {
 			let mut obj: Object = serde_yaml::from_str::<Object>(&file)?.to_owned();
-			self.add_metadata(&mut obj, Some(ObjectStatus::Baselined));
+			if obj.deleted_at.is_none() {
+				obj.add_metadata( &ObjectStatus::Baselined, &links);
+			} else {
+				obj.add_metadata( &ObjectStatus::Deleted, &links);
+			}
 			objs.push(obj);
 		}
 		Ok(Module::sort_by_level(objs))
@@ -462,7 +502,7 @@ impl Module {
 		let mut links: Links = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
 		if Module::add_unique_link(&mut links.inbound_links, &destination.object, &origin) {
 			git::add_file(&repo, &mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?.to_string_lossy())?;
-			git::git_commit(&repo, &format!("Create link of `{}:{}` to `{}:{}`.", self.manifest.prefix, origin.object, destination.module, destination.object))?;
+			git::git_commit(&repo, &format!("Create link of `{}:{}` to `{}:{}`.", self.manifest.prefix, origin.object, destination.module(), destination.object))?;
 		}
 		Ok(())
 	}
@@ -472,14 +512,14 @@ impl Module {
 		let mut links: Links = mid::read_yml_file(&self.path, defs::OD_LINKS_FILE_NAME)?;
 		if Module::add_unique_link(&mut links.outbound_links, &origin.object, &destination) {
 			git::add_file(&repo, &mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?.to_string_lossy())?;
-			git::git_commit(&repo, &format!("Create link of `{}:{}` to `{}:{}`.", self.manifest.prefix, origin.object, destination.module, destination.object))?;
+			git::git_commit(&repo, &format!("Create link of `{}:{}` to `{}:{}`.", self.manifest.prefix, origin.object, destination.module(), destination.object))?;
 		}
 		Ok(())
 	}
 
 	pub fn create_link(&self, repo: &Option<Repository>, origin: &Link, destination: &Link) -> Result<Links, ModuleError> {
 		let repo_path: PathBuf = self.get_repository_path().unwrap_or_default();
-		let dest_module_path: PathBuf = Module::add_paths(&repo_path, &destination.path);
+		let dest_module_path: PathBuf = Module::add_paths(&repo_path, &PathBuf::from(&destination.path));
 		let dest_module: Module = Module::read(&dest_module_path)?;
 		dest_module.create_inbound_link(&repo, origin, destination)?;
 		self.create_outbound_links(&repo, origin, destination)?;
@@ -488,7 +528,7 @@ impl Module {
 
 	pub fn delete_link(&self, repo: &Option<Repository>, origin: &Link, destination: &Link) -> Result<Links, ModuleError> {
 		let repo_path: PathBuf = self.get_repository_path().unwrap_or_default();
-		let dest_module_path: PathBuf = Module::add_paths(&repo_path, &destination.path);
+		let dest_module_path: PathBuf = Module::add_paths(&repo_path, &PathBuf::from(&destination.path));
 		let dest_module: Module = Module::read(&dest_module_path)?;
 		dest_module.delete_inbound_link(&repo, origin, destination)?;
 		self.deleted_outbound_link(&repo, origin, destination)?;
@@ -501,7 +541,7 @@ impl Module {
 			let mut new_links: Vec<Link> = links.clone();
 			new_links.retain(|lnk| lnk != origin);
 			git::add_file(&repo, &mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?.to_string_lossy())?;
-			git::git_commit(&repo, &format!("Deleted link from `{}:{}` to `{}:{}`.", self.manifest.prefix, origin.object, destination.module, destination.object))?;
+			git::git_commit(&repo, &format!("Deleted link from `{}:{}` to `{}:{}`.", self.manifest.prefix, origin.object, destination.module(), destination.object))?;
 		};
 		Ok(())
 	}
@@ -512,7 +552,7 @@ impl Module {
 			let mut new_links: Vec<Link> = links.clone();
 			new_links.retain(|lnk| lnk != destination);
 			git::add_file(&repo, &mid::update_yml_file(&self.path, defs::OD_LINKS_FILE_NAME, &links)?.to_string_lossy())?;
-			git::git_commit(&repo, &format!("Deleted link from `{}:{}` to `{}:{}`.", self.manifest.prefix, origin.object, destination.module, destination.object))?;
+			git::git_commit(&repo, &format!("Deleted link from `{}:{}` to `{}:{}`.", self.manifest.prefix, origin.object, destination.module(), destination.object))?;
 		};
 		Ok(())
 	}
@@ -678,7 +718,7 @@ impl Module {
 			0
 		}
 		
-		objects.sort_by(|a, b| compare_levels(&a.level, &b.level).cmp(&0));
+		//objects.sort_by(|a, b| compare_levels(&a.level, &b.level).cmp(&0));
 
 		objects
 	}

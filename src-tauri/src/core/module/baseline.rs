@@ -8,7 +8,7 @@ use crate::core::user::User;
 
 use super::definitions;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SemVer {
 	major: usize,
 	minor: usize,
@@ -80,7 +80,7 @@ impl<'de> Visitor<'de> for SemVerVisitor {
 	}
 }
 
-#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all="camelCase")]
 pub enum BaselineStatus {
 	#[default]
