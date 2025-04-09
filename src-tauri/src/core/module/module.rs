@@ -316,7 +316,7 @@ impl Module {
 			status: BaselineStatus::Latest,
 		};
 		let mut baselines: Vec<Baseline> = mid::read_yml_file(&path, defs::OD_BASELINE_FILE_NAME)?;
-		baselines.iter_mut().map(|bl| {
+		baselines.iter_mut().for_each(|bl| {
 			if bl.status == BaselineStatus::Latest {
 				bl.status = BaselineStatus::Historical
 			}
