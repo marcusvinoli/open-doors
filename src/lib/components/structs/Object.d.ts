@@ -1,4 +1,3 @@
-import type { Author } from './User';
 import type { User } from './User';
 import type { Metadata } from './Metadata'
 
