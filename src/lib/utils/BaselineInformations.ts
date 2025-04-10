@@ -1,4 +1,5 @@
-import type { Baseline } from "$lib/components/structs/Module";
+import type { Baseline } from "$lib/components/structs/Baseline";
+import type { BaselineStatus } from "$lib/components/structs/BaselineStatus";
 
 export function getBaselineStatusIcon(status: string): string {
     if (status === "Current Baseline") {
@@ -9,13 +10,8 @@ export function getBaselineStatusIcon(status: string): string {
     return "gravity-ui:circle-exclamation-fill";
 }
 
-export function getBaselineStatus(baseline: Baseline, current: boolean = false): string {
-    if (current && baseline.hash) {
-        return "Current Baseline";
-    } else if (baseline.hash) {
-        return "Deprecated";
-    }
-    return "Work in Progress";
+export function getBaselineStatus(baseline: Baseline, current: boolean = false): BaselineStatus {
+    return baseline.status;
 }
 
 export function getBaselineStatusIconColor(status: string) {
