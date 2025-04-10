@@ -7,7 +7,7 @@ pub mod view;
 pub mod links;
 pub mod objects;
 
-pub use view::View;
+pub use view::{View, ViewItem};
 pub use module::{Module, ModuleManifest};
 pub use links::{Link, Links};
 pub use template::Template;

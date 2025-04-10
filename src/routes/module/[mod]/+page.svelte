@@ -18,16 +18,18 @@
 	import * as Resizable from "$lib/components/ui/resizable";
 	import type { View } from "$lib/components/structs/View";
 	import type { Module } from "$lib/components/structs/Module";
-	import type { IHash, Link, ObjectView } from "$lib/components/structs/Object";
+	import type { IHash, Object } from "$lib/components/structs/Object";
 	import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
 	import type { Template } from "$lib/components/structs/Template";
     import BaselineForm from "$lib/components/forms/module/BaselineForm.svelte";
 	import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
 	import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
 	import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
+    import { ObjectStatus } from "$lib/components/structs/ObjectStatus";
+    import DynamicTable from "$lib/components/global/object_explorer/DynamicTable.svelte";
 	
-	let selectedObject: ObjectView | null = null;
-	let objects: ObjectView[] = [];
+	let selectedObject: Object | null = null;
+	let objects: Object[] = [];
 	let module: Module;
 
 	let templateFlag: boolean = false;
@@ -254,33 +256,31 @@
 		})
 	}
 
-	function createEmptyObject(): ObjectView {
+	function createEmptyObject(): Object {
 		let customFields: IHash = {};
 		createCustomFieldHashFromTemplate(module.template, customFields);
-		return {
-			object: {
-				id: 0,
-				header: "",
-				content: "",
-				author: $user.toString()!,
-				isActive: true,
-				isNormative: false,
-				isRequirement: false,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				deletedAt: null,
-				customFields: customFields,
-				level: "",
-				outboundLinks: [],
-			},
-			inboundLinks: [],
-			isDraft: false,
-			hasChanges: false,
-		}
+		let object: Object = {
+            id: 0,
+            parentLevel: 0,
+            indexLevel: 0,
+            header: "",
+            content: "",
+            author: $user.toString(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+            attributes: null,
+            metadata: {
+                status: ObjectStatus.draft,
+                inboundLinks: undefined,
+                outboundLinks: undefined
+            },
+        }
+		return object
 	}
 
 	function handleObjectCreation(event: any) {
-		let obj = event.detail.objectView.object;
+		let obj = event.detail.object;
 		createObject(module.path, obj)
 			.then(() => {
 				selectedObject = createEmptyObject();
@@ -293,7 +293,7 @@
 	}
 	
 	function handleObjectDraftCreation(event: any) {
-		let obj = event.detail.objectView.object;
+		let obj = event.detail.object;
 		createDraftObject(module.path, obj)
 			.then((objs) => {
 				selectedObject = createEmptyObject();
@@ -306,7 +306,7 @@
 	}
 	
 	async function handleObjectExclusion(event: any) {
-		let obj = event.detail.objectView.object;
+		let obj = event.detail.object;
 		const confirmed = await confirm('Do you really want to delete this Object?', 'Deleting object ' + module.manifest.prefix + module.manifest.separator + obj.id);
 		if (!confirmed) {
 			return;
@@ -323,7 +323,7 @@
 	}
 
 	async function handleObjectRestoring(event: any) {
-		let obj = event.detail.objectView.object;
+		let obj = event.detail.object;
 		const confirmed = await confirm('Do you really want to restore this Object?', 'Restoring object ' + module.manifest.prefix + module.manifest.separator + obj.id);
 		if (!confirmed) {
 			return;
@@ -344,11 +344,11 @@
 
 	function handleObjectSelect(event: any) {
 		if (event) { 
-			selectedObject = event.detail.objectView; 
+			selectedObject = event.detail.object; 
 		}
-		let customFields = selectedObject?.object.customFields || {};
+		let customFields = selectedObject?.attributes || {};
 		createCustomFieldHashFromTemplate(module.template, customFields)
-		selectedObject!.object.customFields! = customFields;
+		selectedObject!.attributes! = customFields;
 		editPanelFlag = true;
 	}
 
@@ -438,68 +438,43 @@
 	} 
 
 	function handleCreateObjectBelow(event: any) {
-		let currObj = event.detail.objectView as ObjectView;
-		let currentLevel = currObj.object.level;
+		let currentObject = event.detail.object;
 		selectedObject = createEmptyObject();
-		selectedObject.object.level = getNewLevel(currentLevel, 'sameLevel');
+		selectedObject.parentLevel = currentObject.id;
+		selectedObject.indexLevel = 0;
 		handleObjectSelect(undefined);
 	}
 
 	function handleCreateObjectNextLevel(event: any) {
-		let currObj = event.detail.objectView as ObjectView;
-		let currentLevel = currObj.object.level;
+		let currentObject = event.detail.object;
 		selectedObject = createEmptyObject();
-		selectedObject.object.level = getNewLevel(currentLevel, 'belowLevel');
+		selectedObject.parentLevel = currentObject.id;
+		selectedObject.indexLevel = 1;
 		handleObjectSelect(undefined);
 	}
 
-	function sortItems(items: ObjectView[]): ObjectView[] {
+	/* function sortItems(items: Object[]): Object[] {
 		return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
-	}
-
-	function getLinks(links: any, id: number) {
-		let ret: Link[] = [];
-
-		if (links[id]) {
-			links[id].forEach((lk: Link) => {
-				ret.push(lk);
-			})
-		}
-
-		return ret;
-	}
+	} */
 
 	async function loadAllObjects(modPath: string) {
 		let retObjects = await readObjects(modPath);
 		let retDraftObjects = await readDraftObjects(modPath);
-		let newObjects: ObjectView[] = [];
+		let newObjects: Object[] = [];
 
 		retObjects.forEach((obj) => {
-			let dob = {
-				object: obj,
-				isDraft: false,
-				hasChanges: false,
-				inboundLinks: getLinks(module.inboundLinks, obj.id),
-			}
-			newObjects.push(dob);
+			newObjects.push(obj);
 		});
 
 		retDraftObjects.forEach((dobj) => {
-			let index = newObjects.findIndex((ob) => {return (ob.object.id === dobj.id)});
-			let dob = {
-				object: dobj,
-				isDraft: true,
-				hasChanges: false,
-				inboundLinks: getLinks(module.inboundLinks, dobj.id),
-			}
-
+			let index = newObjects.findIndex((ob) => {return (ob.id === dobj.id)});
 			if (index < 0) {
-				newObjects.push(dob);
+				newObjects.push(dobj);
 			} else {
-				newObjects[index] = dob;
+				newObjects[index] = dobj;
 			}
 		});
-		newObjects = sortItems(newObjects);
+		//newObjects = sortItems(newObjects);
 		objects = newObjects;
 	}
 
@@ -581,7 +556,7 @@
 		{/if}
 			<Resizable.Pane order={2}>
 				{#if module}
-					<ObjectExplorer 
+<!-- 					<ObjectExplorer 
 						bind:view={view} 
 						bind:module={module} 
 						bind:objects={objects} 
@@ -594,7 +569,8 @@
 						on:commit={handleObjectCreation} 
 						on:delete={handleObjectExclusion} 
 						on:createBelow={handleCreateObjectBelow} 
-					/>
+					/> -->
+					<DynamicTable moduleManifest={module.manifest} objects={objects}/>
 				{/if}
 			</Resizable.Pane>
 		{#if editPanelFlag}
@@ -602,7 +578,7 @@
 			<Resizable.Pane class="h-full" defaultSize={50} order={3}>
 				{#if selectedObject}
 				<ObjectEditor 
-				bind:objectView={selectedObject} 
+				bind:object={selectedObject} 
 				bind:module={module} 
 				bind:readOnlyMode={readOnlyFlag}
 				on:save={handleObjectCreation} 

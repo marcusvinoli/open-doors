@@ -23,5 +23,6 @@ pub struct Attribute {
     pub is_mandatory: bool,
     pub kind: AttributeKind,
     pub name: String,
+    pub description: String,
     pub key: String,
 }

@@ -14,10 +14,10 @@ export function getBaselineStatus(baseline: Baseline, current: boolean = false):
     return baseline.status;
 }
 
-export function getBaselineStatusIconColor(status: string) {
-    if (status === "Current Baseline") {
+export function getBaselineStatusIconColor(baseline: Baseline) {
+    if (baseline.status === "Historical" ) {
         return "#00802b";
-    } else if (status === "Work in Progress") {
+    } else if (baseline.status === "WorkInProgress") {
         return "#007acc";
     }
     return "#e6ac00";

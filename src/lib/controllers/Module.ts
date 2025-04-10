@@ -50,6 +50,7 @@ export function readBaselinedObjects(path: string, version: string) {
 }
 
 export async function createObject(modulePath: String, object: Object) {
+    console.log(object)
     const mod = await invoke('create_object', { path: modulePath, object: object });
     return mod as Object;
 }

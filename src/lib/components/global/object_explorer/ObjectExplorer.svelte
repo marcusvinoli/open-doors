@@ -10,12 +10,12 @@
 	import * as ContextMenu from "$lib/components/ui/context-menu/index.js";
 	import type { View } from "../../structs/View";
 	import type { Module } from "$lib/components/structs/Module";
-	import type { ObjectView, Object } from "$lib/components/structs/Object";
+	import type { Object } from "$lib/components/structs/Object";
 	import "$lib/assets/markdown.css";
 	import "$lib/assets/flashing.css";
     import Header from "../object_table/Header.svelte";
 
-	export let objects: ObjectView[] = [];
+	export let objects: Object[] = [];
 	export let module: Module;
 	export let view: View;
 
@@ -24,32 +24,32 @@
 	export let showDeleted: boolean = false;
 	export let showRowNumber: boolean = true;
 
-	let objs: ObjectView[] = [];
+	let objs: Object[] = [];
 
 	const dispatch = createEventDispatcher();
 
-	function onEditClick(obj: ObjectView) {
-		dispatch("select", {objectView: obj})
+	function onEditClick(obj: Object) {
+		dispatch("select", {Object: obj})
 	}
 
-	function handleRowClick(obj: ObjectView) {
-		dispatch('click', {objectView: obj})
+	function handleRowClick(obj: Object) {
+		dispatch('click', {Object: obj})
 	}
 
-	function handleCommit(obj: ObjectView) {
-		dispatch('commit', {objectView: obj})
+	function handleCommit(obj: Object) {
+		dispatch('commit', {Object: obj})
 	}
 
-	function handleDelete(obj: ObjectView) {
-		dispatch('delete', {objectView: obj})
+	function handleDelete(obj: Object) {
+		dispatch('delete', {Object: obj})
 	}
 
-	function handleCreate(obj: ObjectView) {
-		dispatch('create', {objectView: obj})
+	function handleCreate(obj: Object) {
+		dispatch('create', {Object: obj})
 	}
 
-	function handleCreateBelow(obj: ObjectView) {
-		dispatch('createBelow', {objectView: obj})
+	function handleCreateBelow(obj: Object) {
+		dispatch('createBelow', {Object: obj})
 	}
 
 	function generateHashString(level: string): string {
@@ -89,6 +89,7 @@
 	})
 
 </script>
+
 
 <div class="h-full w-full flex flex-col">
 	<!-- <Header view={view.items} /> -->

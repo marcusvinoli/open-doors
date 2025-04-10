@@ -1,14 +1,21 @@
 <script lang="ts">
-    import type { ObjectView } from "$lib/components/structs/Object";
-    import type { View } from "$lib/components/structs/View";
+    import type { ModuleManifest } from "$lib/components/structs/ModuleManifest";
+import type { Object } from "$lib/components/structs/Object";
+    import { type View, readOnlyView } from "$lib/components/structs/View";
     import * as Table from "$lib/components/ui/table";
+    import DynamicCell from "./DynamicCell.svelte";
     import HeaderContext from "./HeaderContextMenu.svelte";
     import RowContextMenu from "./RowContextMenu.svelte";
     
-    export let view: View;
+    export let moduleManifest: ModuleManifest;
+    export let view: View = readOnlyView;
     export let readOnly: boolean = true;
-    export let objects: ObjectView[] = [];
+    export let objects: Object[] = [];
     
+    function objectContextItemClick(event: any) {
+        console.log(event.details);
+    }
+
 </script>
 
 <Table.Root class="w-full relative" id="scroll-table">
@@ -31,7 +38,10 @@
         <Table.Row>
             {#each view.items as attribute}
                 <Table.Cell>
-                    {object[attribute.key]}
+                    <RowContextMenu object={object} on:click={objectContextItemClick}>
+                        <DynamicCell object={object} viewItem={attribute} moduleManifest={moduleManifest}/>
+                        <!-- {object[attribute.key]} -->
+                    </RowContextMenu>
                 </Table.Cell>
             {/each}
         </Table.Row>

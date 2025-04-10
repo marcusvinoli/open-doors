@@ -5,17 +5,17 @@
 	import StringComboBox from "$lib/components/forms/module/StringComboBox.svelte";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import type { Field } from "$lib/components/structs/Template";
+	import type { AttributeKind } from "$lib/components/structs/Attributes";
 
 	export let value: any;
-	export let field: Field;
-	export let type = Object.keys(field.kind)[0];
+	export let field: AttributeKind;
+	export let kind = Object.keys(field.kind)[0];
 	export let allowedValues = Object.values(field.kind)[0];
 	export let disabled: boolean = true;
 
 </script>
 
-{#if type === "nullableOption"}
+{#if kind === "nullableOption"}
 	<div class="flex flex-row gap-1">
 		<StringDropdown options={allowedValues} bind:selected={value} placeholder="" disabled={disabled}/>
 		{#if !disabled}
@@ -24,7 +24,7 @@
 			</Button>
 		{/if}
 	</div>
-{:else if type === "nullableOptions"}
+{:else if kind === "nullableOptions"}
 	<div class="flex flex-row gap-1">
 		<StringComboBox options={allowedValues} bind:selectedList={value} placeholder="" disabled={disabled}/>
 		{#if !disabled}
@@ -33,7 +33,7 @@
 			</Button>
 		{/if}
 	</div>
-{:else if type === "nullableBoolean"}
+{:else if kind === "boolean"}
 	<div class="min-h-10 flex items-center">
 		{#if value === "true"}
 		<Checkbox class="mx-1" checked={true} on:click={() => (value = "false")} disabled={disabled}/>
