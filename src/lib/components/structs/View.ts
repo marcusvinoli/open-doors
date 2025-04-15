@@ -11,12 +11,12 @@ export interface View {
 export const readOnlyView: View = {
     items: [
         {
-            attribute: 'id',
+            attribute: 'ID',
             key: 'id',
             show: true,
         },
         {
-            attribute: 'content',
+            attribute: 'Content',
             key: 'content',
             show: true,
         },

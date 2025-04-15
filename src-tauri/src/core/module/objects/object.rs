@@ -50,6 +50,7 @@ impl Object {
     pub fn set_status(&mut self, status: ObjectStatus) {
         if let Some(meta) = self.metadata.as_mut() {
             meta.status = status.to_owned();
+            self.metadata = Some(meta.to_owned());
         } else {
             let mut metadata: Metadata = Metadata::default();
             metadata.status = status.to_owned();
@@ -58,7 +59,8 @@ impl Object {
 
     pub fn add_inbound_links(&mut self, links: Option<Vec<Link>>) {
         if let Some(meta) = self.metadata.as_mut() {
-            meta.inbound_links = links
+            meta.inbound_links = links;
+            self.metadata = Some(meta.to_owned());
         } else {
             let mut metadata: Metadata = Metadata::default();
             metadata.inbound_links = links;
@@ -68,7 +70,8 @@ impl Object {
 
     pub fn add_outbound_links(&mut self, links: Option<Vec<Link>>) {
         if let Some(meta) = self.metadata.as_mut() {
-            meta.outbound_links = links
+            meta.outbound_links = links;
+            self.metadata = Some(meta.to_owned());
         } else {
             let mut metadata: Metadata = Metadata::default();
             metadata.outbound_links = links;

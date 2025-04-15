@@ -22,6 +22,12 @@ pub fn update_module(state: State<'_, Mutex<Option<GitRepository>>>, path: PathB
 	Ok(Module::read(&path)?)
 }
 
+#[tauri::command]
+pub fn delete_module(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf) -> Result<(), String> {
+	let repo = state.lock().unwrap();
+  	Ok(())
+}
+
 #[command]
 pub fn create_object(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, object: Object) -> Result<Object, OpenDoorsError> {
 	let mut module = Module::read(&path)?;

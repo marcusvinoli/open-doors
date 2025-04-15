@@ -6,7 +6,7 @@ export const parseTemplate = (template: Template, show: boolean = false) : ViewI
     let temp: ViewItem[] = [];
     template.fields.forEach((field) => {
         let newViewItem: ViewItem = {
-            attribute: field.attribute,
+            attribute: field.name,
             show: show,
             key: field.key
         }
@@ -24,30 +24,10 @@ export const defaultView = () : View => {
                 key: "id"
             },
             {
-                attribute: "Object Content",
+                attribute: "Content",
                 show: true,
                 key: "content"
-            },
-            {
-                attribute: "Active?",
-                show: true,
-                key: "isActive"
-            },
-            {
-                attribute: "Normative?",
-                show: true,
-                key: "isNormative"
-            },
-            {
-                attribute: "Requirement?",
-                show: true,
-                key: "isRequirement"
-            },
-            {
-                attribute: "Author",
-                show: true,
-                key: "author"
-            },
+            }
         ]
     }
 }

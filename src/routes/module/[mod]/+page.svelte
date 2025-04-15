@@ -11,12 +11,11 @@
 	import { confirm } from '@tauri-apps/api/dialog';
 	import { pageState } from "./store";
 	import { repository } from "$lib/stores/Repository";
-	import { defaultView } from "$lib/controllers/View";
 	import { loadRepository } from "$lib/controllers/Repository";
 	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
 	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readDraftObjects, readModuleFromPath, readObjects, restoreObject } from "$lib/controllers/Module";
 	import * as Resizable from "$lib/components/ui/resizable";
-	import type { View } from "$lib/components/structs/View";
+	import { type View, readOnlyView } from "$lib/components/structs/View";
 	import type { Module } from "$lib/components/structs/Module";
 	import type { IHash, Object } from "$lib/components/structs/Object";
 	import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
@@ -28,7 +27,7 @@
     import { ObjectStatus } from "$lib/components/structs/ObjectStatus";
     import DynamicTable from "$lib/components/global/object_explorer/DynamicTable.svelte";
 	
-	let selectedObject: Object | null = null;
+	let selectedObject: Object;
 	let objects: Object[] = [];
 	let module: Module;
 
@@ -42,7 +41,7 @@
 	let newBaselineFlag: boolean = false;
 	
 	let tabKey: string = "";
-	let view: View = defaultView();
+	let view: View = readOnlyView;
 
 	function loadHomeToolbar() {
 		clearToolbar();
@@ -272,8 +271,8 @@
             attributes: null,
             metadata: {
                 status: ObjectStatus.draft,
-                inboundLinks: undefined,
-                outboundLinks: undefined
+                inboundLinks: null,
+                outboundLinks: null,
             },
         }
 		return object
@@ -458,13 +457,8 @@
 	} */
 
 	async function loadAllObjects(modPath: string) {
-		let retObjects = await readObjects(modPath);
+		let newObjects = await readObjects(modPath);
 		let retDraftObjects = await readDraftObjects(modPath);
-		let newObjects: Object[] = [];
-
-		retObjects.forEach((obj) => {
-			newObjects.push(obj);
-		});
 
 		retDraftObjects.forEach((dobj) => {
 			let index = newObjects.findIndex((ob) => {return (ob.id === dobj.id)});
@@ -535,6 +529,17 @@
 		})
 		addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
 	}
+
+	function contextClick(e: any) {
+		let objectId = e.detail.id as number;
+		let item = e.detail.item as string;
+		console.log(objects);
+		selectedObject = objects.find(obj => obj.id === objectId);
+		console.log(selectedObject);
+		if (item === 'properties') {
+			editPanelFlag = true;
+		}
+	}
 	
 	$: {
 		const { mod, version } = $page.params;
@@ -570,13 +575,19 @@
 						on:delete={handleObjectExclusion} 
 						on:createBelow={handleCreateObjectBelow} 
 					/> -->
-					<DynamicTable moduleManifest={module.manifest} objects={objects}/>
+					<DynamicTable 
+						moduleManifest={module.manifest} 
+						objects={objects}
+						readOnly={readOnlyFlag}
+						view={view}
+						on:contextClick={contextClick}
+					/>
 				{/if}
 			</Resizable.Pane>
 		{#if editPanelFlag}
 			<Resizable.Handle/>
 			<Resizable.Pane class="h-full" defaultSize={50} order={3}>
-				{#if selectedObject}
+				{#key selectedObject}
 				<ObjectEditor 
 				bind:object={selectedObject} 
 				bind:module={module} 
@@ -587,7 +598,7 @@
 				on:retore={handleObjectRestoring}
 				on:saveDraft={handleObjectDraftCreation} 
 				/>
-				{/if}
+				{/key}
 			</Resizable.Pane>
 		{/if}
 	</Resizable.PaneGroup>

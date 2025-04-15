@@ -136,12 +136,17 @@ impl Module {
 
 	pub fn read_object(&self, id: usize) -> Result<Object, ModuleError> {
 		let mut obj = Module::open_object(&self.path.join(defs::OD_OBJS_FOLDER_NAME), id)?;
-		
+		obj.add_metadata(&ObjectStatus::Updated, &self.links);
+		if let Some(lts) = self.get_latest_baseline() {
+			if obj.updated_at < lts.created_at {
+				obj.set_status(ObjectStatus::Baselined);
+			}
+		}
 		Ok(obj)
 	}
 
 	pub fn read_draft_object(&self, id: usize) -> Result<Object, ModuleError> {
-		let mut obj: Object = self.read_object(id)?;
+		let mut obj: Object = Module::open_object(&self.path.join(defs::OD_DRAFT_FOLDER_NAME), id)?;
 		obj.add_metadata(&ObjectStatus::Draft, &self.links);
 		Ok(obj)
 	}
@@ -166,9 +171,7 @@ impl Module {
 	
 				if let Some(number_str) = file_name_str.strip_suffix(".yml") {
 					if let Ok(number) = number_str.parse::<usize>() {
-						let mut obj = self.read_object(number)?;
-						obj.add_metadata(&ObjectStatus::Updated, &self.links);
-						objs.push(obj);
+						objs.push(self.read_object(number)?);
 					}
 				}
 			}
@@ -357,6 +360,10 @@ impl Module {
 			}
 		}
 		Err(ModuleError::BaselineNotFound(version.into()))
+	}
+
+	fn get_latest_baseline(&self) -> Option<&Baseline> {
+		self.baselines.iter().find(|bl| bl.status == BaselineStatus::Latest)
 	}
 
 	fn object_relative_folder(&self) -> String {

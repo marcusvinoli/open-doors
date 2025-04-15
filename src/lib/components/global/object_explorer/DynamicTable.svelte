@@ -1,19 +1,21 @@
 <script lang="ts">
+    import { createEventDispatcher } from "svelte";
     import type { ModuleManifest } from "$lib/components/structs/ModuleManifest";
-import type { Object } from "$lib/components/structs/Object";
-    import { type View, readOnlyView } from "$lib/components/structs/View";
+    import type { Object } from "$lib/components/structs/Object";
+    import type { View } from "$lib/components/structs/View";
     import * as Table from "$lib/components/ui/table";
     import DynamicCell from "./DynamicCell.svelte";
     import HeaderContext from "./HeaderContextMenu.svelte";
     import RowContextMenu from "./RowContextMenu.svelte";
     
     export let moduleManifest: ModuleManifest;
-    export let view: View = readOnlyView;
+    export let view: View;
     export let readOnly: boolean = true;
     export let objects: Object[] = [];
-    
-    function objectContextItemClick(event: any) {
-        console.log(event.details);
+    const dispatch = createEventDispatcher();
+
+    function contextClick(e: any) {
+        dispatch("contextClick", {id: e.detail.id, item: e.detail.item})
     }
 
 </script>
@@ -30,15 +32,12 @@ import type { Object } from "$lib/components/structs/Object";
             {/each}
         </Table.Row>
     </Table.Header>
-    {#if !readOnly}
-    <Table.Head class="min-w-[50px] sticky top-0 bg-slate-50 shadow-sm"/>
-    {/if}
     <Table.Body>
         {#each objects as object}
         <Table.Row>
             {#each view.items as attribute}
                 <Table.Cell>
-                    <RowContextMenu object={object} on:click={objectContextItemClick}>
+                    <RowContextMenu object={object} on:click={contextClick} readOnly={readOnly}>
                         <DynamicCell object={object} viewItem={attribute} moduleManifest={moduleManifest}/>
                         <!-- {object[attribute.key]} -->
                     </RowContextMenu>

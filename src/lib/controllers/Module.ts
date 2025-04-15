@@ -62,6 +62,7 @@ export async function createDraftObject(modulePath: String, object: Object) {
 
 export async function readObjects(modulePath: String) {
     const mods = await invoke('read_objects', { path: modulePath });
+    console.log('read_objects', mods);
     return mods as Object[];
 }
 
