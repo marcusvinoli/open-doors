@@ -1,30 +1,34 @@
 <script lang="ts">
     import Icon from '@iconify/svelte';
-    import Tree from "$lib/components/global/treeview/TreeView.svelte";
-    import PanelView from '$lib/components/global/panelview/PanelView.svelte';
+    import TreeView from '$lib/components/global/treeview/TreeView.svelte';
+    import PanelView from '$lib/components/global/panel_view/PanelView.svelte';
+
     import CreateFolderForms from '$lib/components/forms/folder/CreateFolderForms.svelte';
     import CreateProjectForms from "$lib/components/forms/project/CreateProjectForms.svelte"
+    import CreateModuleForms from '$lib/components/forms/module/CreateModuleForms.svelte';
+
+    import { app } from '$lib/stores/AppState.svelte';
     import { goto } from '$app/navigation';
-    import { Button } from "$lib/components/ui/button/index.js";
+    import { currentItem, goBack, goTo } from '$lib/stores/PanelView.svelte';
     import { onMount } from 'svelte';
-    import { repository } from '$lib/stores/Repository';
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import { reloadRepository } from '$lib/controllers/Repository';
-    import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-    import { treeHistory, goBack, goIn, currentItem } from '$lib/stores/PanelView';
+    import { addTab, setActiveTab } from '$lib/stores/Tabs.svelte';
+    import { loadAuthorInformation } from '$lib/controllers/User';
+    import { getIconFromTreeItemType } from '$lib/utils/tree-item-utils';
+    import { addToolbarItem, clearToolbar } from '$lib/stores/Toolbar.svelte';
+    
     import * as Resizable from "$lib/components/ui/resizable";
-    import type { TabData } from "$lib/components/global/tabs/TabData";
+    
+    import type { Module } from '$lib/components/structs/Module';
+    import type { Project } from '$lib/components/structs/Project';
     import type { TreeItem } from '$lib/components/structs/Tree';
     import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType } from '$lib/components/global/toolbar/Toolbar';
-    import CreateModuleForms from '$lib/components/forms/module/CreateModuleForms.svelte';
-    import { addTab } from '$lib/stores/Tabs';
-    import { loadAuthorInformation } from '$lib/controllers/User';
-    import { getIconFromTreeItemType } from '$lib/utils/getIconFromTreeItemType';
+    import Loading from '$lib/components/ui/loading/Loading.svelte';
 
-
-    let newProjectDialog: boolean = false;
-    let newFolderDialog: boolean = false;
-    let newModuleDialog: boolean = false;
+    let newProjectDialog: boolean = $state(false);
+    let newFolderDialog: boolean = $state(false);
+    let newModuleDialog: boolean = $state(false);
 
     function openNewProjectDialog() {
         newProjectDialog = true;
@@ -40,6 +44,24 @@
 
     function goHome() {
         goto("/home");
+    }
+
+    function onModuleCreation(mod: Module) {
+
+    }
+
+    function onFolderCreation(folderTreeItem: TreeItem) {
+        reloadRepository()
+            .then(() => {
+                goTo(folderTreeItem);
+            })
+    }
+
+    function onProjectCreation(project: Project) {
+        reloadRepository()
+        .then(() => {
+            goTo(project.tree);
+        })
     }
 
     function loadHomeToolbar() {
@@ -67,14 +89,14 @@
             type: "button",
             tooltip: "New...",
             icon: "gravity-ui:circle-plus",
-            action: openNewModuleDialog,
+            action: () => {},
         }
 
         let newProjectButton: ToolbarButtonType = {
             type: "button",
             tooltip: "New Project",
             icon: "gravity-ui:folder-open-fill",
-            action: () => {},
+            action: openNewProjectDialog,
         }
 
         let newFolderButton: ToolbarButtonType = {
@@ -120,60 +142,64 @@
         addToolbarItem(newGroup);
     }
 
-    function updateFromPanel(event: any) {
-        goIn(event.detail);
-    }
-
-    function updateFromTree(event: any) {
-        goIn(event.detail.item);
+    async function loadHomepage() : Promise<void> {
+        return new Promise((resolve, reject) => {
+            reloadRepository().then(() => loadAuthorInformation());
+            addTab("Home", "gravity-ui:house", "/home");
+            loadHomeToolbar();
+            setActiveTab("/home");
+            return resolve();
+        })
     }
 
     onMount(() => {
-        reloadRepository();
-        loadHomeToolbar();
-        loadAuthorInformation();
-        addTab("Home", "gravity-ui:house", "/home");
+        loadHomepage();
     })
+
+    const result = loadHomepage();
 
 </script>
 
-<div class="bg-slate-50 h-full py-1">
-    <CreateProjectForms bind:openDialog={newProjectDialog} on:create={goHome} selectedParent={$repository?.tree}/>
-    <CreateFolderForms bind:openDialog={newFolderDialog} on:create={goHome} selectedParent={$repository?.tree}/>
-    <CreateModuleForms bind:openDialog={newModuleDialog} on:create={goHome} selectedParent={$repository?.tree}/>
-    <Resizable.PaneGroup direction="horizontal">
-        <Resizable.Pane defaultSize={20} minSize={5}>
-            <ScrollArea class="h-full">
-                <Tree treeItems={$repository?.tree} on:itemSelected={updateFromTree}/>
-            </ScrollArea>
-        </Resizable.Pane>
-        <Resizable.Handle withHandle/>
-        <Resizable.Pane minSize={5}>
-        {#if $repository?.tree.children.length > 0}
-            <div class="flex flex-col h-full text-sm">
-                {#if $currentItem}
-                    <PanelView currentItem={$currentItem} treeHistory={$treeHistory} on:deleted={goBack} on:itemSelected={updateFromPanel}/>
-                {/if}
+{#await result}
+    <div class="flex flex-col items-center justify-center bg-slate-50 text-slate-400 w-full h-full">
+        <Loading />
+        <h1 class="text-xl font-semibold my-1">LOADING</h1>
+    </div>    
+{:then _}
+    <div class="bg-slate-50 h-full py-1">
+        <CreateProjectForms bind:openDialog={newProjectDialog} currentParent={currentItem()} oncreateproject={onProjectCreation}/>
+        <CreateFolderForms bind:openDialog={newFolderDialog} currentParent={currentItem()} oncreatefolder={onFolderCreation}/>
+        <CreateModuleForms bind:openDialog={newModuleDialog} currentParent={currentItem()} oncreatedmodule={onModuleCreation}/> 
+        <Resizable.PaneGroup direction="horizontal">
+            <Resizable.Pane defaultSize={20} minSize={5}>
+                <ScrollArea class="h-full">
+                    <TreeView />            
+                </ScrollArea>
+            </Resizable.Pane>
+            <Resizable.Handle withHandle/>
+            <Resizable.Pane minSize={5}>
+            {#if app.repository!.tree.children.length > 0}
+                <div class="flex flex-col h-full text-sm">
+                    <PanelView />
+                </div>
+            {:else}
+                <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
+                    <Icon icon={getIconFromTreeItemType(app.repository!.tree, true)} width="50px"/>
+                    <h1 class="text-xl font-semibold my-1">EMPTY REPOSITORY</h1>
+                </div>
+            {/if}
+            </Resizable.Pane>
+        </Resizable.PaneGroup> 
+    </div>
+{:catch e}
+    <div class="flex flex-col justify-center items-center w-full h-full text-slate-500">
+        <Icon icon="mdi:dinosaur-pixel" width="50px"/>
+        <h1 class="text-xl font-semibold my-1">OOPS! FAIL LOADING REPOSITORY...</h1>
+        <div class="bg-red-100 border-red-900 rounded-sm text-red-800 mt-2 max-w-[80%] font-mono text-sm px-2 py-1 overflow-auto max-h-50">
+            <div class="border-b-2 border-b-red-200">
+                <p class="bold">Error Details:</p> 
             </div>
-        {:else}
-            <div class="w-full h-full grow flex flex-col items-center justify-center text-slate-400 pb-[100px] rounded-lg">
-                <Icon icon={getIconFromTreeItemType($repository?.tree, true)} width="50px"/>
-                <h1 class="text-xl font-semibold my-1">EMPTY REPOSITORY</h1>
-            </div>
-            <!-- <div class="w-full flex flex-col text-center items-center text-slate-500 py-10">
-            <div class="my-5">
-                <Icon icon="gravity-ui:folder-exclamation" width="50px"/>
-            </div>
-            
-            <h1 class="font-semibold ">It seems that there is no project on this Repository...</h1>
-            <h2 class="font-regular pb-3">Let's create the first one!</h2>
-            <Button on:click={openNewProjectDialog}>
-                <Icon icon="gravity-ui:folder-plus" width="20px"/>
-                <p class="pl-2">New Project</p>
-            </Button>
-            </div>-->
-        {/if}
-        </Resizable.Pane>
-    </Resizable.PaneGroup> 
-</div>
-                        
+            <p>{e}</p>
+        </div>
+    </div>
+{/await}

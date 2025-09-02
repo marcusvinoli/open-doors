@@ -12,8 +12,8 @@ pub enum AttributeKind {
     Time,
     DateTime,
     Boolean,
-    Enumeration(Vec<String>), // Single Option.
-    Optional(Vec<String>), // Zero, One or More Itens from a list.
+    SingleOption(Vec<String>), // Single Option.
+    MultipleOptions(Vec<String>), // Zero, One or More Itens from a list.
     User,
 }
 

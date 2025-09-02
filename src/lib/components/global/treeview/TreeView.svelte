@@ -1,21 +1,19 @@
 <script lang="ts">
-    import {createEventDispatcher} from 'svelte';
     import Tree from "./Tree.svelte";
-    import type { TreeItem } from '$lib/components/structs/Tree';
 
-    const dispatch = createEventDispatcher();
+    import { goTo } from "$lib/stores/PanelView.svelte";
+    import { repository } from "$lib/stores/Repository.svelte";
 
-    export let treeItems: TreeItem;
+    let repo = $derived(repository());
 
-    function handleClick(event: any) {
-        event.stopPropagation();
-        dispatch('itemSelected', event.detail);
+    function handleItemClick(item: any) {
+        goTo(item);
     }
 
 </script>
 
 <div>
-    {#if treeItems}
-        <Tree structure={treeItems} on:click={handleClick}/>
+    {#if repo?.tree}
+        <Tree onclick={handleItemClick}/>
     {/if}
 </div>

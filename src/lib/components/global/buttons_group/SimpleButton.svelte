@@ -4,7 +4,11 @@
     import Button from "$lib/components/ui/button/button.svelte";
     import type { ButtonInterface, ButtonSimple } from "./ButtonGroup";
 
-    export let button: ButtonInterface;
+    interface Props {
+        button: ButtonInterface;
+    }
+
+    let { button }: Props = $props();
     let btn: ButtonSimple = button as ButtonSimple;
 </script>
 

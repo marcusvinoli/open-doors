@@ -1,79 +1,46 @@
 <script lang="ts">
-    import type { ObjectView } from "$lib/components/structs/Object";
-    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
-    import type { IndexTree } from "./IndexTree";
     import IndexTreeItem from "./IndexTreeItem.svelte";
-    
-    export let items: ObjectView[] = [];
-    
-    let trees: IndexTree[] = [];
 
-    function parseLevel(level: string): (number | string)[] {
-        return level.split(/[\.\-]/).map(part => isNaN(Number(part)) ? part : Number(part));
-    }
+    import { onDestroy, onMount, tick } from "svelte";
 
-    function ellipsisText(text: string, length: number = 30) {
-        return text.slice(0, length).replaceAll(/[*_]/g, "") + "...";
-    }
+    import type { IndexItem } from "$lib/components/structs/IndexItem";
 
-    function buildTreeIndex(objects: ObjectView[]): IndexTree[] {
-        const root: IndexTree[] = [];
-        const map = new Map<string, IndexTree>();
+    let {
+        id = "",
+        onclick,
+        trees = $bindable(),
+        state = $bindable(),
+        onscroll,
+    } : {
+        id?: string,
+        onclick?: (id: string | number) => void,
+        trees: IndexItem[],
+        state: Map<number, boolean>,
+        onscroll?: (e: any) => void,
+    } = $props();
 
-        for (const obj of objects) {
-            let levels = obj.object.level.split(/[\.\-]/).map(part => isNaN(Number(part)) ? part : Number(part));
-
-            while (levels.length > 1 && levels[levels.length - 1] === 0) {
-                levels.pop();
-            }
-
-            let currentLevel = root;
-
-            for (let i = 0; i < levels.length; i++) {
-                const level = levels.slice(0, i + 1).join('.');
-
-                let node = map.get(level);
-
-                if (!node) {
-                    node = {
-                        level: level,
-                        header: i === levels.length - 1 ? obj.object.header : ellipsisText(obj.object.content),
-                        content: obj.object.header === "" ? ellipsisText(obj.object.content) : "",
-                        path: obj.object.id.toString(),
-                        children: [],
-                        opened: true,
-                    };
-                    
-                    map.set(level, node);
-
-                    if (i === 0) {
-                        currentLevel.push(node);
-                    } else {
-                        const parentLevel = levels.slice(0, i).join('.');
-                        const parent = map.get(parentLevel);
-                        if (parent) {
-                            parent.children.push(node);
-                        }
-                    }
-                }
-
-                currentLevel = node.children;
-            }
+    onMount(() => {
+        if (!onscroll) {
+            return;
         }
+        tick().then(() => {
+            document.getElementById(id)?.addEventListener("scroll", onscroll);
+        });
+    })
 
-    return root;
-}
-
-    $: {
-        trees = buildTreeIndex(items);
-    }
+    onDestroy(() => {
+        if (!onscroll) {
+            return;
+        }
+        document.getElementById(id)?.removeEventListener("scroll", onscroll);
+    })
 
 </script>
 
-<div class="h-full w-full flex flex-col">
-    <ScrollArea>
+<div class="relative h-full right-0.5 overflow-auto">
+    <div id={id} class="absolute top-0 bottom-0 right-0 min-w-30 w-full overflow-x-auto">
         {#each trees as tree}
-            <IndexTreeItem item={tree} level={0} on:click/>
+            <IndexTreeItem item={tree} level={0} onclick={onclick} state={state} />
         {/each}
-    </ScrollArea>
+    </div>
 </div>

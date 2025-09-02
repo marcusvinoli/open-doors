@@ -7,13 +7,23 @@
 	import * as Command from "$lib/components/ui/command/index.js";
 	import * as Popover from "$lib/components/ui/popover/index.js";
 
-	export let options: string[] = [];
-	export let selected: string[] = [];
-	export let placeholder: string = "";
-	export let selectedList: string = placeholder;
-	export let disabled: boolean = false;
+	interface Props {
+		options?: string[];
+		selected?: string[];
+		placeholder?: string;
+		selectedList?: string;
+		disabled?: boolean;
+	}
 
-	let openCombobox: boolean = false;
+	let {
+		options = [],
+		selected = $bindable([]),
+		placeholder = "",
+		selectedList = $bindable(placeholder),
+		disabled = false
+	}: Props = $props();
+
+	let openCombobox: boolean = $state(false);
 	// We want to refocus the trigger button when the user selects
 	// an item from the list so users can continue navigating the
 	// rest of the form with the keyboard.
@@ -52,23 +62,27 @@
 
 </script>
 
-<Popover.Root bind:open={openCombobox} let:ids closeFocus>
-	<Popover.Trigger asChild let:builder class="w-full">
-	<Button builders={[builder]} variant="outline" role="combobox" aria-expanded={openCombobox} class="justify-between w-full" disabled={disabled} >
-		<p class="w-full text-left">{(placeholder !== "") ? placeholder : selectedList}</p>
-		<ChevronDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-	</Button>
-	</Popover.Trigger>
-	<Popover.Content class="p-0">
-	<Command.Root>
-		<Command.Group class="">
-			{#each options as option}
-			<Command.Item value={option} onSelect={() => { changeSelection(option); closeAndFocusTrigger(ids.trigger); }}>
-				<Check class={cn("mr-2 h-4 w-4", !(selected.includes(option)) && "text-transparent" )}/> 
-				<span class="pl-1">{option}</span>
-			</Command.Item>
-			{/each}
-		</Command.Group>
-	</Command.Root>
-	</Popover.Content>
+<Popover.Root bind:open={openCombobox}  closeFocus>
+	{#snippet children({ ids })}
+		<Popover.Trigger asChild  class="w-full">
+		{#snippet children({ builder })}
+				<Button builders={[builder]} variant="outline" role="combobox" aria-expanded={openCombobox} class="justify-between w-full" disabled={disabled} >
+				<p class="w-full text-left">{(placeholder !== "") ? placeholder : selectedList}</p>
+				<ChevronDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+			</Button>
+						{/snippet}
+		</Popover.Trigger>
+		<Popover.Content class="p-0">
+		<Command.Root>
+			<Command.Group class="">
+				{#each options as option}
+				<Command.Item value={option} onSelect={() => { changeSelection(option); closeAndFocusTrigger(ids.trigger); }}>
+					<Check class={cn("mr-2 h-4 w-4", !(selected.includes(option)) && "text-transparent" )}/> 
+					<span class="pl-1">{option}</span>
+				</Command.Item>
+				{/each}
+			</Command.Group>
+		</Command.Root>
+		</Popover.Content>
+	{/snippet}
 </Popover.Root>

@@ -1,19 +1,26 @@
 <script lang="ts">
-    import { Separator } from "$lib/components/ui/separator";
+    import ToolbarGroup from './ToolbarGroup.svelte';
+    import ToolbarToggle from "./ToolbarToggle.svelte";
     import ToolbarButton from "./ToolbarButton.svelte";
     import ToolbarDropdown from "./ToolbarDropdown.svelte";
-    import ToolbarToggle from "./ToolbarToggle.svelte";
+
+    import { Separator } from "$lib/components/ui/separator";
+    
     import type { ToolbarGroupType } from "./Toolbar";
 
-    export let group: ToolbarGroupType;
+    interface Props {
+        group: any;
+    }
+
+    let { group }: Props = $props();
 </script>
 
 <div class="flex flex-row items-center gap-1">
     {#each group.items as item}
-        {#if item.type === "button" }
+        {#if item.type === "button"}
             <ToolbarButton item={item} />
         {:else if item.type === "buttonsGroup"}
-            <svelte:self group={item} />
+            <ToolbarGroup group={item.items} />
         {:else if item.type === "dropdown"}
             <ToolbarDropdown dropdown={item} />
         {:else if item.type === "toggle"}

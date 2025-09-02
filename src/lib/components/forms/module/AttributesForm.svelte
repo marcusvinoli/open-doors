@@ -1,184 +1,212 @@
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import Input from "$lib/components/ui/input/input.svelte";
-	import DataTypeDropdown from "./DataTypeDropdown.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { createEventDispatcher } from 'svelte';
-	import { readModuleFromPath, saveTemplate } from "$lib/controllers/Module";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import * as Table from "$lib/components/ui/table";
-	import type { Module } from "$lib/components/structs/Module";
-	import type { Field, DataKind } from "$lib/components/structs/Template";
+    import Icon from "@iconify/svelte";
+    import Input from "$lib/components/ui/input/input.svelte";
+    import AttributeKindDropDown from "./AttributeKindDropDown.svelte"
 
-	const dispatch = createEventDispatcher();
+    import { Button } from "$lib/components/ui/button/index.js";
+    import { isValidAttributeName } from "$lib/utils/name-validator";
 
-	export let openDialog: boolean = false;
-	export let module: Module;
-	let tempModule: Module;
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
+    import * as Table from "$lib/components/ui/table";
 
-	let newAttribute: string;
-	let newDataTypeSelected: string;
-	let newAllowedValues: string;
-	
-	function closeDialog() {
-		openDialog = false;
-	}
+    import type { Module } from "$lib/components/structs/Module";
+    import type { Attribute, AttributeKind } from "$lib/components/structs/Attributes";
+    import type { Template } from "$lib/components/structs/Template";
 
-	function generateKey(input: string): string {
-		const sanitized = input.toLowerCase().replace(/[^a-z0-9]/g, '');
-		const truncated = sanitized.length > 30 ? sanitized.substring(0, 30) : sanitized;
-		return truncated;
-	}
+    let { 
+        openDialog = $bindable(false), 
+        module,
+        ontemplateupdate,
+        readOnly = false,
+    } : {
+        openDialog?: boolean;
+        module: Module;
+        readOnly?: boolean;
+        ontemplateupdate?: (template: Template) => void;
+    } = $props();
 
-	function generateDataKind(dataType: string, allowedValues: string = ""): DataKind {
-		switch (dataType) {
-			case "nullableOptions":
-				return { nullableOptions: allowedValues.split(",").map(s => s.trim()) };
-			case "nullableOption": 
-				return { nullableOption: allowedValues.split(",").map(s => s.trim()) };
-			case "nullableBoolean":
-				return { nullableBoolean: false };
-			default:
-				return { any: "" };
-		}
-	}
+    let tempTemplate: Template = $state({... module.template} as Template);
+    let newAttributeName: string = $state("");
+    let newAttributeDescription: string = $state("");
+    let newAttributeKind: string | null = $state(null);
+    let newAllowedValues: string | null = $state(null);
+    let disableValueList: boolean = $derived(!(newAttributeKind === 'singleOption' || newAttributeKind === 'multipleOptions'));
+    let disableAddButton: boolean = $derived(!((isValidAttributeName(newAttributeName) && (newAttributeKind)) && (isValidAttributeName(newAllowedValues)&&(!disableValueList) || disableValueList)));
 
-	function addAttribute() {
-		if (newAttribute === "") {
-			return;
-		}
+    function closeDialog() {
+        clearFields();
+        openDialog = false;
+    }
 
-		let newField: Field = {
-			attribute: newAttribute,
-			kind: generateDataKind(newDataTypeSelected, newAllowedValues),
-			key: generateKey(newAttribute),
-		}
+    function clearFields() {
+        newAttributeName = "";
+        newAttributeDescription = "";
+        newAttributeKind = null;
+        newAllowedValues = null;
+    }
 
-		tempModule.template.fields = [...tempModule.template.fields, newField];
+    function generateKey(input: string): string {
+        const sanitized = input.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const truncated = sanitized.length > 30 ? sanitized.substring(0, 30) : sanitized;
+        const randomized = truncated + String(Math.floor(Math.random()*100).toString()).padStart(3, '0');
+        return randomized;
+    }
 
-		newDataTypeSelected = "any";
-		newAllowedValues = "";
-		newAttribute = "";
-	}
+    function generateDataKind(attributeKind: string | null, allowedValues?: string | null): AttributeKind {
+        switch (attributeKind) {
+            case "singleOption":
+                return { singleOption: allowedValues!.split(",").map(s => s.trim()) };
+            case "multipleOptions": 
+                return { multipleOptions: allowedValues!.split(",").map(s => s.trim()) };
+            case "boolean":
+                return 'boolean';
+            case "general":
+                return 'general';
+            default: // For string, integer, real, date, time, dateTime, 
+                return 'string';
+        }
+    }
 
-	function removeAttribute(key: string) {
-		let tempTemplte = tempModule.template.fields;
-		let index = tempTemplte.findIndex((fd) => (fd.key === key));
-		if (index < 0) {
-			return;
-		}
-		tempTemplte.splice(index, 1);
-		tempModule.template.fields = tempTemplte;
-	}
+    function addAttribute() {
+        if (newAttributeName && !newAttributeKind) {
+            return;
+        }
 
-	function getDataKind(data: any) {
-		let dataKind = Object.keys(data)[0];
-		switch (dataKind) {
-			case "any": 
-				return "Text";
-			case "nullableOption":
-				return "Single Option";
-			case "nullableOptions":
-				return "Multiple Options";
-			case "nullableBoolean":
-				return "Yes/No";
-		}
-	}
+        let newAttr: Attribute = {
+            isMandatory: false, // TODO: A validation of this field should be included on software.
+            name: newAttributeName,
+            description: newAttributeDescription,
+            kind: generateDataKind(newAttributeKind, newAllowedValues),
+            key: generateKey(newAttributeName),
+        };
 
-	function getDataValues(data: any) {
-		let dataKind = Object.keys(data)[0];
-		switch (dataKind) {
-			case "nullableOption":
-			case "nullableOptions":
-				let dataValues = Object.values(data)[0] as string[];
-				return dataValues.join(", ");
-			case "nullableBoolean": 
-				return "Boolean values";
-			case "any": 
-				return "String values";
-			default: 
-				return "";
-		}
-	}
+        tempTemplate.fields = [...tempTemplate.fields, newAttr];
+        console.log($state.snapshot(tempTemplate));
+        clearFields();
+    }
 
-	async function handleSaveTemplate() {
-		await saveTemplate(module.path, tempModule.template);
-		readModuleFromPath(module.path)
-			.then(mod => {
-				module = mod as Module;
-				dispatch('updateTemplate', {})
-			})
-			.finally(() => {
-				closeDialog();
-			})
-	}
+    function removeAttribute(key: string) {
+        let index = tempTemplate.fields.findIndex(attr => (attr.key === key));
+        if (index < 0) {
+            return;
+        }
+        tempTemplate.fields.splice(index, 1);
+    }
 
-	$: if (openDialog && module) {
-		tempModule = JSON.parse(JSON.stringify(module));
-	}
+    function getAttributeKind(attributeKind: AttributeKind) {
+        switch (attributeKind) {
+            case "string":
+                return "String";
+            case "general": // TODO: Include number, date, time, dateTime, etc...
+                return "Markdown";
+            case "boolean":
+                return "True/False";
+            default: // TODO: Include number, date, time, dateTime, etc...
+                let dataKind = Object.keys(attributeKind)[0];
+                if (dataKind === "singleOption") {
+                    return "Single Option";
+                } else if (dataKind === "multipleOption") {
+                    return "Multiple Option";
+                } else {
+                    return "Text";
+                }
+        }
+    }
+
+    function getDataValues(attributeKind: AttributeKind) {
+        switch (attributeKind) {
+            case "string":
+                return "Text";
+            case "general": // TODO: Include number, date, time, dateTime, etc...
+                return "Formatted text";
+            case "boolean":
+                return "True/False";
+            default: // TODO: Include number, date, time, dateTime, etc...
+                let dataKind = Object.keys(attributeKind)[0];
+                let dataValues = Object.values(attributeKind)[0] as string[];
+                if (dataKind === "singleOption" || dataKind === "multipleOptions") {
+                    return "Options: " + dataValues.join(", ");
+                } else {
+                    return "Other";
+                }
+        }
+    }
+
+    function handleSaveTemplate() {
+        if (ontemplateupdate) {
+            ontemplateupdate(tempTemplate);
+        }
+        closeDialog();
+    }
+
 </script>
 
-{#if tempModule}
-<Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>
-	<Dialog.Content class="max-w-[75%] max-h-[80%] flex flex-col">
-		<Dialog.Header class="pt-2 pb-1">
-			<Dialog.Title>Custom Attributes of {tempModule.manifest.prefix} Formal Module</Dialog.Title>
-			<Dialog.Description>{tempModule.manifest.title} module</Dialog.Description>
-		</Dialog.Header>
-		<Table.Root class="w-full max-h-32 overflow-auto">
-			<Table.Header class="w-full">
-				<Table.Row class="border-b-[1px]">
-					<Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Attribute</Table.Head>
-					<Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[200px]">Data Type</Table.Head>
-					<Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Values</Table.Head>
-					<Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[30px]"></Table.Head>
-				</Table.Row>
-			</Table.Header>
-			<Table.Body class="w-full">
-				<Table.Row class="">
-					<Table.Cell class="pl-2 pr-1">
-						<Input bind:value={newAttribute} placeholder="New attribute..." class="px-2 py-1 w-full" autocomplete="off"/>
-					</Table.Cell>
-					<Table.Cell class="px-1">
-						<DataTypeDropdown bind:dataType={newDataTypeSelected} />
-					</Table.Cell>
-					<Table.Cell class="px-1">
-						<Input bind:value={newAllowedValues} placeholder="Comma, Separeted, Values" class="px-2 py-1 w-full" disabled={(newDataTypeSelected === "any") || (newDataTypeSelected === "nullableBoolean")}/>
-					</Table.Cell>
-					<Table.Cell class="w-[30px] pl-1 pr-2">
-						<Button variant="ghost" class="hover:text-blue-600" on:click={addAttribute} disabled={(newAttribute==="")}>
-							<Icon icon="gravity-ui:circle-plus" width="20px" />
-						</Button>
-					</Table.Cell>
-				</Table.Row>
-				{#each tempModule.template.fields as field}
-				<Table.Row>
-					<Table.Cell>
-						<input bind:value={field.attribute} placeholder="Create a new attribute..." class="bg-transparent px-2 py-1 w-full"/>
-					</Table.Cell>
-					<Table.Cell>
-						{getDataKind(field.kind)}
-					</Table.Cell>
-					<Table.Cell>
-						{getDataValues(field.kind)}
-					</Table.Cell>
-					<Table.Cell class="w-[30px] pl-1 pr-2">
-						<Button variant="ghost" class="hover:text-red-600" on:click={() => removeAttribute(field.key)}>
-							<Icon icon="gravity-ui:circle-minus" width="20px" />
-						</Button>
-					</Table.Cell>
-				</Table.Row>
-				{:else}
-				<Table.Row class="h-28">
-				</Table.Row>
-				{/each}
-			</Table.Body>
-		</Table.Root>
-		<Dialog.Footer>
-			<div class="grow"></div>
-			<Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-			<Button on:click={handleSaveTemplate}>Save Changes</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
+<Dialog.Root bind:open={openDialog}>
+    <Dialog.Content class="flex flex-col min-w-[80%] max-h-[90%] min-h-[80%]">
+        <Dialog.Header class="pt-2 pb-1">
+            <Dialog.Title>Custom Attributes of Module {module.manifest.prefix}</Dialog.Title>
+            <Dialog.Description>{module.manifest.title} module</Dialog.Description>
+        </Dialog.Header>
+        <Table.Root class="">
+            <Table.Header class="">
+                <Table.Row class="border-b-[1px]">
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Attribute</Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Description</Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[200px]">Data Type</Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Values</Table.Head>
+                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[30px]"></Table.Head>
+                </Table.Row>
+            </Table.Header>
+            <Table.Body>
+                {#each tempTemplate.fields as attribute}
+                <Table.Row>
+                    <Table.Cell>
+                        {attribute.name}
+                    </Table.Cell>
+                    <Table.Cell class="whitespace-normal">
+                        {attribute.description}
+                    </Table.Cell>
+                    <Table.Cell class="max-w-[100px]">
+                        { getAttributeKind(attribute.kind) }
+                    </Table.Cell>
+                    <Table.Cell>
+                        { getDataValues(attribute.kind) }
+                    </Table.Cell>
+                    <Table.Cell class="max-w-[30px] pl-1 pr-2">
+                        <Button variant="ghost" class="hover:text-red-600" onclick={() => removeAttribute(attribute.key)}>
+                            <Icon icon="gravity-ui:circle-minus" width="20px" />
+                        </Button>
+                    </Table.Cell>
+                </Table.Row>
+                {/each}
+                {#if !readOnly}
+                    <Table.Row class="">
+                        <Table.Cell class="pl-2 pr-1">
+                            <Input bind:value={newAttributeName} placeholder="Name..." class="px-2 py-1 w-full" autocomplete="off"/>
+                        </Table.Cell>
+                        <Table.Cell class="pl-2 pr-1">
+                            <Input bind:value={newAttributeDescription} placeholder="Description..." class="px-2 py-1 w-full" autocomplete="off"/>
+                        </Table.Cell>
+                        <Table.Cell class="px-1">
+                            <AttributeKindDropDown bind:attributeKind={newAttributeKind} />
+                        </Table.Cell>
+                        <Table.Cell class="px-1">
+                            <Input bind:value={newAllowedValues} placeholder="Comma, Separeted, Values" class="px-2 py-1 w-full" disabled={disableValueList}/>
+                        </Table.Cell>
+                        <Table.Cell class="w-[30px] pl-1 pr-2">
+                            <Button variant="ghost" class="hover:text-blue-600" onclick={addAttribute} disabled={disableAddButton}>
+                                <Icon icon="gravity-ui:circle-plus" width="20px" />
+                            </Button>
+                        </Table.Cell>
+                    </Table.Row>
+                {/if}
+            </Table.Body>
+        </Table.Root>
+        <div class="grow"></div>
+        <Dialog.Footer>
+            <Button variant="secondary" onclick={closeDialog}>Cancel</Button>
+            <Button onclick={handleSaveTemplate}>Save Changes</Button>
+        </Dialog.Footer>
+    </Dialog.Content>
 </Dialog.Root>
-{/if}
+

@@ -6,7 +6,11 @@
     import type { ButtonInterface, ButtonDropdown } from "./ButtonGroup";
     import DropdownButtonItem from './DropdownButtonItem.svelte';
     
-    export let dropdown: ButtonInterface;
+    interface Props {
+        dropdown: ButtonInterface;
+    }
+
+    let { dropdown }: Props = $props();
     let dd: ButtonDropdown =  dropdown as ButtonDropdown;
 
 </script>

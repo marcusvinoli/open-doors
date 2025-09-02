@@ -1,20 +1,18 @@
 import type { User } from './User';
 import type { Metadata } from './Metadata'
-
-export interface IHash {
-    [key: string]: string;
-}
+import type { Template } from './Template';
+import type { AttributeHashMap } from './Attributes';
 
 export interface Object {
     id: number,
-    parentLevel: number,
-    indexLevel: number,
+    indexParentId: number,
+    indexLevel: string,
     header: string,
     content: string,
     author: User | string, 
     createdAt: Date,
     updatedAt: Date,
     deletedAt: Date | null,
-    attributes: IHash | null,
-    metadata: Metadata,
+    attributes: AttributeHashMap | null,
+    metadata: Metadata | null,
 }

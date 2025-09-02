@@ -1,12 +1,14 @@
 import { open } from '@tauri-apps/api/dialog';
 import { invoke } from "@tauri-apps/api";
 import { reloadRepository } from "./Repository";
-import type { TreeItem } from "$lib/components/structs/Tree"
+
+import type { Link } from '$lib/components/structs/Link';
 import type { Module} from "$lib/components/structs/Module"
-import type { ModuleManifest } from '$lib/components/structs/ModuleManifest';
-import type { Baseline } from '$lib/components/structs/Baseline';
 import type { Object } from "$lib/components/structs/Object";
 import type { Template } from "$lib/components/structs/Template";
+import type { TreeItem } from "$lib/components/structs/Tree"
+import type { Baseline } from '$lib/components/structs/Baseline';
+import type { ModuleManifest } from '$lib/components/structs/ModuleManifest';
 
 export async function createModule(manifesf: ModuleManifest, parent: TreeItem) {
     try {
@@ -18,8 +20,8 @@ export async function createModule(manifesf: ModuleManifest, parent: TreeItem) {
     }
 }
 
-export function readModule(module: TreeItem) {
-    return readModuleFromPath(module.path)
+export async function readModule(module: TreeItem) {
+    return readModuleFromPath(module.path);
 }
 
 export async function updateModuleManifest(module: TreeItem, manifest: ModuleManifest) {
@@ -27,17 +29,23 @@ export async function updateModuleManifest(module: TreeItem, manifest: ModuleMan
     return mod as Module;
 }
 
-export function deleteModule(module: TreeItem) {
+export async function deleteModule(module: TreeItem) {
     return invoke('delete_module', {path: module.path})
 }
 
-export function readAllObjects(module: TreeItem) {
-
+export async function readBaselinedModule(modulePath: string, version: string) {
+    return invoke('read_baselined_module', { path: modulePath, version });
 }
 
 export async function readModuleFromPath(path: string) {
-    const mod = await invoke('read_module', { path: path });
-    return mod as Module;
+    return invoke('read_module', { path: path })
+        .then((mod) => {
+            return mod as Module;
+        })
+        .catch((e) => { 
+            console.log(`Erro reading module at path ${path}: ${e}`) 
+            return null;
+        });
 }
 
 export function readBaselinedObject(path: string, id: number, version: string) {
@@ -60,15 +68,24 @@ export async function createDraftObject(modulePath: String, object: Object) {
     return mod as Object;
 }
 
+export async function createLink(originModulePath: string, from: Link, to: Link) {
+    return invoke('create_link', {originModulePath, from, to})
+}
+
+export async function deleteLink(originModulePath: string, from: Link, to: Link) {
+    return invoke('delete_link', {originModulePath, from, to})
+}
+
 export async function readObjects(modulePath: String) {
-    const mods = await invoke('read_objects', { path: modulePath });
-    console.log('read_objects', mods);
-    return mods as Object[];
+    return invoke('read_objects', { path: modulePath });
 }
 
 export async function readDraftObjects(modulePath: String) {
-    const objs = await invoke('read_draft_objects', { path: modulePath });
-    return objs as Object[];
+    return invoke('read_draft_objects', { path: modulePath });
+}
+
+export async function readCurrentObjects(modulePath: string) {
+    return invoke('read_current_objects', {path: modulePath});
 }
 
 export function deleteObject(modulePath: String, id: number) {
@@ -77,6 +94,10 @@ export function deleteObject(modulePath: String, id: number) {
 
 export function restoreObject(modulePath: String, id: number) {
 	return invoke('restore_object', {path: modulePath, id: id})
+}
+
+export function updateTemplate(modulePath: string, template: Template) {
+    return invoke('update_template', {path: modulePath, template: template})
 }
 
 export function saveTemplate(modulePath: String, template: Template) {

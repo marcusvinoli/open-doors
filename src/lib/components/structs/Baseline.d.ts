@@ -1,3 +1,5 @@
+import type { BaselineStatus } from "./BaselineStatus";
+
 export interface Baseline {
     version: string,
     description: string,
@@ -5,6 +7,6 @@ export interface Baseline {
     createdAt: DateTime,
     createdBy: User,
     deletedAt: DateTime | null,
-    deletedBy: User,
+    deletedBy: User | null,
     hash: string | null,
 }

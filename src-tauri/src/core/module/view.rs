@@ -12,5 +12,6 @@ pub struct ViewItem {
 #[serde(rename_all="camelCase")]
 pub struct View {
     pub name: String,
+    pub description: String,
     pub fields: Vec<ViewItem>,
 }

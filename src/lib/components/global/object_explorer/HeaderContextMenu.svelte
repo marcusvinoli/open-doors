@@ -1,10 +1,23 @@
 <script lang="ts">
-    import type { View } from "$lib/components/structs/View";
+    import type { Template } from "$lib/components/structs/Template";
+    import type { Attribute } from "$lib/components/structs/Attributes";
+    import type { View, ViewItem } from "$lib/components/structs/View";
+    
     import * as ContextMenu from "$lib/components/ui/context-menu/index.js";
     
-    export let view: View;
-    export let showLinks: boolean = true;
-    export let showNumbering: boolean = false;
+    let {
+        view = $bindable(),
+        template,
+        showLinks = $bindable(true),
+        showNumbering = $bindable(false),
+        children
+    } : {
+        view: View;
+        template?: Template;
+        showLinks?: boolean;
+        showNumbering?: boolean;
+        children?: import('svelte').Snippet;
+    } = $props();
 
     function toggleNumbering() {
         showNumbering = !showNumbering;
@@ -13,11 +26,27 @@
     function toggleLinks() {
         showLinks = !showLinks;
     }
+
+    function updateView(field: Attribute) {
+        const index = view.items.findIndex(item => item.key === field.key);
+        if (index < 0) {
+            const newView = {
+                key: field.key,
+                show: true,
+                attribute: field.name,
+            };
+            view.items = [...view.items, newView];
+            return;
+        }
+        view.items.splice(index, 1);
+        view.items = [...view.items];
+    }
+
 </script>
 
 <ContextMenu.Root>
     <ContextMenu.Trigger>
-        <slot />
+        {@render children?.()}
     </ContextMenu.Trigger>
     <ContextMenu.Content>
         <ContextMenu.Sub>
@@ -32,11 +61,28 @@
                 {/each}
             </ContextMenu.SubContent>
         </ContextMenu.Sub>
+        <ContextMenu.Sub>
+            <ContextMenu.SubTrigger disabled={(template ? (template.fields.length > 0 ? false : true) : true)}>
+                Add Attribute to View
+            </ContextMenu.SubTrigger>
+            <ContextMenu.SubContent>
+                {#if template}
+                {#each template.fields as field}
+                    <ContextMenu.CheckboxItem 
+                        checked={view.items.findIndex(item => item.attribute === field.name) >= 0}
+                        onclick={() => updateView(field)}
+                        >
+                        {field.name}
+                    </ContextMenu.CheckboxItem>
+                    {/each}
+                {/if}
+            </ContextMenu.SubContent>
+        </ContextMenu.Sub>
         <ContextMenu.Separator/>
-        <ContextMenu.Item on:click={toggleNumbering}>
+        <ContextMenu.Item onclick={toggleNumbering}>
             {(showNumbering)? "Hide" : "Show"} Row Number
         </ContextMenu.Item>
-        <ContextMenu.Item on:click={toggleLinks}>
+        <ContextMenu.Item onclick={toggleLinks}>
             {(showLinks)? "Hide" : "Show"} Object Links
         </ContextMenu.Item>
     </ContextMenu.Content>

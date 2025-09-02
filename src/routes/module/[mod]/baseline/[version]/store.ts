@@ -1,11 +1,12 @@
-import type { View } from '$lib/components/global/object_explorer/viewStructs';
-import type { ObjectView } from '$lib/components/structs/Object';
 import { writable } from 'svelte/store';
+
+import type { View } from '$lib/components/structs/View';
+import type { Object } from '$lib/components/structs/Object';
 
 export interface PageState {
   scrollX: number;
   scrollY: number;
-  selectedObject: ObjectView | null;
+  selectedObject: Object | null;
   editPanelFlag: boolean;
   showLinksFlag: boolean,
 	showRowNumberFlag: boolean,

@@ -20,7 +20,7 @@ impl SemVer {
 		let vers = ver.as_ref().to_string();
 		let mut vers = vers.split(".").into_iter();
 		SemVer {
-			major: vers.next().unwrap_or("1").parse::<usize>().unwrap_or(1),
+			major: vers.next().unwrap_or("0").parse::<usize>().unwrap_or(0),
 			minor: vers.next().unwrap_or("0").parse::<usize>().unwrap_or(0),
 			patch: vers.next().unwrap_or("0").parse::<usize>().unwrap_or(0),
 		}

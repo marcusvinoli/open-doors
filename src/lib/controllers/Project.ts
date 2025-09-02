@@ -17,12 +17,20 @@ export async function readProject(project: TreeItem) {
             return prj as Project;
         })
         .catch((e) => {
-            console.log("Fail reading project" + e)
+            console.log("Fail reading project. " + e);
+            return null;
         })
 }
 
 export async function updateProject(project: TreeItem, man: ProjectManifest) {
     return invoke('update_project', {path: project.path, man: man})
+        .then((prj) => {
+            return prj as Project;
+        })
+        .catch((e) => {
+            console.log("Fail updateing project. " + e);
+            return null;
+        })
 }
 
 export async function deleteProject(project: TreeItem) {

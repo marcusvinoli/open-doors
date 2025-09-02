@@ -1,115 +1,138 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
-    import Loading from '../../ui/loading/Loading.svelte';
-    import ComboboxAllRecipientsOnRepository from '../utils/ComboboxAllRecipientsOnRepository.svelte';
-    import { confirm } from '@tauri-apps/api/dialog';
+    import Loading from '$lib/components/ui/loading/Loading.svelte';
+    import TreeItemsComboBox from '$lib/components/forms/utils/TreeItemsComboBox.svelte';
+
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
-    import { repository } from "$lib/stores/Repository";
+    import { confirm } from '@tauri-apps/api/dialog';
+    import { isValid } from "$lib/utils/name-validator";
+    import { repository } from "$lib/stores/Repository.svelte";
     import { updateFolder } from "$lib/controllers/Folder";
-    import { reloadRepository } from "$lib/controllers/Repository";
     import { deleteProject, readProject, updateProject } from "$lib/controllers/Project";
-    import { listAllRecipientsExceptChildren, listRelatives } from "$lib/utils/lists";
+    import { listAllContainersExceptChildren, listRelatives } from "$lib/utils/lists";
+    
     import * as path from 'path';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import type { Project } from "$lib/components/structs/Project";
-    import type { TreeItem } from "../../structs/Tree";
-    import { createEventDispatcher } from "svelte";
     
-    const dispatch = createEventDispatcher();
+    import type { Project } from "$lib/components/structs/Project";
+    import type { TreeItem } from "$lib/components/structs/Tree";
+    import type { Repository } from "$lib/components/structs/Repo";
 
-    export let openDialog: boolean = true;
-    export let project: TreeItem;
+    const loadingMessage: string = "Loading project information";
+    const deletingFolderMessage: string = "Deleting project...";
+    const updatingFolderMessage: string = "Updating project...";
 
-    let loading: boolean = false;
-    let loadingMessage: string = "Reading project information...";
+    let { 
+        openDialog = $bindable(true), 
+        project,
+        onprojectupdate,
+        onprojectdelete,
+    } : {
+        openDialog: boolean;
+        project: TreeItem;
+        onprojectupdate?: (project: TreeItem) => void;
+        onprojectdelete?: (project: TreeItem) => void;
+    } = $props();
 
-    let parent: TreeItem;
-    let possibleParents: TreeItem[];
+    let repo: Repository = $derived(repository()!);
+    let loading: boolean = $state(false);
+    let infoMessage: string = $state(loadingMessage);
 
-    let currentParent: TreeItem;
+    let possibleParents: TreeItem[] = $derived.by(() => listAllContainersExceptChildren(repo.tree, project));
+    let currentParent: TreeItem = $derived.by(() => listRelatives(repo.tree, repo.tree, project).pop() ?? repo.tree);
+    let newParent: TreeItem = $derived.by(() => listRelatives(repo.tree, repo.tree, project).pop() ?? repo.tree);
+    
+    let projectName: string = $derived.by(() => project.name);
+    let isValidName: boolean = $derived(isValid(projectName));
 
-    let currentProject: Project | null;
-    let updatedProject: Project;
+    let currentProject: Project | null = $state(null);
+    let updatedProject: Project | null = $state(null);
 
     function closeDialog() {
         loading = false;
         openDialog = false;
+        currentProject = null;
+        updatedProject = null;
     }
 
     async function handleProjectUpdate() {
-        loadingMessage = "Updating folder...";
         loading = true;
+        infoMessage = updatingFolderMessage;
         let updated = false;
 
-        if((parent) && (currentParent) && (project) && (currentProject)){
-            if (currentProject.manifest !== updatedProject.manifest) {
-                await updateProject(currentProject.tree, updatedProject.manifest)
-                currentProject = await readProject(currentProject.tree);
-            }
-
-            if (currentParent.path !== parent.path) {
-                const projectFolder = path.basename(currentProject?.tree.path);
-                const newPath = path.join(parent.path, projectFolder);
-                await updateFolder(currentProject.tree.path, newPath);
+        if (currentProject!.manifest !== updatedProject!.manifest) {
+            currentProject = await updateProject(currentProject!.tree, updatedProject!.manifest);
+            if (currentProject) {
+                updated = true;
             }
         }
 
-        if(updated) {
-            dispatch('updated', {project: currentProject});
-            reloadRepository();
+        if (currentParent.path !== newParent.path) {
+            const projectFolder = path.basename(currentProject!.tree.path);
+            const newPath = path.join(newParent.path, projectFolder);
+            currentProject!.tree = await updateFolder(project.path, newPath);
+            updated = true;
+        }
+
+        if(updated && onprojectupdate) {
+            onprojectupdate(currentProject!.tree);
         }
 
         closeDialog();
     }
 
     async function handleProjectDelete() {
-        const confirmed = await confirm('Do you really want to delete this project? All it content will be delete!', 'Deleting project ' + currentProject.manifest.name );
+        const confirmed = await confirm('Do you really want to delete this project? All it content will be delete!', 'Deleting project ' + currentProject!.manifest.name );
         if (!confirmed) {
             return;
         }
         loading = true;
-        deleteProject(currentProject.tree)
+        infoMessage = deletingFolderMessage;
+        deleteProject(currentProject!.tree)
             .then(() => {
-                reloadRepository();
-                dispatch('deleted', {project: project});
+                if (onprojectdelete) {
+                    onprojectdelete(project)
+                }
             })
             .finally(() => {
+                loading = true;
                 closeDialog();
-            })
+            });
     }
     
-    async function loadData() {
-        console.log("Loading data...");
-        if ($repository && (project.itemType === "project")) {
-            console.log("Loading data... 2");
-            let retProject = await readProject(project);
-            currentProject = retProject;
-            updatedProject = JSON.parse(JSON.stringify(currentProject));
-            possibleParents = listAllRecipientsExceptChildren($repository!.tree, currentProject.tree);
-            parent = listRelatives($repository?.tree, $repository?.tree, currentProject?.tree).pop()??$repository?.tree;
-            currentParent = parent;
-            loading = false;
+    $effect(() => {
+        if (project.itemType !== 'project') {
+            return;
         }
-    }
-
-    $: if (openDialog) {
-        loadData();
-    }
+        if (!openDialog) {
+            return;
+        }
+        loading = true;
+        infoMessage = loadingMessage;
+        readProject(project)
+            .then((prj) => {
+                currentProject = prj as Project;
+                updatedProject = structuredClone(prj as Project);
+            })
+            .finally(() => {
+                loading = false;
+            });
+    })
     
 </script>
 
-<Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>
+<Dialog.Root bind:open={openDialog}>
     <Dialog.Content class="sm:max-w-[480px]">
         {#if loading}
             <div class="flex flex-col items-center">
                 <Loading />
-                <h1 class="leading-1 pt-1 my-2">{loadingMessage}</h1>
+                <h1 class="leading-1 pt-1 my-2">{infoMessage}</h1>
             </div> 
         {:else}
             <div class="grid gap-4 py-4 min-h-42">
-                {#if updatedProject}
+                {#if currentProject && updatedProject}
                     <Dialog.Header>
                         <Dialog.Title>{currentProject.manifest.name}</Dialog.Title>
                         <Dialog.Description>{currentProject.manifest.prefix}</Dialog.Description>
@@ -117,9 +140,7 @@
                     <div class="grid grid-cols-4 items-center gap-2">
                         <Label for="name" class="text-right col-span-1">Parent</Label>
                         <div class="col-span-3">
-                        {#if $repository}
-                            <ComboboxAllRecipientsOnRepository recipients={possibleParents} bind:selectedItem={parent} />
-                        {/if}
+                            <TreeItemsComboBox items={possibleParents} bind:selectedItem={newParent} />
                         </div>
                     </div>
                     <div class="grid grid-cols-4 items-center gap-2">
@@ -135,14 +156,14 @@
                 {/if}
             </div>
             <Dialog.Footer>
-                <Button variant="destructive" on:click={handleProjectDelete}>
+                <Button variant="destructive" onclick={handleProjectDelete}>
                     <Icon icon="gravity-ui:trash-bin" width="15px"/>
                     <p class="pl-2">Delete</p>
                 </Button>
                 <div class="grow"></div>
-                <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
+                <Button variant="secondary" onclick={closeDialog}>Cancel</Button>
                 {#if updatedProject}
-                    <Button on:click={handleProjectUpdate} disabled={(updatedProject.manifest.name==="")}>Save Changes</Button>
+                    <Button onclick={handleProjectUpdate} disabled={(!isValidName)}>Save Changes</Button>
                 {/if}
             </Dialog.Footer>
         {/if}

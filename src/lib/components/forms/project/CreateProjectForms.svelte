@@ -1,52 +1,76 @@
 <script lang="ts">
     import Loading from '../../ui/loading/Loading.svelte';
-    import ComboboxAllRecipientsOnRepository from '../utils/ComboboxAllRecipientsOnRepository.svelte';
+    import TreeItemsComboBox from '../utils/TreeItemsComboBox.svelte';
+
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
-    import { repository } from "$lib/stores/Repository";
+    import { isValid } from '$lib/utils/name-validator';
+    import { repository } from '$lib/stores/Repository.svelte';
     import { createProject } from '$lib/controllers/Project';
     import { reloadRepository } from "$lib/controllers/Repository";
-    import { createEventDispatcher, onMount } from 'svelte';
-    import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
+    import { listAllContainers } from '$lib/utils/lists';
+
     import * as Dialog from "$lib/components/ui/dialog/index.js";
+    
     import type { TreeItem } from '../../structs/Tree';
-    import type { ProjectManifest } from "$lib/components/structs/Project";
+    import type { Project, ProjectManifest } from "$lib/components/structs/Project";
+    
+    const placeholder = 'Select a repository, project or folder...';
 
-    export let openDialog: boolean = false;
-    export let selectedParent: TreeItem;
+    let { 
+        openDialog = $bindable(false),
+        currentParent,
+        oncreateproject,
+    } : {
+        openDialog?: boolean;
+        currentParent?: TreeItem | null;
+        oncreateproject?: ((mod: Project) => void) | null;
+    } = $props();
 
-    let loading: boolean = false;
-    let projectManifest: ProjectManifest = {
+    let repo = $derived(repository());
+    let loading: boolean = $state(false);
+    let selectedParent: TreeItem | null = $derived(currentParent ?? null);
+    let possibleParents = $derived(listAllContainers(repo?.tree, true));
+
+    let projectManifest: ProjectManifest = $state({
         name:"",
         separator: "-",
         prefix:"",
-    };
+    });
 
     function closeDialog() {
         loading = false;
         openDialog = false;
     }
 
-    const dispatch = createEventDispatcher();
-
     function handleCreateProject() {
         loading = true;
-        createProject(projectManifest, selectedParent!).then(() => {
-            reloadRepository();
-            closeDialog();
-            dispatch('created', {manifest: projectManifest, parent: selectedParent});
-        })
+        
+        if(!selectedParent) {
+            return;
+            // TODO: Insert here an Error Message.
+        }
+
+        if (!isValid(projectManifest.prefix)) {
+            return;
+            // TODO: Insert here an Error Message.
+        }
+
+        createProject(projectManifest, selectedParent)
+            .then((prj) => {
+                if (oncreateproject) {
+                    oncreateproject(prj as Project);
+                }
+            })
+            .finally(() => {
+                closeDialog();
+            })
     }
 
-    onMount(() => {
-        if (!selectedParent! && $repository) {
-            selectedParent = listAllRecipientItemsFromRepository($repository)[0];
-        }
-    })
 </script>
 
-<Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>
+<Dialog.Root bind:open={openDialog}>
     <Dialog.Content class="sm:max-w-[480px]">
         <Dialog.Header>
             <Dialog.Title>Create a New Project</Dialog.Title>
@@ -64,9 +88,7 @@
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="name" class="text-right col-span-1">Create Here</Label>
                 <div class="col-span-3">
-                {#if $repository}
-                    <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={selectedParent} />
-                {/if}
+                    <TreeItemsComboBox items={possibleParents} bind:selectedItem={selectedParent} placeholder={placeholder}/>
                 </div>
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
@@ -87,8 +109,8 @@
             {/if}
         </div>
         <Dialog.Footer>
-            <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleCreateProject} disabled={((projectManifest.name==="")||(projectManifest.prefix===""))}>Create</Button>
+            <Button variant="secondary" onclick={closeDialog}>Cancel</Button>
+            <Button onclick={handleCreateProject} disabled={((projectManifest.name==="")||(projectManifest.prefix===""))}>Create</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

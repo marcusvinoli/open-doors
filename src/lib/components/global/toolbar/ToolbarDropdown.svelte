@@ -1,30 +1,36 @@
 <script lang="ts">
     import Icon from '@iconify/svelte';
     import Button from '$lib/components/ui/button/button.svelte';
-    import * as Tooltip from "$lib/components/ui/tooltip";
-    import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-    import type { ToolbarDropdownType, ToolbarItemInterface } from "./Toolbar";
     import ToolbarDropdownItem from './ToolbarDropdownItem.svelte';
     
-    export let dropdown: ToolbarItemInterface;
-    let dd: ToolbarDropdownType;
+    import * as Tooltip from "$lib/components/ui/tooltip";
+    import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 
-    $: {dd = dropdown as ToolbarDropdownType}
+    import type { ToolbarDropdownType, ToolbarItemInterface } from "./Toolbar";
+    
+    interface Props {
+        dropdown: ToolbarItemInterface;
+    }
+
+    let { dropdown }: Props = $props();
+    let dd: ToolbarDropdownType = $derived(dropdown as ToolbarDropdownType); 
 
 </script>
 
-<DropdownMenu.Root closeOnItemClick closeOnOutsideClick>
+<DropdownMenu.Root>
     <DropdownMenu.Trigger>
-        <Tooltip.Root openDelay={200}>
-            <Tooltip.Trigger>
-                <Button variant="ghost" class="cursor-default">
-                    <Icon icon={dd.button.icon} width="20px"/>
-                </Button>
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-                <p>{dd.button.tooltip}</p>
-            </Tooltip.Content>
-        </Tooltip.Root>
+        <Tooltip.Provider>
+            <Tooltip.Root delayDuration={200}>
+                <Tooltip.Trigger>
+                    <Button variant="ghost" class="cursor-default">
+                        <Icon icon={dd.button.icon} width="20px"/>
+                    </Button>
+                </Tooltip.Trigger>
+                <Tooltip.Content>
+                    <p>{dd.button.tooltip}</p>
+                </Tooltip.Content>
+            </Tooltip.Root>
+        </Tooltip.Provider>
     </DropdownMenu.Trigger>
     <DropdownMenu.Content>
         {#each dd.items as dropdownGroup, index}

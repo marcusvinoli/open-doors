@@ -3,7 +3,11 @@
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
     import type { ButtonInterface, ButtonSimple } from "./ButtonGroup";
     
-    export let item: ButtonInterface;
+    interface Props {
+        item: ButtonInterface;
+    }
+
+    let { item }: Props = $props();
     let dpItem: ButtonSimple = item as ButtonSimple;
 </script>
 

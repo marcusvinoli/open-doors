@@ -1,72 +1,85 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
     import Icon from '@iconify/svelte';
-    import type { TreeItemState } from '$lib/components/global/treeview/TreeViewState';
+    import TreeItem from "./TreeItem.svelte";
+    
+    import { getTreeState, setTreeState } from '$lib/stores/TreeState.svelte';
 
-    export let level;
-    export let item: TreeItemState
+    import type { TreeItem as TreeItemType } from '$lib/components/structs/Tree';
+
+    let { 
+        level, 
+        item,
+        onclick,
+    } : {
+        level: any;
+        item: TreeItemType;
+        onclick?: (item: any) => void;
+    } = $props();
     
     let tabLevel = level;
+    let open = $state(getTreeState(item) || (level === 0)); // Ensures that repository is always start opened.
 
-    function toggleItem(){
-        item.opened = !item.opened;
+    function toggleItem(event: any){
+        event.stopPropagation();
+        open = !open;
+        setTreeState(item, open);
     }
-
-    const dispatch =  createEventDispatcher();
 
     function handleClick(event: any) {
         event.stopPropagation();
-        dispatch('click', {item: item});
-        if (!item.opened) {
-            item.opened = true;
+        if (onclick) {
+            onclick(item)
         }
     }
-    
-    function openLevel(event: any) {
-        event.stopPropagation();
-        item.opened =! item.opened;
+
+    function handleDoubleClick(event: any) {
+        toggleItem(event);
+        handleClick(event);
     }
+    
 </script>
 
-<button class="flex items-center hover:bg-slate-200 px-2 w-full text-ellipsis text-sm font-light" on:click={handleClick}>
-    <div class="flex">
-        {#each {length: tabLevel} as _}
-        <div class="tree-strips hover:border-r-slate-300 w-[10px] h-[30px]"></div>
-        {/each}
-    </div>
-    <div class="flex text-left truncate p-1 items-center">
-        <button class="" on:click={openLevel}>
-            {#if item.opened && item.itemType != "module"}
+<div role="button" onclick={handleClick} ondblclick={handleDoubleClick} tabindex="-1" onkeydown={() => {}} class="cursor-default">
+    <div class="flex items-center hover:bg-slate-200 px-2 w-full text-ellipsis text-sm font-light select-none">
+        <div class="flex">
+            {#each {length: tabLevel} as _}
+            <div class="tree-strips hover:border-r-slate-300 w-[10px] h-[30px]"></div>
+            {/each}
+        </div>
+        <div class="flex text-left truncate p-1 items-center">
+            <button onclick={toggleItem}>
+                {#if open && item.itemType != "module"}
                 <Icon icon="gravity-ui:chevron-down" width="12px"/>
-            {:else if !item.opened  && item.itemType != "module"}
+                {:else if !open  && item.itemType != "module"}
                 <Icon icon="gravity-ui:chevron-right" width="12px"/>
-            {:else}
+                {:else}
                 <div class="w-[12px]"></div>
-            {/if}
-        </button>
-        <icon class="pr-2 pl-1">
-            {#if item.itemType === "repository"}
+                {/if}
+            </button>
+            <icon class="pr-2 pl-1">
+                {#if item.itemType === "repository"}
                 <Icon icon="gravity-ui:database" width="15px"/>
-            {:else if item.itemType === "project" && item.opened}
+                {:else if item.itemType === "project" && open}
                 <Icon icon="gravity-ui:folder-open-fill" width="15px"/>
-            {:else if item.itemType === "project" && !item.opened}
+                {:else if item.itemType === "project" && !open}
                 <Icon icon="gravity-ui:folder-fill" width="15px"/>
-            {:else if item.itemType === "folder" && item.opened}
+                {:else if item.itemType === "folder" && open}
                 <Icon icon="gravity-ui:folder-open" width="15px"/>
-            {:else if item.itemType === "folder" && !item.opened}
+                {:else if item.itemType === "folder" && !open}
                 <Icon icon="gravity-ui:folder" width="15px"/>
-            {:else if item.itemType === "module"}
+                {:else if item.itemType === "module"}
                 <Icon icon="gravity-ui:layout-header-cells-large-fill" width="15px"/>
-            {:else}
+                {:else}
                 <Icon icon="gravity-ui:file" width="15px"/>
-            {/if}
-        </icon>
-        <p class="">{item.name}</p>
+                {/if}
+            </icon>
+            <span class="select-none">{item.name}</span>
+        </div>
     </div>
-</button>
+</div>
 
-{#if (item.children) && item.opened}
+{#if (item.children) && open}
     {#each item.children as child}
-        <svelte:self item={child} level={level+1} on:click/>
+        <TreeItem item={child} level={level+1} onclick={onclick}/>
     {/each}
 {/if}

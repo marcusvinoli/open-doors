@@ -8,9 +8,13 @@
     import { Input } from "$lib/components/ui/input/index.js";
     import { open } from '@tauri-apps/api/dialog';
 
-    export let openDialog: boolean = false;
-    export let loading: boolean = false;
-    let path: string | string[] = "";
+    interface Props {
+        openDialog?: boolean;
+        loading?: boolean;
+    }
+
+    let { openDialog = $bindable(false), loading = $bindable(false) }: Props = $props();
+    let path: string | string[] = $state("");
 
     function closeDialog() {
         loading = false;
@@ -36,7 +40,7 @@
     }
 </script>
 
-<Dialog.Root bind:open={openDialog} closeOnEscape={true}>
+<Dialog.Root bind:open={openDialog}>
     <Dialog.Content class="sm:max-w-[425px]">
         <Dialog.Header>
         <Dialog.Title>Open a local Repository</Dialog.Title>
@@ -55,7 +59,7 @@
                 <Label for="name" class="text-right col-span-1">Location</Label>
                 <div class="flex flex-row gap-3 col-span-4">
                     <Input id="name" bind:value={path} class="" autocomplete="off"/>
-                    <Button variant="secondary" class="" on:click={selectFolder}>
+                    <Button variant="secondary" class="" onclick={selectFolder}>
                         <Icon icon="gravity-ui:folder-magnifier" width="25px"/>
                     </Button>
                 </div>
@@ -63,8 +67,8 @@
             {/if}
         </div>
         <Dialog.Footer>
-        <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-        <Button on:click={handleOpen} disabled={(path==="")}>Open</Button>
+        <Button variant="secondary" onclick={closeDialog}>Cancel</Button>
+        <Button onclick={handleOpen} disabled={(path==="")}>Open</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

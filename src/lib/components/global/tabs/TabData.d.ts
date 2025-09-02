@@ -3,4 +3,5 @@ export interface TabData {
     icon: string;
     title: string;
     badge: string | null;
+    onClose?: () => void;
 }

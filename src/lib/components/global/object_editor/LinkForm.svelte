@@ -1,36 +1,43 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
+	import StringDropdown from './StringDropdown.svelte';
+	
 	import { Button } from "$lib/components/ui/button/index.js";
+	import { repository } from '$lib/stores/Repository.svelte';
+	import { readObjects } from '$lib/controllers/Module';
+	import { listAllModules } from '$lib/utils/lists';
+	
+	import path from 'path';
+	
 	import * as Table from "$lib/components/ui/table";
-	import type { Link, ObjectView } from '$lib/components/structs/Object';
+	
 	import type { Module } from '$lib/components/structs/Module';
 	import type { Object } from '$lib/components/structs/Object';
-	import StringDropdown from './StringDropdown.svelte';
-	import { createEventDispatcher, onMount } from 'svelte';
-	import { listAllModules } from '$lib/utils/lists';
-	import { repository } from '$lib/stores/Repository';
 	import type { TreeItem } from '$lib/components/structs/Tree';
-	import { readObjects } from '$lib/controllers/Module';
-    import path from 'path';
+	import type { Link } from '$lib/components/structs/Link';
+	
+	let {
+		links = $bindable([]),
+		editable = true,
+		modPlaceholder = "Select a module...",
+		objsPlaceholder = $bindable("Select a module first...")
+	} : {
+		links?: Link[] | null;
+		editable?: boolean;
+		modPlaceholder?: string;
+		objsPlaceholder?: string;
+	} = $props();
 
-	export let links: Link[] | null = [];
-	export let editable: boolean = true;
-
-	export let modPlaceholder = "Select a module...";
-	export let objsPlaceholder = "Select a module first...";
-
-	let modules: string[];
-	let objects: string[];
+	let modules: string[] = $state();
+	let objects: string[] = $state();
 
 	let selectedModule: string = "";
-	let selectedObject: string = "";
+	let selectedObject: string = $state("");
 
 	let moduleTrees: TreeItem[];
 	let moduleObjects: Object[] = [];
 	
-	let readToLink: boolean = false;
-
-	const dispatch = createEventDispatcher();
+	let readToLink: boolean = $state(false);
 
 	function handleModuleSelection(event: any) {
 		if (event.detail.item === modPlaceholder) {
@@ -153,10 +160,6 @@
 		objsPlaceholder = "Select a object..."
 		objects = allObjs;
 	}
-
-	onMount(() => {
-		getAllModules();
-	})
 
 </script>
 

@@ -2,7 +2,7 @@ use std::{path::PathBuf, sync::Mutex};
 use git2::Repository as GitRepository;
 use tauri::{command, State}; 
 
-use crate::core::{error::OpenDoorsError, module::{Baseline, Object, Template, Module, ModuleManifest}, tree::TreeItem};
+use crate::core::{error::OpenDoorsError, module::{Baseline, Module, ModuleManifest, Object, Template}, tree::TreeItem, Link};
 
 #[command] 
 pub fn create_module(state: State<'_, Mutex<Option<GitRepository>>>, man: ModuleManifest, parent: TreeItem) -> Result<Module, OpenDoorsError> {
@@ -23,9 +23,9 @@ pub fn update_module(state: State<'_, Mutex<Option<GitRepository>>>, path: PathB
 }
 
 #[tauri::command]
-pub fn delete_module(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf) -> Result<(), String> {
+pub fn delete_module(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf) -> Result<(), OpenDoorsError> {
 	let repo = state.lock().unwrap();
-  	Ok(())
+  	Ok(Module::delete(&repo, &path)?)
 }
 
 #[command]
@@ -57,12 +57,6 @@ pub fn read_draft_object(path: PathBuf, id: usize) -> Result<Object, OpenDoorsEr
 pub fn read_objects(path: PathBuf) -> Result<Vec<Object>, OpenDoorsError> {
 	let module = Module::read(&path)?;
 	Ok(module.read_objects()?)
-}
-
-#[command]
-pub fn read_draft_objects(path: PathBuf) -> Result<Vec<Object>, OpenDoorsError> {
-	let mut module = Module::read(&path)?;
-	Ok(module.read_draft_objects()?)
 }
 
 #[command] 
@@ -134,4 +128,27 @@ pub fn read_objects_from_baseline(state: State<'_, Mutex<Option<GitRepository>>>
 	let repo = state.lock().unwrap();
 	let module = Module::read(&path.into())?;
 	Ok(module.read_objects_from_baseline(&repo, &version)?)
+}
+
+#[command]
+pub fn read_baselined_module(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, version: String) -> Result<Module, OpenDoorsError> {
+	let repo = state.lock().unwrap();
+	let module = Module::read(&path)?;
+	Ok(module.read_module_from_baseline(&repo, &version)?)
+}
+
+#[tauri::command]
+pub fn create_link(state: State<'_, Mutex<Option<GitRepository>>>, origin_module_path: PathBuf, from: Link, to: Link) -> Result<(), OpenDoorsError> {
+	let repo = state.lock().unwrap();
+	let mut module = Module::read(&origin_module_path)?;
+	module.create_link(&repo, &from, &to)?;
+	Ok(())
+}
+
+#[tauri::command]
+pub fn delete_link(state: State<'_, Mutex<Option<GitRepository>>>, origin_module_path: PathBuf, from: Link, to: Link) -> Result<(), OpenDoorsError> {
+	let repo = state.lock().unwrap();
+	let mut module = Module::read(&origin_module_path)?;
+	module.delete_link(&repo, &from, &to)?;
+	Ok(())
 }

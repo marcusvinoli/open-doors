@@ -1,6 +1,6 @@
 pub mod path_utils {
 	use serde::{Serializer, Deserialize, Deserializer};
-	use std::{borrow::Cow, path::{Path, PathBuf}};
+	use std::{borrow::Cow, path::PathBuf};
 
 	pub fn serialize<S>(p: &String, serializer: S) -> Result<S::Ok, S::Error>
 	where

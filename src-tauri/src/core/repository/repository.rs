@@ -54,8 +54,8 @@ impl Repository {
 	
 	pub fn read(path: &PathBuf) -> Result<Repository, RepositoryError> {
 		let man: RepositoryManifest = mid::read_yml_file(&path, defs::MANIFEST_FILE_NAME)?;
-		let tree: TreeItem = TreeItem::from_path(&path)?;
-	
+		let mut tree: TreeItem = TreeItem::from_path(&path)?;
+		tree.name = man.name.clone();
 		Ok(Repository { 
 			manifest: man,
 			tree,

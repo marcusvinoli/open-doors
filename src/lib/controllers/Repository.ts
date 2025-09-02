@@ -1,20 +1,25 @@
+import { app } from "$lib/stores/AppState.svelte";
 import { invoke } from "@tauri-apps/api";
-import { repository } from "$lib/stores/Repository";
-import type { Repository } from "$lib/components/structs/Repo";
 import { loadAuthorInformation } from "./User";
+//TODO: In the future, the store "repository" will be deprecated by "app" from "AppState"
+import { repository, setRepository } from "$lib/stores/Repository.svelte";
+
+import type { Repository } from "$lib/components/structs/Repo";
 
 export function saveRepository(repo: Repository) {
 	localStorage.setItem('repository', JSON.stringify(repo));
-	repository.set(repo);
+	app.repository = repo;
+	setRepository(repo); //TODO: To be removed.
 }
 
-export function loadRepository(): Repository {
+export function loadRepository() {
 	let repo = JSON.parse(localStorage.getItem('repository') as string) as Repository;
 	if (repo) {
-		loadAuthorInformation();
 		saveRepository(repo);
+		loadAuthorInformation();
+		return true;
 	}
-	return repo;
+	return false;
 }
 
 export async function openRepository(path: string) {
@@ -48,11 +53,25 @@ export async function createRepository(path: string, name: string, remote: strin
 }
 
 export async function reloadRepository() {
-	invoke('read_repository', {path: loadRepository().tree.path})
+	let repo = repository();
+	if (!repo) {
+		if (loadRepository()) {
+			reloadRepository()
+			return;
+		}
+		return;
+	}
+
+	return invoke('read_repository', {path: repo.tree.path})
 		.then((repo) => {
 			saveRepository(repo as Repository)
 		})
 		.catch((err) => {
 			console.log(err)
 		})
+}
+
+export function clearRepositoryInformation() {
+	app.repository = null;
+	setRepository(null); //TODO: To be removed.
 }

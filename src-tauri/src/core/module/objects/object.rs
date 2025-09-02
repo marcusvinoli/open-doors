@@ -11,8 +11,8 @@ use super::{Metadata, ObjectStatus};
 #[serde(rename_all="camelCase")]
 pub struct Object {
     id: usize,
-    pub parent_level: usize,
-    pub index_level: usize,
+    pub index_parent_id: usize,
+    pub index_level: String,
     pub header: String,
     pub content: String,
     pub author: User,
@@ -37,7 +37,7 @@ impl Object {
         self.id
     }
 
-    pub fn add_metadata(&mut self, status: &ObjectStatus, links: &Links) {
+    pub fn add_metadata(&mut self, status: ObjectStatus, links: &Links) {
         if let Some(links) = links.inbound_links.get(&self.id) {
             self.add_inbound_links(Some(links.to_owned()));
         }
@@ -49,11 +49,12 @@ impl Object {
 
     pub fn set_status(&mut self, status: ObjectStatus) {
         if let Some(meta) = self.metadata.as_mut() {
-            meta.status = status.to_owned();
+            meta.status = status;
             self.metadata = Some(meta.to_owned());
         } else {
             let mut metadata: Metadata = Metadata::default();
             metadata.status = status.to_owned();
+            self.metadata = Some(metadata);
         }
     }
 
@@ -75,6 +76,17 @@ impl Object {
         } else {
             let mut metadata: Metadata = Metadata::default();
             metadata.outbound_links = links;
+            self.metadata = Some(metadata);
+        }
+    }
+
+    pub fn set_level(&mut self, level: String) {
+        if let Some(meta) = self.metadata.as_mut() {
+            meta.level = level;
+            self.metadata = Some(meta.to_owned());
+        } else {
+            let mut metadata: Metadata = Metadata::default();
+            metadata.level = level;
             self.metadata = Some(metadata);
         }
     }

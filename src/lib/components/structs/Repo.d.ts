@@ -1,4 +1,4 @@
-import type TreeItem from "./Tree";
+import type { TreeItem } from "./Tree";
 
 export interface RepositoryManifest {
     name: string;

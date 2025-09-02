@@ -8,10 +8,14 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { createEventDispatcher } from 'svelte';
 	
-	export let openDialog: boolean = false;
-	export let loading: boolean = false;
-	let remote: string = "";
-	let path: string | string[] = "";
+	interface Props {
+		openDialog?: boolean;
+		loading?: boolean;
+	}
+
+	let { openDialog = $bindable(false), loading = $bindable(false) }: Props = $props();
+	let remote: string = $state("");
+	let path: string | string[] = $state("");
 
 	function closeDialog() {
 		loading = false;
@@ -37,7 +41,7 @@
 	}
 </script>
 
-<Dialog.Root bind:open={openDialog} closeOnEscape={true}>
+<Dialog.Root bind:open={openDialog}>
 	<Dialog.Content class="sm:max-w-[450px]">
 		<Dialog.Header>
 			<Dialog.Title>Clone a Repository</Dialog.Title>
@@ -60,7 +64,7 @@
 				<Label for="name" class="text-right col-span-1">Location</Label>
 				<div class="flex flex-row gap-3 col-span-4">
 					<Input id="name" bind:value={path} class="" autocomplete="off"/>
-					<Button variant="secondary" class="" on:click={selectFolder}>
+					<Button variant="secondary" class="" onclick={selectFolder}>
 						<Icon icon="gravity-ui:folder-magnifier" width="25px"/>
 					</Button>
 				</div>
@@ -68,8 +72,8 @@
 			{/if}
 		</div>
 		<Dialog.Footer>
-			<Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-			<Button on:click={handleClone} disabled={((remote==="")||(path===""))}>Clone</Button>
+			<Button variant="secondary" onclick={closeDialog}>Cancel</Button>
+			<Button onclick={handleClone} disabled={((remote==="")||(path===""))}>Clone</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

@@ -1,159 +1,183 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import Loading from '../../ui/loading/Loading.svelte';
-    import ComboboxAllRecipientsOnRepository from '../utils/ComboboxAllRecipientsOnRepository.svelte';
-    import { confirm } from '@tauri-apps/api/dialog';
+    import TreeItemsComboBox from "../utils/TreeItemsComboBox.svelte";
+
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
-    import { repository } from "$lib/stores/Repository";
-    import { createModule, deleteModule, readModule, updateModuleManifest } from '$lib/controllers/Module';
-    import { reloadRepository } from "$lib/controllers/Repository";
-    import { createProject, readProject } from '$lib/controllers/Project';
-    import { createEventDispatcher, onMount } from 'svelte';
-    import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
+    import { confirm } from '@tauri-apps/api/dialog';
+    import { isValid } from "$lib/utils/name-validator";
+    import { repository } from "$lib/stores/Repository.svelte";
+    import { updateFolder } from "$lib/controllers/Folder";
+    import { listRelatives } from '$lib/utils/lists';
+    import { listAllContainers } from '$lib/utils/lists';
+    import { deleteModule, readModule, updateModuleManifest } from '$lib/controllers/Module';
+
     import * as path from 'path';
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import type { TreeItem } from '../../structs/Tree';
-    import type { ModuleManifest } from "$lib/components/structs/Module";
-    import { listAllRecipientsExceptChildren, listRelatives } from '$lib/utils/lists';
-    import { updateFolder } from "$lib/controllers/Folder";
 
-    const dispatch = createEventDispatcher();
+    import type { Module } from "$lib/components/structs/Module";
+    import type { TreeItem } from "$lib/components/structs/Tree";
+    import type { Repository } from "$lib/components/structs/Repo";
 
-    export let openDialog: boolean = false;
-    export let module: TreeItem;
+    const loadingMessage: string = "Loading module information";
+    const deletingModuleMessage: string = "Deleting module...";
+    const updatingModuleMessage: string = "Updating module...";
 
-    let loading: boolean = false;
-    let loadingMessage: string = "Reading module information...";
+    let { 
+        openDialog = $bindable(false), 
+        moduleItem,
+        onmoduleupdate,
+        onmoduledelete, 
+    } : {
+        openDialog?: boolean;
+        moduleItem: TreeItem;
+        onmoduleupdate?: (mod: TreeItem) => void;
+        onmoduledelete?: (mod: TreeItem) => void;
+    } =  $props();
 
-    let parent: TreeItem;
-    let currentParent: TreeItem;
-    let possibleParents: TreeItem[];
+    let repo: Repository = $derived(repository()!);
+    let loading: boolean = $state(false);
+    let infoMessage: string = $state(loadingMessage);
+
+    let possibleParents: TreeItem[] = $derived.by(() => listAllContainers(repo.tree, true));
+    let currentParent: TreeItem = $derived.by(() => listRelatives(repo.tree, repo.tree, moduleItem).pop() ?? repo.tree);
+    let newParent: TreeItem = $derived.by(() => listRelatives(repo.tree, repo.tree, moduleItem).pop() ?? repo.tree);
     
-    let currentModule: ModuleManifest;
-    let updatedModule: ModuleManifest;
-
+    let currentModule: Module | null = $state(null);
+    let updatedModule: Module | null = $state(null);
+    let isValidName: boolean = $derived.by(() => {
+        if (!updatedModule) {
+            return false;
+        }
+        return isValid(updatedModule?.manifest.title);
+    });
+    
     function closeDialog() {
         loading = false;
         openDialog = false;
+        currentModule = null;
+        updatedModule = null;
     }
 
     async function handleModuleUpdate() {
-        loadingMessage = "Updating module...";
+        infoMessage = updatingModuleMessage;
+        let retModule: TreeItem = {...moduleItem};
         loading = true;
+
         let updated = false;
 
-        if((module) && (currentParent) && (currentModule) && (updatedModule)){
-            if (updatedModule.title !== currentModule.title ||
-                updatedModule.description !== currentModule.description ||
-                updatedModule.separator !== currentModule.separator
-            ) {
-                await updateModuleManifest(module, updatedModule)
-                currentModule = (await readModule(module)).manifest;
-                updated = true;
-            }
-            
-            if (currentParent.path !== parent.path) {
-                const moduleFolder = path.basename(module.path);
-                const newPath = path.join(parent.path, moduleFolder);
-                await updateFolder(module.path, newPath);
-                updated = true;
-            }
+        if (!updatedModule) {
+            return;
         }
 
-        if(updated) {
-            dispatch('updated', {module: currentModule});
-            reloadRepository();
+        if (currentModule !== updatedModule) {
+            currentModule = await updateModuleManifest(moduleItem, updatedModule.manifest);
+            updated = true;
+        }
+
+        if (currentParent.path !== newParent.path) {
+            const moduleFolder = path.basename(moduleItem.path);
+            const newPath = path.join(newParent.path, moduleFolder);
+            retModule = await updateFolder(moduleItem.path, newPath);
+            updated = true;
+        }
+
+        if (updated && onmoduleupdate) {
+            onmoduleupdate(retModule);
         }
 
         closeDialog();
     }
 
     async function handleModuleDelete() {
-        const confirmed = await confirm('Do you really want to delete this Module? All its content will be delete!', 'Deleting module ' + currentModule.title );
+        const confirmed = await confirm('Do you really want to delete this Module? All its content will be delete!', 'Deleting module ' + currentModule?.manifest.title );
+        
         if (!confirmed) {
             return;
         }
+
         loading = true;
-        deleteModule(module)
+        infoMessage = deletingModuleMessage;
+
+        deleteModule(moduleItem)
             .then(() => {
-                reloadRepository();
-                dispatch('deleted', {module: module});
+                
             })
             .finally(() => {
                 closeDialog();
             })
     }
     
-    async function loadData() {
-        console.log("Loading data...")
-        if ($repository && (module.itemType === "module")) {
-            let retModule = (await readModule(module)).manifest;
-            currentModule = retModule;
-            updatedModule = JSON.parse(JSON.stringify(retModule));
-            possibleParents = listAllRecipientsExceptChildren($repository!.tree, module);
-            parent = listRelatives($repository?.tree, $repository?.tree, module).pop()??$repository?.tree;
-            currentParent = parent;
-            loading = false;
+    $effect(() => {
+        if (moduleItem.itemType !== 'module') {
+            return;
         }
-    }
-
-    $: if (openDialog) {
-        loadData();
-    }
+        if (!openDialog) {
+            return;
+        }
+        loading = true;
+        infoMessage = loadingMessage;
+        readModule(moduleItem)
+            .then((mod) => {
+                currentModule = mod as Module;
+                updatedModule = structuredClone(mod as Module);
+            })
+            .finally(() => {
+                loading = false;
+            })
+    });
     
 </script>
 
-<Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>
+<Dialog.Root bind:open={openDialog}>
     <Dialog.Content class="sm:max-w-[520px]">
         {#if loading}
             <div class="flex flex-col items-center">
                 <Loading />
-                <h1 class="leading-1 pt-1 my-2">{loadingMessage}</h1>
+                <h1 class="leading-1 pt-1 my-2">{infoMessage}</h1>
             </div> 
         {:else}
             <div class="grid gap-4 py-4 min-h-42">
-            {#if updatedModule}
+            {#if currentModule && updatedModule}
                 <Dialog.Header>
-                    <Dialog.Title>{currentModule.title}</Dialog.Title>
+                    <Dialog.Title>{currentModule.manifest.title}</Dialog.Title>
                     <Dialog.Description>
-                        {currentModule.description}
+                        {currentModule.manifest.description}
                     </Dialog.Description>
                 </Dialog.Header>
                 <div class="grid grid-cols-4 items-center gap-2">
                     <Label for="name" class="text-right col-span-1">Parent</Label>
                     <div class="col-span-3">
-                    {#if $repository}
-                        <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={parent} />
-                    {/if}
+                        <TreeItemsComboBox items={possibleParents} bind:selectedItem={newParent} />
                     </div>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
                     <Label for="name" class="text-right col-span-1">Module name</Label>
-                    <Input id="name" placeholder="Module" bind:value={updatedModule.title}  class="col-span-3" />
+                    <Input id="name" placeholder="Module" bind:value={updatedModule.manifest.title}  class="col-span-3" />
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
                     <Label for="desc" class="text-right col-span-1">Module description</Label>
-                    <Input multiple id="desc" placeholder="Module Description" bind:value={updatedModule.description}  class="col-span-3" autocomplete="off"/>
+                    <Input multiple id="desc" placeholder="Module Description" bind:value={updatedModule.manifest.description}  class="col-span-3" autocomplete="off"/>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
                     <Label for="prefix" class="text-right col-span-1">Prefix</Label>
-                    <Input id="prefix" placeholder="PRJ" bind:value={updatedModule.prefix} class="col-span-1" disabled/>
+                    <Input id="prefix" placeholder="PRJ" bind:value={updatedModule.manifest.prefix} class="col-span-1" disabled/>
                     <Label for="name" class="text-right col-span-1">Separator</Label>
-                    <Input id="name" placeholder="-" bind:value={updatedModule.separator} class="col-span-1" autocomplete="off"/>
+                    <Input id="name" placeholder="-" bind:value={updatedModule.manifest.separator} class="col-span-1" autocomplete="off"/>
                 </div>
             {/if}
             </div>
         {/if}
         <Dialog.Footer>
-            <Button variant="destructive" on:click={handleModuleDelete}>
+            <Button variant="destructive" onclick={handleModuleDelete}>
                 <Icon icon="gravity-ui:trash-bin" width="15px"/>
                 <p class="pl-2">Delete</p>
             </Button>
             <div class="grow"></div>
-            <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleModuleUpdate} disabled={(updatedModule?.title==="")}>Save Changes</Button>
+            <Button variant="secondary" onclick={closeDialog}>Cancel</Button>
+            <Button onclick={handleModuleUpdate} disabled={!isValidName}>Save Changes</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

@@ -1,35 +1,34 @@
 <script lang="ts">
-    import type { TreeItemState}  from './TreeViewState';
-    import { convertToTreeItemState, updateTreeItemState } from './Utils';
-    import { beforeUpdate, createEventDispatcher, onMount } from 'svelte';
     import TreeItem from "./TreeItem.svelte";
+
+    import { repository } from "$lib/stores/Repository.svelte";
+    
     import type { TreeItem as TreeItemType } from '$lib/components/structs/Tree';
+ 
+    let { 
+        onclick,
+    } : {
+        onclick?: (item: any) => void,
+    } = $props();
 
-    export let structure: TreeItemType;
-    let tree: TreeItemState;
+    let tree: TreeItemType | null = $derived(repository()?.tree);
 
-    const dispatch = createEventDispatcher();
-
-    function handleClick(event: any) {
-        dispatch('click', event.detail);
-    }
-
-    beforeUpdate(() => {
-        if(!tree) {
-            tree = convertToTreeItemState(structure);
+    function handleClick(item: any) {
+        if (onclick) {
+            onclick(item)
         }
-        tree = updateTreeItemState(structure, tree);
-    })
+    }
 
 </script>
 
 <div class="flex flex-col w-full min-h-[180px] overflow-auto tree-content">
     {#if tree}
-        <TreeItem item={tree} level={0} on:click={handleClick}/>
+        <TreeItem item={tree} level={0} onclick={handleClick}/>
     {/if}
 </div>
 
-<!-- <style type="postcss">
+<!-- 
+<style type="postcss">
     .tree-content:hover .tree-strips {
         @apply border-l-[1px];
     }

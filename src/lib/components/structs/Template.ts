@@ -10,27 +10,27 @@ export const readOnlyTemplate: Template = {
             isMandatory : false,
             kind : 'general',
             name : 'ID',
-            description : 'Object unique identification',
+            description : 'Object unique identifier.',
             key : 'id'
         },
         {
             isMandatory : false,
             kind : 'general',
             name : 'header',
-            description : 'Object Header',
+            description : 'Object header.',
             key : 'Header'
         },
         {
             isMandatory : false,
             kind : 'general',
             name : 'Content',
-            description : 'Object Text',
+            description : 'Object content text.',
             key : 'content'
         },
         {
             isMandatory : true,
             kind : 'user',
-            description : 'Object Text',
+            description : 'Last user that modifies the Object Content/Header',
             name : 'Author',
             key : 'author'
         }

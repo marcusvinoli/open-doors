@@ -1,6 +1,10 @@
 import type { TreeItem } from "$lib/components/structs/Tree";
 
-export function getIconFromTreeItemType(item: TreeItem, open = false): string {
+export function getIconFromTreeItemType(item: TreeItem | null, open = false): string {
+    if (!item) {
+        return "";
+    }
+
     let icon = "gravity-ui:file";
     switch (item.itemType) {
         case "repository": 

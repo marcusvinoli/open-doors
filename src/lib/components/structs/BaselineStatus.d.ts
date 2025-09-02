@@ -1,6 +1,1 @@
-export type BaselineStatus = {
-    WorkInProgress,
-    Latest,
-    Historical,
-    Deleted,
-}
+export type BaselineStatus = 'workInProgress' | 'latest' | 'historical' | 'deleted';

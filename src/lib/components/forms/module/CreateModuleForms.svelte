@@ -1,53 +1,85 @@
 <script lang="ts">
     import Loading from '../../ui/loading/Loading.svelte';
-    import ComboboxAllRecipientsOnRepository from '../utils/ComboboxAllRecipientsOnRepository.svelte';
+    import TreeItemsComboBox from '../utils/TreeItemsComboBox.svelte';
+
     import { Input } from "$lib/components/ui/input/index.js";
     import { Label } from "$lib/components/ui/label/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
-    import { repository } from "$lib/stores/Repository";
+    import { isValid } from '$lib/utils/name-validator';
+    import { repository } from "$lib/stores/Repository.svelte";
     import { createModule } from '$lib/controllers/Module';
-    import { reloadRepository } from "$lib/controllers/Repository";
-    import { createProject, readProject } from '$lib/controllers/Project';
-    import { createEventDispatcher, onMount } from 'svelte';
-    import { listAllRecipientItemsFromRepository } from '$lib/utils/listAllRecipientsFromRepository';
+    import { listAllContainers } from '$lib/utils/lists';
+
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import type { TreeItem } from '../../structs/Tree';
-    import type { ModuleManifest } from "$lib/components/structs/Module";
+    
+    import type { Module } from '$lib/components/structs/Module';
+    import type { TreeItem } from '$lib/components/structs/Tree';
+    import type { ModuleManifest } from "$lib/components/structs/ModuleManifest";
 
-    export let openDialog: boolean = false;
-    export let selectedParent: TreeItem;
+    const placeholder: string = 'Select a repository, project or folder...';
+    
+    let { 
+        openDialog = $bindable(false),
+        currentParent,
+        oncreatedmodule,
+    } : {
+        openDialog?: boolean;
+        currentParent?: TreeItem | null;
+        oncreatedmodule?: ((mod: Module) => void) | null;
+    } = $props();
 
-    let loading: boolean = false;
+    let repo = $derived(repository());
+    let loading: boolean = $state(false);
+    let selectedParent: TreeItem | null = $derived(currentParent ?? null);
+    let possibleParents: TreeItem[] = $derived.by(() => {
+            if (!repo) {
+                return []
+            } 
+            return listAllContainers(repo.tree)
+        });
 
-    let moduleManifest: ModuleManifest = {
+    let moduleManifest: ModuleManifest = $state({
         title:"",
         prefix:"",
         separator: "-",
         description: "",
-    };
+    });
 
     function closeDialog() {
         loading = false;
         openDialog = false;
     }
 
-    const dispatch = createEventDispatcher();
-
     function handleCreateModule() {
+        loading = true;
+
+		if(!selectedParent) {
+			return;
+			// TODO: Insert here an Error Message.
+		}
+
+		if (!isValid(moduleManifest.prefix)) {
+			return;
+			// TODO: Insert here an Error Message.
+		}
+
         loading = true;
         createModule(moduleManifest, selectedParent)
             .then((mod) => {
-                console.log(mod);
-                dispatch('create', {manifest: moduleManifest});
+                let module = mod as Module;
+                if (oncreatedmodule) {
+                    oncreatedmodule(module);
+                }
             })
             .finally(() => {
                 closeDialog();
             })
     }
+
 </script>
 
-<Dialog.Root bind:open={openDialog} closeOnEscape closeOnOutsideClick>
-    <Dialog.Content class="sm:max-w-[520px]">
+<Dialog.Root bind:open={openDialog}>
+    <Dialog.Content class="sm:max-w-[550px]">
         <Dialog.Header>
             <Dialog.Title>New Module</Dialog.Title>
             <Dialog.Description>
@@ -61,12 +93,10 @@
                 <h1 class="leading-1 pt-1 my-2">Creating a new Module...</h1>
             </div> 
             {:else}
-            <div class="grid grid-cols-4 items-center gap-2">
-                <Label for="name" class="text-right col-span-1">Create Here</Label>
-                <div class="col-span-3">
-                {#if $repository}
-                    <ComboboxAllRecipientsOnRepository recipients={listAllRecipientItemsFromRepository($repository)} bind:selectedItem={selectedParent} />
-                {/if}
+            <div class="grid grid-cols-4 items-center  gap-2">
+                <Label for="location" class="text-right col-span-1 ">Create Here</Label>
+                <div class="col-span-3" id="location">
+                    <TreeItemsComboBox bind:selectedItem={selectedParent} items={possibleParents} placeholder={placeholder}/>
                 </div>
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
@@ -74,14 +104,14 @@
                 <Input id="name" placeholder="Module" bind:value={moduleManifest.title}  class="col-span-3" />
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
-                <Label for="desc" class="text-right col-span-1">Module description</Label>
+                <Label for="desc" class="text-right col-span-1">Module Description</Label>
                 <Input multiple id="desc" placeholder="Module Description" bind:value={moduleManifest.description}  class="col-span-3" />
             </div>
-            <div class="grid grid-cols-4 items-center gap-2">
+            <div class="grid grid-cols-4 items-center gap-2 text-left">
                 <Label for="prefix" class="text-right col-span-1">Prefix</Label>
                 <Input id="prefix" placeholder="PRJ" bind:value={moduleManifest.prefix} class="col-span-1" />
-                <Label for="name" class="text-right col-span-1">Separator</Label>
-                <Input id="name" placeholder="-" bind:value={moduleManifest.separator} class="col-span-1"/>
+                <Label for="separator" class="text-right col-span-1">Separator</Label>
+                <Input id="separator" placeholder="-" bind:value={moduleManifest.separator} class="col-span-1"/>
             </div>
             <Dialog.Description>
                 {#if (moduleManifest.title !== "") && (moduleManifest.prefix !== "") && (parent)}
@@ -91,8 +121,8 @@
             {/if}
         </div>
         <Dialog.Footer>
-            <Button variant="secondary" on:click={closeDialog}>Cancel</Button>
-            <Button on:click={handleCreateModule} disabled={(moduleManifest.prefix===""||moduleManifest.title==="")}>Create</Button>
+            <Button variant="secondary" onclick={closeDialog}>Cancel</Button>
+            <Button onclick={handleCreateModule} disabled={(moduleManifest.prefix===""||moduleManifest.title==="")}>Create</Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

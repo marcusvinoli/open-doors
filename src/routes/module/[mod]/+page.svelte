@@ -1,605 +1,743 @@
 <script lang="ts">
-	import IndexTree from "$lib/components/global/indextree/IndexTree.svelte";
-	import ObjectEditor from "$lib/components/global/object_editor/ObjectEditor.svelte";
-	import ObjectExplorer from "$lib/components/global/object_explorer/ObjectExplorer.svelte";
-	import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
-	import { goto } from "$app/navigation";
-	import { page } from "$app/stores";
-	import { user } from "$lib/stores/User";
-	import { addTab } from "$lib/stores/Tabs";
-	import { onMount } from "svelte";
-	import { confirm } from '@tauri-apps/api/dialog';
-	import { pageState } from "./store";
-	import { repository } from "$lib/stores/Repository";
-	import { loadRepository } from "$lib/controllers/Repository";
-	import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar";
-	import { createDraftObject, createObject, deleteObject, exportCSV, exportXlsx, readDraftObjects, readModuleFromPath, readObjects, restoreObject } from "$lib/controllers/Module";
-	import * as Resizable from "$lib/components/ui/resizable";
-	import { type View, readOnlyView } from "$lib/components/structs/View";
-	import type { Module } from "$lib/components/structs/Module";
-	import type { IHash, Object } from "$lib/components/structs/Object";
-	import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
-	import type { Template } from "$lib/components/structs/Template";
-    import BaselineForm from "$lib/components/forms/module/BaselineForm.svelte";
-	import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
-	import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
-	import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
-    import { ObjectStatus } from "$lib/components/structs/ObjectStatus";
+    import Icon from "@iconify/svelte";
+    import Loading from "$lib/components/ui/loading/Loading.svelte";
+    import IndexTree from "$lib/components/global/indextree/IndexTree.svelte";
+    import ObjectForm from "$lib/components/forms/object/ObjectForm.svelte";
     import DynamicTable from "$lib/components/global/object_explorer/DynamicTable.svelte";
-	
-	let selectedObject: Object;
-	let objects: Object[] = [];
-	let module: Module;
+    //import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
+    import BaselineForm from "$lib/components/forms/module/BaselineForm.svelte";
+    //import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
+    import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
+    //import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
 
-	let templateFlag: boolean = false;
-	let readOnlyFlag: boolean = false;
-	let editPanelFlag: boolean = false;
-	let treePanelFlag: boolean = false;
-	let showLinksFlag: boolean = true;
-	let showDeletionsFlag: boolean = false;
-	let showRowNumberFlag: boolean = true;
-	let newBaselineFlag: boolean = false;
-	
-	let tabKey: string = "";
-	let view: View = readOnlyView;
+    import { app, disposeModule, loadModule } from "$lib/stores/AppState.svelte";
+    import { tick } from "svelte";
+    import { goto } from "$app/navigation";
+    import { page } from "$app/state";
+    import { addTab } from "$lib/stores/Tabs.svelte";
+    import { confirm, message } from '@tauri-apps/api/dialog';
+    import { absolutePath, encodePath, relativePath } from "$lib/utils/path-handler";
+    import { buildTreeIndex } from "$lib/utils/index-tree.utils";
+    import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar.svelte";
+    import { computeIndexLevelChild, computeIndexLevelSibilings, newObject } from "$lib/utils/object-utils";
+    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, readModuleFromPath, readObjects, restoreObject, updateTemplate } from "$lib/controllers/Module";
 
-	function loadHomeToolbar() {
-		clearToolbar();
-	
-		let homeButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Home",
-			icon: "gravity-ui:house",
-			action: () => {
-				goto("/home")
-			},
-		}
+    import * as Resizable from "$lib/components/ui/resizable";
 
-		let showTree: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Show/Hide tree panel",
-			icon: "gravity-ui:layout-header-side-content",
-			action: () => {
-				treePanelFlag = !treePanelFlag;
-			},
-		}
+    import { type View, defaultView } from "$lib/components/structs/View";
 
-		let templateManager: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Custom Attributes",
-			icon: "gravity-ui:shapes-3",
-			action: () => {
-				templateFlag = !templateFlag;
-			}
-		}
-		
-		let newButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "New...",
-			icon: "gravity-ui:circle-plus",
-			action: () => {},
-		}
-	
-		let newBaselineButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "New Baseline",
-			icon: "gravity-ui:tag",
-			action: () => {
-				newBaselineFlag = !newBaselineFlag;
-			},
-		}
-	
-		let newObjectButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "New Object",
-			icon: "gravity-ui:square-chart-bar",
-			action: () => {
-				if(!editPanelFlag) {
-					selectedObject = createEmptyObject();
-					editPanelFlag = true;
-				}
-			},
-		}
+    import type { Link } from "$lib/components/structs/Link";
+    import type { Task } from "$lib/components/structs/Task";
+    import type { Module } from "$lib/components/structs/Module";
+    import type { Object } from "$lib/components/structs/Object";
+    import type { Template } from "$lib/components/structs/Template";
+    import type { Baseline } from "$lib/components/structs/Baseline";
+    import type { IndexItem } from "$lib/components/structs/IndexItem";
+    import type { Repository } from "$lib/components/structs/Repo";
+    import type { ModuleState, Linker } from "$lib/components/structs/States";
+    import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
+    
+    const OBJECT_TABLE_ID = 'object-table';
+    const OBJECT_TABLE_CONTAINER_SUFFIX = '-container';
+    const INDEX_TREE_ID = 'index-tree';
 
-		let exportButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Export module...",
-			icon: "gravity-ui:file-arrow-right-out",
-			action: () => {},
-		}
+    let repo: Repository | null = $derived(app.repository);
+    let view: View = $state(defaultView);
+    let module: Module | null = $state(null);
+    let objects: Object[] = $state([]);
+    let selectedObject: Object | null = $state(null);
+    let indexTree: IndexItem[] = $derived(buildTreeIndex([...objects]));
+    let indexTreeState: Map<number, boolean> = $state(new Map());
+    let linker: Linker | null = $state(app.linker);
 
-		let exportExcelButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Microsoft Excel (.xlsx)",
-			icon: "ri:file-excel-2-fill",
-			action: () => {
-				exportXlsx(module.path).then((res) => console.log(res))
-			},
-		}
+    let templateFlag: boolean = $state(false);
+    let readOnlyFlag: boolean = $state(false);
+    let treePanelFlag: boolean = $state(false);
+    let showLinksFlag: boolean = $state(false);
+    let objectFormFlag: boolean = $state(false);
+    let newBaselineFlag: boolean = $state(false);
+    let showDeletionsFlag: boolean = $state(false);
+    let showRowNumberFlag: boolean = $state(false);
 
-		let exportCSVButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Comma-Separeted Value (.csv)",
-			icon: "ph:file-csv",
-			action: () => {
-				exportCSV(module.path).then((res) => console.log(res))
-			},
-		}
+    let forceScroll: {x: number, y: number} = $state({x: 0, y: 0});
+    let objectsScroll: {x: number, y: number} = {x: 0, y: 0};
+    let indexScroll: {x: number, y: number} = {x: 0, y: 0};
 
-		let readOnlyModeButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Toggle Edit Mode",
-			icon: "lucide:pencil-off",
-			action: () => {
-				readOnlyFlag = true;
-			},
-		}
+    let previousPageKey: string | null = null;
+    let currentPageKey: string = $derived(generateModuleStateKey(page.params.mod, page.params.version ?? 'current'));
 
-		let editModeButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Toggle Read-Only Mode",
-			icon: "lucide:pencil",
-			action: () => {
-				readOnlyFlag = false;
-			},
-		}
+    $effect(() => {
+        const {mod, version} = page.params;
+        if (mod) {
+            previousPageKey = generateModuleStateKey(mod, version ?? 'current');
+        }
+        retrieveState(currentPageKey);
+    })
 
-		let viewModeButton: ToolbarToggleType = {
-			type: "toggle",
-			buttonOn: editModeButton,
-			buttonOff: readOnlyModeButton,
-			status: readOnlyFlag,
-		}
+    $effect.pre(() => {
+        const {mod, version} = page.params;
+        if (mod || version) {
+            saveCurrentState(previousPageKey);
+        }
+        return () => {
+            saveCurrentState(previousPageKey);
+        }
+    })
 
-		let showDeletionsButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Show deletions",
-			icon: "gravity-ui:square-chart-bar",
-			action: () => {
-				showDeletionsFlag = true;
-			},
-		}
+    async function handleExportCSV() {
+        if (!module) {
+            return;
+        }
+        const taskID = 'csvExporter' + currentPageKey;
+        let csvTask: Task = {
+            job: "CSV Exporter",
+            status: "running",
+            icon: "line-md:uploading-loop",
+            tooltip: "Export " + module?.manifest.title + " to .CSV",
+        };
+        app.tasks.set(taskID, csvTask);
+        exportCSV(module?.path)
+            .then(() => {
+                csvTask.status = "done";
+            })
+            .catch(() => {
+                csvTask.status = "error";
+            })
+            .finally(() => {
+                app.tasks.set(taskID, csvTask)
+                tick().then(() => {
+                    app.tasks.delete(taskID)
+                })
+            })
+    }
 
-		let dontShowDeletionsButton: ToolbarButtonType = {
-			type: "button",
-			tooltip: "Don't show deletions",
-			icon: "gravity-ui:square-dashed-text",
-			action: () => {
-				showDeletionsFlag = false;
-			},
-		}
+    async function handleExportXLSX() {
+        if (!module) {
+            return;
+        }
+        const taskID = 'xlsxExporter' + currentPageKey;
+        let csvTask: Task = {
+            job: "XLSX Exporter",
+            status: "running",
+            icon: "line-md:uploading-loop",
+            tooltip: "Export " + module?.manifest.title + " to .XLSX",
+        };
+        app.tasks.set(taskID, csvTask);
+        exportXlsx(module?.path)
+            .then(() => {
+                csvTask.status = "done";
+            })
+            .catch(() => {
+                csvTask.status = "error";
+            })
+            .finally(() => {
+                app.tasks.set(taskID, csvTask)
+                tick().then(() => {
+                    app.tasks.delete(taskID)
+                })
+            })
+    }
 
-		let deletionsModeButton: ToolbarToggleType = {
-			type: "toggle",
-			buttonOn: showDeletionsButton,
-			buttonOff: dontShowDeletionsButton,
-			status: showDeletionsFlag,
-		}
-		
-		let creationGroup: ToolbarDropdownType = {
-			button: newButton,
-			items: [
-				{
-					items: [
-						newObjectButton,
-					],
-					type: "buttonsGroup",
-				},
-				{
-					items: [
-						newBaselineButton,
-					],
-					type: "buttonsGroup",
-				}
-			],
-			type: "dropdown",
-		}
-
-		let expGroup: ToolbarDropdownType = {
-			button: exportButton,
-			items: [
-				{
-					items: [
-						exportExcelButton,
-					],
-					type: "buttonsGroup",
-				},
-				{
-					items: [
-						exportCSVButton,
-					],
-					type: "buttonsGroup",
-				},
-			],
-			type: "dropdown"
-		}
-	
-		let navigationGroup: ToolbarGroupType = {
-			items: [homeButton],
-			type: "buttonsGroup"
-		}
-	
-		let newGroup: ToolbarGroupType = {
-			items: [creationGroup],
-			type: "buttonsGroup"
-		}
-		
-		let exportGroup: ToolbarGroupType = {
-			items: [expGroup],
-			type: "buttonsGroup"
-		}
-
-		let viewGrouplView: ToolbarGroupType = {
-			items: [showTree, viewModeButton, deletionsModeButton],
-			type: "buttonsGroup"
-		}
-
-		let templateButton: ToolbarGroupType = {
-			items: [templateManager],
-			type: "buttonsGroup"
-		}
-	
-		addToolbarItem(navigationGroup);
-		addToolbarItem(newGroup);
-		addToolbarItem(viewGrouplView);
-		addToolbarItem(exportGroup);
-		addToolbarItem(templateButton);
-
-	}
-
-	function createCustomFieldHashFromTemplate(template: Template, customFields: IHash) {
-		template.fields.forEach((field) => {
-			if (!customFields[field.key]) {
-				customFields[field.key] = "";
-			}
-		})
-	}
-
-	function createEmptyObject(): Object {
-		let customFields: IHash = {};
-		createCustomFieldHashFromTemplate(module.template, customFields);
-		let object: Object = {
-            id: 0,
-            parentLevel: 0,
-            indexLevel: 0,
-            header: "",
-            content: "",
-            author: $user.toString(),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            deletedAt: null,
-            attributes: null,
-            metadata: {
-                status: ObjectStatus.draft,
-                inboundLinks: null,
-                outboundLinks: null,
+    function loadToolbar() {
+        clearToolbar();
+    
+        let homeButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Home",
+            icon: "gravity-ui:house",
+            action: () => {
+                goto("/home")
             },
         }
-		return object
-	}
 
-	function handleObjectCreation(event: any) {
-		let obj = event.detail.object;
-		createObject(module.path, obj)
-			.then(() => {
-				selectedObject = createEmptyObject();
-				editPanelFlag = false;
-				loadAllObjects(module.path);
-			})
-			.catch((err) => {
-				console.log(err);
-			})
-	}
-	
-	function handleObjectDraftCreation(event: any) {
-		let obj = event.detail.object;
-		createDraftObject(module.path, obj)
-			.then((objs) => {
-				selectedObject = createEmptyObject();
-				editPanelFlag = false;
-				loadAllObjects(module.path);
-			})
-			.catch((err) => {
-				console.log(err);
-			})
-	}
-	
-	async function handleObjectExclusion(event: any) {
-		let obj = event.detail.object;
-		const confirmed = await confirm('Do you really want to delete this Object?', 'Deleting object ' + module.manifest.prefix + module.manifest.separator + obj.id);
-		if (!confirmed) {
-			return;
-		}
-		deleteObject(module.path, obj.id)
-			.then(() => {
-				editPanelFlag = false;
-				selectedObject = createEmptyObject();
-				loadAllObjects(module.path);
-			})
-			.catch((err) => {
-				console.log(err);
-			})
-	}
+        let showTree: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Show/Hide tree panel",
+            icon: "gravity-ui:layout-header-side-content",
+            action: () => {
+                treePanelFlag = !treePanelFlag;
+            },
+        }
 
-	async function handleObjectRestoring(event: any) {
-		let obj = event.detail.object;
-		const confirmed = await confirm('Do you really want to restore this Object?', 'Restoring object ' + module.manifest.prefix + module.manifest.separator + obj.id);
-		if (!confirmed) {
-			return;
-		}
-		restoreObject(module.path, obj.id)
-			.then(() => {
-				editPanelFlag = true;
-				loadAllObjects(module.path);
-			})
-			.catch((err) => {
-				console.error(err);
-			})
-	}
-	
-	function handleCloseEditPanel(event: any) {
-		editPanelFlag = false;
-	}
+        let templateManager: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Custom Attributes",
+            icon: "gravity-ui:rectangles-4",
+            action: () => {
+                templateFlag = !templateFlag;
+            }
+        }
 
-	function handleObjectSelect(event: any) {
-		if (event) { 
-			selectedObject = event.detail.object; 
-		}
-		let customFields = selectedObject?.attributes || {};
-		createCustomFieldHashFromTemplate(module.template, customFields)
-		selectedObject!.attributes! = customFields;
-		editPanelFlag = true;
-	}
+        let newButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "New...",
+            icon: "gravity-ui:circle-plus",
+            action: () => {},
+        }
+    
+        let newBaselineButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "New Baseline",
+            icon: "gravity-ui:tag",
+            action: () => {
+                newBaselineFlag = !newBaselineFlag;
+            },
+        }
 
-	function handleScrollIntoView(event: any) {
-		scrollIntoView(event.detail.path);
-	}
-	
-	function scrollIntoView(id: string) {
-		const el = document.getElementById("row-" + id);
-		const ov = document.getElementById("scroll-table");
-		const hd = document.getElementById("scroll-table-header");
-		if (!el) return;
-		if (!ov) return;
-		if (!hd) return;
+        let newObjectButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "New Object",
+            icon: "gravity-ui:square-chart-bar",
+            action: () => {
+                if (!objectFormFlag) {
+                    if (objects.length === 0) {
+                        selectedObject = newObject(module?.template);
+                    } else {
+                        const lastObject = objects[objects.length - 1];
+                        let sibiling = computeIndexLevelSibilings(objects, lastObject.id as number);
+                        selectedObject = newObject(module?.template, sibiling.parentId, sibiling.indexLevel);
+                    }
+                    objectFormFlag = true;
+                }
+            },
+        }
 
-		const offset = hd.offsetHeight;
+        let exportButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Export module...",
+            icon: "gravity-ui:file-arrow-right-out",
+            action: () => {},
+        }
 
-		ov.scrollTo({
-			top: el.offsetTop - offset,
-			behavior: 'smooth'
-		});
+        let exportExcelButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Microsoft Excel (.xlsx)",
+            icon: "ph:microsoft-excel-logo-fill",
+            action: () => {
+                handleExportXLSX()
+            },
+        }
 
-		document.querySelectorAll('.flash').forEach(element => {
-			element.classList.remove('flash');
-		});
+        let exportCSVButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Comma-Separeted Value (.csv)",
+            icon: "ph:file-csv",
+            action: () => {
+                handleExportCSV()
+            },
+        }
 
-		el.classList.add('flash');
-	}
+        let readOnlyModeButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Toggle Edit Mode",
+            icon: "lucide:pencil-off",
+            action: () => {
+                readOnlyFlag = true;
+            },
+        }
 
-	function getScrollPosition() {
-		const ov = document.getElementById("scroll-table");
-		if (!ov) {return };
-		return {x: ov.scrollTop, y: ov.scrollLeft};
-	}
-	
-	function setScrollPosition(x: number, y: number) {
-		const ov = document.getElementById("scroll-table");
-		if (!ov) {return };
-		ov.scrollTo({top: x, left: y, behavior: 'instant'})
-	}
+        let editModeButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Toggle Read-Only Mode",
+            icon: "lucide:pencil",
+            action: () => {
+                readOnlyFlag = false;
+            },
+        }
 
-	function compareLevels(a: string, b: string): number {
-		const parseLevel = (level: string) => level.split(/[\.\-]/).map(part => isNaN(Number(part)) ? part : Number(part));
-		
-		const aParts = parseLevel(a);
-		const bParts = parseLevel(b);
-		
-		const len = Math.max(aParts.length, bParts.length);
-		for (let i = 0; i < len; i++) {
-			if (aParts[i] === undefined) return -1;
-			if (bParts[i] === undefined) return 1;
-			
-			if (typeof aParts[i] === 'number' && typeof bParts[i] === 'number') {
-				if (aParts[i] !== bParts[i]) return (aParts[i] as number) - (bParts[i] as number);
-			} else if (typeof aParts[i] === 'string' && typeof bParts[i] === 'string') {
-				let aP = aParts[i] as string;
-				let bP = bParts[i] as string;
-				if (aParts[i] !== bParts[i]) return aP.localeCompare(bP);
-			} else {
-				return typeof aParts[i] === 'number' ? -1 : 1;
-			}
-		}
-		return 0;
-	}
+        /* let viewModeButton: ToolbarToggleType = {
+            type: "toggle",
+            buttonOn: editModeButton,
+            buttonOff: readOnlyModeButton,
+            status: readOnlyFlag,
+        } */
 
-	function getNewLevel(currentLevel: string, direction: 'sameLevel' | 'belowLevel'): string {
-		const parts = currentLevel.split(/[\.\-]/).map(part => isNaN(Number(part)) ? part : Number(part));
+        let showDeletionsButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Showing deletions",
+            icon: "gravity-ui:square-dashed-text",
+            action: () => {
+                showDeletionsFlag = true;
+            },
+        }
 
-		if (direction === 'belowLevel') {
-			if (typeof parts[parts.length - 1] === 'number') {
-			return currentLevel + '.1';
-			} else {
-			return currentLevel + '.1';
-			}
-		} else if (direction === 'sameLevel') {
-			if (typeof parts[parts.length - 1] === 'number') {
-			parts[parts.length - 1] = (parts[parts.length - 1] as number) + 1;
-			} else {
-			const lastPart = parts[parts.length - 1] as string;
-			const newChar = String.fromCharCode(lastPart.charCodeAt(0) + 1);
-			parts[parts.length - 1] = newChar;
-			}
-			return parts.join('.');
-		}
-		
-		return currentLevel;
-	} 
+        let dontShowDeletionsButton: ToolbarButtonType = {
+            type: "button",
+            tooltip: "Show deletions",
+            icon: "gravity-ui:square-chart-bar",
+            action: () => {
+                showDeletionsFlag = false;
+            },
+        }
 
-	function handleCreateObjectBelow(event: any) {
-		let currentObject = event.detail.object;
-		selectedObject = createEmptyObject();
-		selectedObject.parentLevel = currentObject.id;
-		selectedObject.indexLevel = 0;
-		handleObjectSelect(undefined);
-	}
+        let deletionsModeButton: ToolbarToggleType = {
+            type: "toggle",
+            buttonOn: showDeletionsButton,
+            buttonOff: dontShowDeletionsButton,
+            status: showDeletionsFlag,
+        }
+        
+        let creationGroup: ToolbarDropdownType = {
+            button: newButton,
+            items: [
+                {
+                    items: [
+                        newObjectButton,
+                    ],
+                    type: "buttonsGroup",
+                },
+                {
+                    items: [
+                        newBaselineButton,
+                    ],
+                    type: "buttonsGroup",
+                }
+            ],
+            type: "dropdown",
+        }
 
-	function handleCreateObjectNextLevel(event: any) {
-		let currentObject = event.detail.object;
-		selectedObject = createEmptyObject();
-		selectedObject.parentLevel = currentObject.id;
-		selectedObject.indexLevel = 1;
-		handleObjectSelect(undefined);
-	}
+        let expGroup: ToolbarDropdownType = {
+            button: exportButton,
+            items: [
+                {
+                    items: [
+                        exportExcelButton,
+                    ],
+                    type: "buttonsGroup",
+                },
+                {
+                    items: [
+                        exportCSVButton,
+                    ],
+                    type: "buttonsGroup",
+                },
+            ],
+            type: "dropdown"
+        }
+    
+        let navigationGroup: ToolbarGroupType = {
+            items: [homeButton],
+            type: "buttonsGroup"
+        }
+    
+        let newGroup: ToolbarGroupType = {
+            items: [creationGroup],
+            type: "buttonsGroup"
+        }
+        
+        let exportGroup: ToolbarGroupType = {
+            items: [expGroup],
+            type: "buttonsGroup"
+        }
 
-	/* function sortItems(items: Object[]): Object[] {
-		return items.sort((a, b) => compareLevels(a.object.level, b.object.level));
-	} */
+        let viewGrouplView: ToolbarGroupType = {
+            items: [showTree, 
+                //viewModeButton, 
+                deletionsModeButton],
+            type: "buttonsGroup"
+        }
 
-	async function loadAllObjects(modPath: string) {
-		let newObjects = await readObjects(modPath);
-		let retDraftObjects = await readDraftObjects(modPath);
+        let templateButton: ToolbarGroupType = {
+            items: [templateManager],
+            type: "buttonsGroup"
+        }
 
-		retDraftObjects.forEach((dobj) => {
-			let index = newObjects.findIndex((ob) => {return (ob.id === dobj.id)});
-			if (index < 0) {
-				newObjects.push(dobj);
-			} else {
-				newObjects[index] = dobj;
-			}
-		});
-		//newObjects = sortItems(newObjects);
-		objects = newObjects;
-	}
+        addToolbarItem(navigationGroup);
+        addToolbarItem(newGroup);
+        addToolbarItem(viewGrouplView);
+        addToolbarItem(exportGroup);
+        addToolbarItem(templateButton);
+    }
 
-	async function loadModule(modPath: string) {
-		module = await readModuleFromPath(modPath);
-	}
+    async function handleObjectCreation(obj: Object) {
+        try {
+            await createObject(module!.path, obj);
+            selectedObject = null;
+            objectFormFlag = false;
+            loadAllObjects(module!.path);
+        } catch (err) {
+            console.error(err);
+        }
+    }
 
-	async function load(modPath: string) {
-		await loadModule(modPath);
-		await loadAllObjects(modPath);
-	}
+    async function handleObjectDraftCreation(obj: Object) {
+        try {
+            const objs = await createDraftObject(module!.path, obj);
+            selectedObject = null;
+            objectFormFlag = false;
+            await loadAllObjects(module!.path);
+        } catch (err) {
+            console.error(err);
+        }
+    }
 
-	function generateKey(input: string): string {
-		const sanitized = input.toLowerCase().replace(/[^a-z0-9]/g, '');
-		const truncated = sanitized.length > 30 ? sanitized.substring(0, 30) : sanitized;
-		return truncated;
-	}
+    async function handleObjectExclusion(obj: Object) {
+        const confirmed = await confirm('Do you really want to delete this Object?', 'Deleting object ' + module!.manifest.prefix + module!.manifest.separator + obj.id);
+        if (!confirmed) {
+            selectedObject = null;
+            objectFormFlag = false;
+            return;
+        }
+        return deleteObject(module!.path, obj.id)
+            .then(() => {
+                loadAllObjects(module!.path);
+            })
+            .catch((err) => {
+                console.error(err);
+            })
+            .finally(() => {
+                selectedObject = null;
+                objectFormFlag = false;
+            })
+    }
 
-	function updateState(mod: string, version: string) {
-		tabKey = generateKey(`${mod.substring($repository?.tree.path.length)}-${version}`);
-		const savedState = pageState.getPageState(tabKey);
-		if (savedState) {
-			({ scrollX, scrollY, selectedObject, editPanelFlag, view, showLinksFlag, showRowNumberFlag, readOnlyFlag } = savedState);
-			setScrollPosition(scrollX, scrollY);
-		}
-	}
+    async function handleObjectRestoring(obj: Object) {
+        const confirmed = await confirm('Do you really want to restore this Object?', 'Restoring object ' + module!.manifest.prefix + module!.manifest.separator + obj.id);
+        if (!confirmed) {
+            return;
+        }
+        restoreObject(module!.path, obj.id)
+            .then(() => {
+                objectFormFlag = true;
+                loadAllObjects(module!.path);
+            })
+            .catch((err) => {
+                console.error(err);
+            })
+            .finally(() => {
+                selectedObject = null;
+                objectFormFlag = false;
+            })
+    }
 
-	function saveCurrentState() {
-		const scroll = getScrollPosition();
-		const currentView = JSON.parse(JSON.stringify(view))
-		const state = {
-			scrollX: scroll?.x??0,
-			scrollY: scroll?.y??0,
-			view: currentView,
-			showRowNumberFlag,
-			selectedObject,
-			editPanelFlag,
-			showLinksFlag,
-			readOnlyFlag,
-		};
-		pageState.setPageState(tabKey, state);
-	}
+    async function handleTemplateUpdate(template: Template) {
+        updateTemplate(module!.path, template)
+            .then(template => {
+                module!.template = template as Template;
+            })
+            .catch((err) => {
+                console.error(err);
+            })
+    }
 
-	function setupPage() {
-		const params = $page.params;
-		const url: string = $page.url.pathname;
-		const name: string = params.mod.substring($repository?.tree.path.length);
-		const version: string = "current";
-		saveCurrentState();
-		loadRepository();
-		loadHomeToolbar();
-		load(params.mod).then(() => {
-			updateState(params.mod, params.version);
-			const hash = $page.url.hash;
-			if(hash && hash !== "") {
-				scrollIntoView(hash.slice(1));
-			}
-		})
-		addTab(name, "gravity-ui:layout-header-cells-large-fill", url, version);
-	}
+    async function handleLinkCreation() {
+        if (((linker?.from?.object === linker?.to?.object) 
+            && (linker?.from?.path === linker?.to?.path))) {
+            await message('You cannot link an object to itself', { title: 'Error', type: 'error' });
+            return;
+        }
+        if (linker && (!linker?.from || !linker.to)) {
+            return;
+        }
+        const originModulePath: string = absolutePath(repo!.tree.path, linker!.from!.path);
+        return createLink(originModulePath, linker!.from!, linker!.to!)
+            .then(() => {
+                loadAllObjects(module!.path);
+            })
+    }
 
-	function contextClick(e: any) {
-		let objectId = e.detail.id as number;
-		let item = e.detail.item as string;
-		console.log(objects);
-		selectedObject = objects.find(obj => obj.id === objectId);
-		console.log(selectedObject);
-		if (item === 'properties') {
-			editPanelFlag = true;
-		}
-	}
-	
-	$: {
-		const { mod, version } = $page.params;
-		setupPage();
-	}
+    async function handleLinkDeletion(object: Object, modulePath: string, link: Link) {
+        const response = await confirm('Are you sure you want to delete this link?', { title: 'Confirm link deletion'});
+        if (response) {
+            const origin: Link = {
+                object: object.id,
+                path: relativePath(repo!.tree.path, modulePath),
+                baseline: page.params.version ?? 'current',
+            }
+            return deleteLink(modulePath, origin, link)
+                .then(() => {
+                    loadAllObjects(module!.path);
+                })
+                .catch((e) => {
+                    console.error(e);
+                })
+        }
+    }
+
+    async function handleLinkVisit(link: Link) {
+        const path = "/module/" + encodePath(repo?.tree.path + "/" + link.path) + "#" + link.object;
+        await tick().then(() => {
+            handleScrollObjectsIntoView(link.object);
+        });
+        goto(path);
+    }
+
+    async function handleBaselineCreation(baseline: Baseline) {
+        createBaseline(module!.path, baseline)
+            .then((baselines) => {
+                module!.baselines = baselines as Baseline[]
+            })
+            .catch((err) => {
+                console.error(err);
+            })
+    }
+
+    function handleObjectSelection(id: string | number) {
+        selectedObject = objects.find(obj => obj.id === id) ?? null;
+        objectFormFlag = true;
+    }
+
+    function handleScrollObjectsIntoView(id: string | number) {
+        const el = document.getElementById("row-" + id.toString());
+        const ov = document.getElementById(OBJECT_TABLE_ID + "-container");
+        const hd = document.getElementById(OBJECT_TABLE_ID + "-header");
+        
+        if (!el) return;
+        if (!ov) return;
+        if (!hd) return;
+        
+        const offset = hd.offsetHeight;
+        ov.scrollTo({
+            top: el.offsetTop - offset,
+            behavior: 'smooth'
+        });
+        document.querySelectorAll('.flash').forEach(element => {
+            element.classList.remove('flash');
+        });
+        el.classList.add('flash');
+    }
+
+    function handleObjectsScrolling(e: any) {
+        objectsScroll = {x: e.target.scrollTop ?? 0, y: e.target.scrollLeft ?? 0};
+    }
+
+    function handleIndexScrolling(e: any) {
+        indexScroll = {x: e.target.scrollTop ?? 0, y: e.target.scrollLeft ?? 0};
+    }
+
+    function setScrollPosition(id: string, x: number, y: number) {
+        const ov = document.getElementById(id);
+        if (!ov) { return };
+        ov.scrollTo({top: x, left: y, behavior: 'instant'})
+    }
+
+    async function loadAllObjects(modPath: string) {
+        readObjects(modPath)
+            .then(objs => {
+                objects = [...objs as Object[]];
+                if(selectedObject) {
+                    selectedObject = objects.find(obj => obj.id === selectedObject?.id) ?? null;
+                }
+            })
+    }
+
+    function generateModuleStateKey(mod: string, version: string): string {
+        const dataFormat = `${mod.substring(repo!.tree.path.length)}-${version}`;
+        const sanitized = dataFormat.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const truncated = sanitized.length > 30 ? sanitized.substring(0, 30) : sanitized;
+        return truncated;
+    }
+
+    function retrieveState(key: string | null) {
+        if (!key) {
+            return;
+        }
+        let res = app.modules.get(currentPageKey);
+        if (!res) {
+            return;
+        }
+        newBaselineFlag = res.flags.showNewBaselineDialog;
+        templateFlag = res.flags.showTemplateDialog;
+        showRowNumberFlag = res.flags.showRowsNumbering;
+        objectFormFlag = res.flags.showObjectDialog;
+        treePanelFlag = res.flags.showIndexPanel;
+        showDeletionsFlag = res.flags.showDeletions;
+        showLinksFlag = res.flags.showLinks;
+        readOnlyFlag = res.flags.readOnly;
+        module = res.module;
+        objects = res.objects;
+        view = res.currentView;
+        selectedObject = res.currentObject;
+        indexTree = res.indexTree.tree;
+        indexTreeState = res.indexTree.state;
+        setScrollPosition(INDEX_TREE_ID, res.indexTree.scroll.x, res.indexTree.scroll.y);
+        setScrollPosition(OBJECT_TABLE_ID + OBJECT_TABLE_CONTAINER_SUFFIX, res.scroll.x, res.scroll.y);
+        forceScroll = {x: res.scroll.x, y: res.scroll.y};
+    }
+
+    function saveCurrentState(key: string | null) {
+        if (!key) {
+            return;
+        }
+        const moduleState: ModuleState = {
+            flags: {
+                showNewBaselineDialog: newBaselineFlag,
+                showTemplateDialog: templateFlag,
+                showRowsNumbering: showRowNumberFlag,
+                showObjectDialog: objectFormFlag,
+                showIndexPanel: treePanelFlag,
+                showDeletions: showDeletionsFlag,
+                showLinks: showLinksFlag,
+                readOnly: readOnlyFlag,
+            },
+            module: module!,
+            objects: objects,
+            currentView: view,
+            currentObject: selectedObject,
+            indexTree: {
+                tree: indexTree,
+                state: indexTreeState,
+                scroll: indexScroll,
+            },
+            filter: null,
+            scroll: objectsScroll,
+        };
+        app.modules.set(key, {...moduleState});
+    }
+
+    async function loadPage() {
+        let { mod, version } = page.params;
+        const hash = page.url.hash;
+        const url: string = page.url.pathname;
+        const name: string = mod.substring(repo!.tree.path.length);
+        const baseline: string = version ?? "current";
+        loadToolbar();
+        return loadModule(mod, version)
+            .then(() => {
+                addTab(name, "gravity-ui:layout-header-cells-large-fill", url, baseline, () => disposeModule(mod, version));
+                tick().then(() => {
+                    retrieveState(currentPageKey);
+                    if(hash && hash !== "") {
+                        handleScrollObjectsIntoView(hash.slice(1));
+                    }
+                })
+            })
+    }
+
+    function contextClick(item: string, id: number | string, arg?: any) {
+        switch(item) {
+            case 'properties':
+                selectedObject = objects.find(obj => (obj.id == id)) ?? null;
+                objectFormFlag = true;
+                break;
+            case 'newObject':
+                selectedObject = newObject(module?.template);
+                objectFormFlag = true;
+                break;
+            case 'newObjectAfter': // Object on same level
+                let sibiling = computeIndexLevelSibilings(objects, id as number);
+                selectedObject = newObject(module?.template, sibiling.parentId, sibiling.indexLevel);
+                objectFormFlag = true;
+                break;
+            case 'newObjectBelow': // Object as sub-level
+                let subItem = computeIndexLevelChild(objects, id as number);
+                selectedObject = newObject(module?.template, subItem.parentId, subItem.indexLevel);
+                objectFormFlag = true;
+                break;
+            case 'createLink': 
+                let newLinker = {
+                    from: {
+                        path: relativePath(app.repository!.tree.path, module!.path),
+                        object: Number.parseInt(id.toString()),
+                        baseline: page.params.version ?? 'current',
+                    },
+                    to: null,
+                }
+                app.linker = linker = newLinker;
+                break;
+            case 'stablishLink':
+                if (!linker) {
+                    return;
+                }
+                let destination: Link = {
+                    path: relativePath(app.repository!.tree.path, module!.path),
+                    object: Number.parseInt(id.toString()),
+                    baseline: page.params.version ?? 'current',
+                };
+                linker.to = destination;
+                handleLinkCreation()
+                    .then(() => {
+                        if (linker) {
+                            linker.to = null;
+                        }
+                    }
+                );
+                break;
+            case 'stopLinking': 
+                app.linker = linker = null;
+                break;
+            default: 
+                console.log(item, id, arg);
+                break;
+        }
+    }
+
+    let ready = loadPage();
+
 </script>
 
+{#if module}
+    <ObjectForm
+        bind:openDialog={objectFormFlag}
+        object={selectedObject} 
+        module={module!}
+        onsave={handleObjectCreation}
+        onsavedraft={handleObjectDraftCreation}
+        ondelete={handleObjectExclusion}
+        onrestore={handleObjectRestoring}
+        onlinkvisit={handleLinkVisit}
+        onunlink={handleLinkDeletion}
+    />
+    <BaselineForm 
+        bind:openDialog={newBaselineFlag} 
+        module={module!}
+        onbaselinecreation={handleBaselineCreation}
+    />
+    <AttributesForm 
+        bind:openDialog={templateFlag}
+        module={module!}
+        ontemplateupdate={handleTemplateUpdate}
+    />
+{/if}
 <div class="bg-slate-50 h-full py-1">
-	{#if module}
-		<BaselineForm bind:openDialog={newBaselineFlag} modulePath={module.path}/>
-		<AttributesForm bind:module={module} bind:openDialog={templateFlag}/>
-	{/if}
-	<Resizable.PaneGroup direction="horizontal">
-		{#if treePanelFlag}
-			<Resizable.Pane defaultSize={20} collapsible order={1}>
-				<IndexTree items={objects} on:click={handleScrollIntoView}/>
-			</Resizable.Pane>
-		<Resizable.Handle withHandle/>
-		{/if}
-			<Resizable.Pane order={2}>
-				{#if module}
-<!-- 					<ObjectExplorer 
-						bind:view={view} 
-						bind:module={module} 
-						bind:objects={objects} 
-						bind:readOnly={readOnlyFlag} 
-						bind:showLinks={showLinksFlag} 
-						bind:showRowNumber={showRowNumberFlag} 
-						bind:showDeleted={showDeletionsFlag}
-						on:click={handleObjectSelect} 
-						on:create={handleObjectSelect}
-						on:commit={handleObjectCreation} 
-						on:delete={handleObjectExclusion} 
-						on:createBelow={handleCreateObjectBelow} 
-					/> -->
-					<DynamicTable 
-						moduleManifest={module.manifest} 
-						objects={objects}
-						readOnly={readOnlyFlag}
-						view={view}
-						on:contextClick={contextClick}
-					/>
-				{/if}
-			</Resizable.Pane>
-		{#if editPanelFlag}
-			<Resizable.Handle/>
-			<Resizable.Pane class="h-full" defaultSize={50} order={3}>
-				{#key selectedObject}
-				<ObjectEditor 
-				bind:object={selectedObject} 
-				bind:module={module} 
-				bind:readOnlyMode={readOnlyFlag}
-				on:save={handleObjectCreation} 
-				on:close={handleCloseEditPanel} 
-				on:delete={handleObjectExclusion}
-				on:retore={handleObjectRestoring}
-				on:saveDraft={handleObjectDraftCreation} 
-				/>
-				{/key}
-			</Resizable.Pane>
-		{/if}
-	</Resizable.PaneGroup>
+    {#key (page.params.mod, page.params.version)}
+        <Resizable.PaneGroup direction="horizontal">
+            {#if treePanelFlag}
+            <Resizable.Pane defaultSize={20} maxSize={40} collapsible order={1}>
+                <IndexTree
+                id={INDEX_TREE_ID}
+                bind:trees={indexTree} 
+                bind:state={indexTreeState} 
+                onclick={handleScrollObjectsIntoView}
+                onscroll={handleIndexScrolling}
+                />
+            </Resizable.Pane>
+            <Resizable.Handle withHandle/>
+            {/if}
+            <Resizable.Pane order={2} defaultSize={80}>
+                {#await ready}
+                <div class="flex flex-col justify-center items-center w-full h-full text-slate-500">
+                    <Loading/>
+                    <h1 class="font-semibold">LOADING OBJECTS...</h1>
+                </div>
+                {:then}
+                <DynamicTable
+                id={OBJECT_TABLE_ID}
+                view={view} 
+                module={module!} 
+                objects={objects}
+                readOnly={readOnlyFlag} 
+                linker={linker}
+                oncontextclick={contextClick}
+                ondblclick={handleObjectSelection}
+                onscroll={handleObjectsScrolling}
+                scroll={forceScroll}
+                showDeletions={showDeletionsFlag}
+                bind:selectedObject={selectedObject} 
+                />
+                {:catch e}
+                <div class="flex flex-col justify-center items-center w-full h-full text-slate-500">
+                    <Icon icon="mdi:dinosaur-pixel" width="50px"/>
+                    <h1 class="text-xl font-semibold my-1">OOPS! SOMETHING WENT WRONG...</h1>
+                    <div class="bg-red-100 border-red-900 rounded-sm text-red-800 mt-2 max-w-[80%] font-mono text-sm px-2 py-1 overflow-auto max-h-50">
+                        <div class="border-b-2 border-b-red-200">
+                            <p class="bold">Error Details:</p> 
+                        </div>
+                        <p>{e}</p>
+                    </div>
+                </div>
+                {/await}
+            </Resizable.Pane>
+        </Resizable.PaneGroup>
+    {/key}
 </div>

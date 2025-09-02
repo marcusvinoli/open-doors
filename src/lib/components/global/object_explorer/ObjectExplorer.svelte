@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import Icon from "@iconify/svelte";
     import CustomFieldCell from "./CustomFieldCell.svelte";
 	import { Button } from "$lib/components/ui/button";
@@ -15,16 +17,28 @@
 	import "$lib/assets/flashing.css";
     import Header from "../object_table/Header.svelte";
 
-	export let objects: Object[] = [];
-	export let module: Module;
-	export let view: View;
 
-	export let readOnly: boolean = true;
-	export let showLinks: boolean = true;
-	export let showDeleted: boolean = false;
-	export let showRowNumber: boolean = true;
+	interface Props {
+		objects?: Object[];
+		module: Module;
+		view: View;
+		readOnly?: boolean;
+		showLinks?: boolean;
+		showDeleted?: boolean;
+		showRowNumber?: boolean;
+	}
 
-	let objs: Object[] = [];
+	let {
+		objects = [],
+		module,
+		view = $bindable(),
+		readOnly = true,
+		showLinks = $bindable(true),
+		showDeleted = false,
+		showRowNumber = $bindable(true)
+	}: Props = $props();
+
+	let objs: Object[] = $state([]);
 
 	const dispatch = createEventDispatcher();
 
@@ -68,7 +82,7 @@
 		showLinks = !showLinks;
 	}
 	
-	$: {
+	run(() => {
 		objs = objects;
 		if(view.items.length > 0) {
 			parseTemplate(module.template).forEach((item) => {
@@ -77,7 +91,7 @@
 				}
 			})
 		}
-	}
+	});
 
 	let tableHeaderClass: string = ""
 	let tableCellClass: string = "text-sm "

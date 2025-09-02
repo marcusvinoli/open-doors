@@ -1,31 +1,23 @@
 import type { TreeItem, TreeItemType } from "$lib/components/structs/Tree";
 
-function listSubItems(item: TreeItem): TreeItem[] {
-    let list: TreeItem[] = [];
-    item.children.forEach((subitem) => {
-        if(subitem.itemType === "project" || subitem.itemType === "folder" ) {
-            list.push(subitem);
-            Array.prototype.push.apply(list, listSubItems(subitem))
-        }
-    });
-    return list;
-}
-
-function isTypeMatch(item: TreeItem, type: TreeItemType | TreeItemType[]): boolean {
+function isTypeMatch(item: TreeItem, type?: TreeItemType | TreeItemType[]): boolean {
+    if (!type) {
+        return true;
+    }
     if (Array.isArray(type)) {
         return type.includes(item.itemType);
     }
     return (item.itemType === type);
 }
 
-function searchOnSubItems(item: TreeItem, type: TreeItemType | TreeItemType[]): TreeItem[] {
-    let list: TreeItem[] = [];
-    item.children.forEach((subitem) => {
-        if(isTypeMatch(item, type)) {
-            list.push(subitem);
-            Array.prototype.push.apply(list, searchOnSubItems(subitem, type));
+export function listChildren(parent: TreeItem, inclusiveParent?: boolean, typeFilter?: TreeItemType | TreeItemType[]) {
+    let list: TreeItem[] = inclusiveParent ? [parent] : [];
+    parent.children.forEach((child) => {
+        if (isTypeMatch(child, typeFilter)) {
+            list.push(child);
+            Array.prototype.push.apply(list, listChildren(child,false,typeFilter));
         }
-    });
+    })
     return list;
 }
 
@@ -61,49 +53,29 @@ export function listRelatives(tree: TreeItem, parent: TreeItem, child: TreeItem)
     return relatives;
 }
 
-export function listAllRecipients(parent: TreeItem, inclusive: boolean = false): TreeItem[] {
-    let list: TreeItem[] = [];
-    if(inclusive) {
-        list.push(parent);
-    }
+export function listAllContainers(parent: TreeItem, inclusiveParent: boolean = false): TreeItem[] {
+    let list: TreeItem[] = inclusiveParent ? [parent] : [];
     parent.children.forEach((child: TreeItem) => {
         list.push(child)
-        Array.prototype.push.apply(list, listSubItems(child))
+        Array.prototype.push.apply(list, listChildren(child, false, ['folder', 'project']))
     });
     return list;
 }
 
-export function listChildren(parent: TreeItem, type: TreeItemType | TreeItemType[]): TreeItem[] {
-    let list: TreeItem[] = [];
-    parent.children.forEach((child: TreeItem) => {
-        list.push(child)
-        Array.prototype.push.apply(list, searchOnSubItems(child, type));
-    })
-    return list;
-}
-
-export function listAllRecipientsExceptChildren(parent: TreeItem, children: TreeItem) {
-    let allChilds = listAllRecipients(children, true);
-    let allRecips = listAllRecipients(parent, true);
+export function listAllContainersExceptChildren(parent: TreeItem, children: TreeItem) {
+    let allChilds = listAllContainers(children, true);
+    let allRecips = listAllContainers(parent, true);
     return subtractArraysByProperty(allRecips, allChilds, 'name');
 }
 
 export function listAllProjects(parent: TreeItem): TreeItem[] {
-    return listChildren(parent, "project")
+    return listChildren(parent, true, 'project')
 }
 
 export function listAllFolders(parent: TreeItem): TreeItem[] {
-    return listChildren(parent, "folder")
+    return listChildren(parent, true, 'folder')
 }
 
 export function listAllModules(parent: TreeItem): TreeItem[] {
-    let list: TreeItem[] = [];
-    parent.children.forEach((subitem) => {
-        if(subitem.itemType === "project" || subitem.itemType === "folder" ) {
-            Array.prototype.push.apply(list, listAllModules(subitem))
-        } else if(subitem.itemType === "module") {
-            list.push(subitem);
-        }
-    });
-    return list;
+    return listChildren(parent, true, 'module')
 }

@@ -1,21 +1,27 @@
 
+import { app } from "$lib/stores/AppState.svelte";
 import { User } from "$lib/components/structs/User";
-import { user } from "$lib/stores/User";
-import { repository } from "$lib/stores/Repository";
 import { invoke } from "@tauri-apps/api";
-import { get } from "svelte/store";
 
-export function loadAuthorInformation() {
-    let repo = get(repository);
-    if(repo) {
-        invoke('get_user', {path: repo.tree.path})
+export function loadAuthorInformation() : Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (!app.repository) {
+            return reject(new Error('No repository is opened.'))
+        }     
+        invoke('get_user', {path: app.repository.tree.path})
             .then(usr => {
-                user.set(User.fromString(usr as string));
+                app.user = User.fromString(usr as string);
+                resolve();
             })
             .catch(err => {
-                console.log(err);
+                console.error(err);
+                reject(err);
             })
-    }
+    })
+}
+
+export function clearAuthorInformation() {
+    app.user = null;
 }
 
 export function getFirstAndLastName(fullName: string): string {
