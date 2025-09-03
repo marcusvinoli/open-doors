@@ -14,7 +14,7 @@
     import { tick } from "svelte";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import { addTab } from "$lib/stores/Tabs.svelte";
+    import { addTab, setActiveTab } from "$lib/stores/Tabs.svelte";
     import { confirm, message } from '@tauri-apps/api/dialog';
     import { absolutePath, encodePath, relativePath } from "$lib/utils/path-handler";
     import { buildTreeIndex } from "$lib/utils/index-tree.utils";
@@ -42,6 +42,8 @@
     const INDEX_TREE_ID = 'index-tree';
 
     let repo: Repository | null = $derived(app.repository);
+    let moduleState: ModuleState | null = $derived(app.currentModule);
+
     let view: View = $state(defaultView);
     let module: Module | null = $state(null);
     let objects: Object[] = $state([]);
@@ -64,14 +66,26 @@
     let indexScroll: {x: number, y: number} = {x: 0, y: 0};
 
     let previousPageKey: string | null = null;
-    let currentPageKey: string = $derived(generateModuleStateKey(page.params.mod, page.params.version ?? 'current'));
+    let currentPageKey: string = $derived(generateModuleStateKey(page.params.mod!, page.params.version ?? 'current'));
 
     $effect(() => {
         const {mod, version} = page.params;
-        if (mod) {
-            previousPageKey = generateModuleStateKey(mod, version ?? 'current');
+        if (mod || version) {
+            previousPageKey = generateModuleStateKey(mod!, version ?? 'current');
+            retrieveState(currentPageKey);
         }
-        retrieveState(currentPageKey);
+    })
+    
+    $effect(() => {
+        const url: string = page.url.pathname
+        setActiveTab(url);
+    })
+
+    $effect(() => {
+        const hash = page.url.hash;
+        if(hash && hash !== "") {
+            handleScrollObjectsIntoView(hash.slice(1));
+        }
     })
 
     $effect.pre(() => {
@@ -491,6 +505,7 @@
             top: el.offsetTop - offset,
             behavior: 'smooth'
         });
+        
         document.querySelectorAll('.flash').forEach(element => {
             element.classList.remove('flash');
         });
@@ -534,7 +549,7 @@
         }
         let res = app.modules.get(currentPageKey);
         if (!res) {
-            return;
+            return;      
         }
         newBaselineFlag = res.flags.showNewBaselineDialog;
         templateFlag = res.flags.showTemplateDialog;
@@ -589,12 +604,12 @@
         let { mod, version } = page.params;
         const hash = page.url.hash;
         const url: string = page.url.pathname;
-        const name: string = mod.substring(repo!.tree.path.length);
+        const name: string = mod!.substring(repo!.tree.path.length);
         const baseline: string = version ?? "current";
         loadToolbar();
-        return loadModule(mod, version)
+        return loadModule(mod!, version)
             .then(() => {
-                addTab(name, "gravity-ui:layout-header-cells-large-fill", url, baseline, () => disposeModule(mod, version));
+                addTab(name, "gravity-ui:layout-header-cells-large-fill", url, baseline, () => disposeModule(mod!, version));
                 tick().then(() => {
                     retrieveState(currentPageKey);
                     if(hash && hash !== "") {

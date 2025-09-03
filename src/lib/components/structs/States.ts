@@ -52,4 +52,5 @@ export interface AppState {
     modules: Map<string, ModuleState>,
     tasks: Map<string, Task>,
     linker: Linker | null,
+    currentModule: ModuleState | null,
 }

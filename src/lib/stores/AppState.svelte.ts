@@ -14,10 +14,10 @@ export let app : AppState = $state({
     modules: new Map(),
     tasks: new Map(),
     linker: null,
+    currentModule: null,
 });
 
 // TODO: Migrate here all core logic for application state (e.g.: load repo, load user...)
-
 export async function loadModule(path: string, version?: string) {
     const modKey: string = generateModuleKey(app.repository!.tree.path, path, version);
     let objects: Object[] = [];
@@ -77,4 +77,12 @@ export async function loadModule(path: string, version?: string) {
 export function disposeModule(path: string, version?: string) {
     const modKey: string = generateModuleKey(app.repository!.tree.path, path, version);
     app.modules.delete(modKey);
+}
+
+export function setCurrentModule(path: string, version?: string) {
+    const modKey: string = generateModuleKey(app.repository!.tree.path, path, version);
+    app.currentModule = app.modules.get(modKey) ?? null;
+    if (!app.currentModule) {
+        loadModule(path, version);
+    }
 }
