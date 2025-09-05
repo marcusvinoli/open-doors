@@ -24,7 +24,7 @@
     let {
         id = "",
         module,
-        view,
+        view = $bindable(),
         readOnly = true,
         objects = [],
         selectedObject = $bindable(null),

@@ -684,9 +684,8 @@
     />
 {/if}
 <div class="bg-slate-50 h-full py-1">
-    {#key (page.params.mod, page.params.version)}
-        <Resizable.PaneGroup direction="horizontal">
-            {#if treePanelFlag}
+    <Resizable.PaneGroup direction="horizontal">
+        {#if treePanelFlag}
             <Resizable.Pane defaultSize={20} maxSize={40} collapsible order={1}>
                 <IndexTree
                 id={INDEX_TREE_ID}
@@ -697,7 +696,7 @@
                 />
             </Resizable.Pane>
             <Resizable.Handle withHandle/>
-            {/if}
+        {/if}
             <Resizable.Pane order={2} defaultSize={80}>
                 {#await data}
                 <div class="flex flex-col justify-center items-center w-full h-full text-slate-500">
@@ -707,7 +706,6 @@
                 {:then}
                 <DynamicTable
                 id={OBJECT_TABLE_ID}
-                view={view} 
                 module={module!} 
                 objects={objects}
                 readOnly={readOnlyFlag} 
@@ -716,6 +714,7 @@
                 ondblclick={handleObjectSelection}
                 onscroll={handleObjectsScrolling}
                 showDeletions={showDeletionsFlag}
+                bind:view={view} 
                 bind:selectedObject={selectedObject} 
                 />
                 {:catch e}
@@ -731,6 +730,5 @@
                 </div>
                 {/await}
             </Resizable.Pane>
-        </Resizable.PaneGroup>
-    {/key}
+    </Resizable.PaneGroup>
 </div>
