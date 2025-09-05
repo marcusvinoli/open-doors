@@ -596,14 +596,6 @@
         app.modules.set(key, {...moduleState});
     }
 
-    function setupTab() {
-        let { mod, version } = page.params;
-        const url: string = page.url.pathname;
-        const name: string = mod!.substring(repo!.tree.path.length);
-        const baseline: string = version ?? "current";
-        addTab(name, "gravity-ui:layout-header-cells-large-fill", url, baseline, () => disposeModule(mod!, version));
-    }
-
     function contextClick(item: string, id: number | string, arg?: any) {
         switch(item) {
             case 'properties':
