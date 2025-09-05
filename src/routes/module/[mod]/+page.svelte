@@ -10,8 +10,8 @@
     import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
     //import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
 
-    import { app, disposeModule, loadModule } from "$lib/stores/AppState.svelte";
-    import { tick } from "svelte";
+    import { app, disposeModule } from "$lib/stores/AppState.svelte";
+    import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { addTab, setActiveTab } from "$lib/stores/Tabs.svelte";
@@ -25,13 +25,13 @@
     import * as Resizable from "$lib/components/ui/resizable";
 
     import { type View, defaultView } from "$lib/components/structs/View";
-
     import type { Link } from "$lib/components/structs/Link";
     import type { Task } from "$lib/components/structs/Task";
     import type { Module } from "$lib/components/structs/Module";
     import type { Object } from "$lib/components/structs/Object";
     import type { Template } from "$lib/components/structs/Template";
     import type { Baseline } from "$lib/components/structs/Baseline";
+    import type { PageProps } from './$types';
     import type { IndexItem } from "$lib/components/structs/IndexItem";
     import type { Repository } from "$lib/components/structs/Repo";
     import type { ModuleState, Linker } from "$lib/components/structs/States";
@@ -40,6 +40,8 @@
     const OBJECT_TABLE_ID = 'object-table';
     const OBJECT_TABLE_CONTAINER_SUFFIX = '-container';
     const INDEX_TREE_ID = 'index-tree';
+
+    let { data }: PageProps = $props();
 
     let repo: Repository | null = $derived(app.repository);
     let moduleState: ModuleState | null = $derived(app.currentModule);
@@ -61,7 +63,6 @@
     let showDeletionsFlag: boolean = $state(false);
     let showRowNumberFlag: boolean = $state(false);
 
-    let forceScroll: {x: number, y: number} = $state({x: 0, y: 0});
     let objectsScroll: {x: number, y: number} = {x: 0, y: 0};
     let indexScroll: {x: number, y: number} = {x: 0, y: 0};
 
@@ -69,23 +70,16 @@
     let currentPageKey: string = $derived(generateModuleStateKey(page.params.mod!, page.params.version ?? 'current'));
 
     $effect(() => {
-        const {mod, version} = page.params;
-        if (mod || version) {
-            previousPageKey = generateModuleStateKey(mod!, version ?? 'current');
+        const mod: string = page.params.mod!;
+        if (mod) {
+            previousPageKey = generateModuleStateKey(mod, 'current');
             retrieveState(currentPageKey);
         }
     })
     
     $effect(() => {
-        const url: string = page.url.pathname
+        const url: string = page.url.pathname;
         setActiveTab(url);
-    })
-
-    $effect(() => {
-        const hash = page.url.hash;
-        if(hash && hash !== "") {
-            handleScrollObjectsIntoView(hash.slice(1));
-        }
     })
 
     $effect.pre(() => {
@@ -470,9 +464,6 @@
 
     async function handleLinkVisit(link: Link) {
         const path = "/module/" + encodePath(repo?.tree.path + "/" + link.path) + "#" + link.object;
-        await tick().then(() => {
-            handleScrollObjectsIntoView(link.object);
-        });
         goto(path);
     }
 
@@ -543,7 +534,7 @@
         return truncated;
     }
 
-    function retrieveState(key: string | null) {
+    async function retrieveState(key: string | null) {
         if (!key) {
             return;
         }
@@ -565,9 +556,14 @@
         selectedObject = res.currentObject;
         indexTree = res.indexTree.tree;
         indexTreeState = res.indexTree.state;
-        setScrollPosition(INDEX_TREE_ID, res.indexTree.scroll.x, res.indexTree.scroll.y);
-        setScrollPosition(OBJECT_TABLE_ID + OBJECT_TABLE_CONTAINER_SUFFIX, res.scroll.x, res.scroll.y);
-        forceScroll = {x: res.scroll.x, y: res.scroll.y};
+        await tick().then(() => {
+            setScrollPosition(INDEX_TREE_ID, res.indexTree.scroll.x, res.indexTree.scroll.y);
+            setScrollPosition(OBJECT_TABLE_ID + OBJECT_TABLE_CONTAINER_SUFFIX, res.scroll.x, res.scroll.y);
+            if(page.url.hash) {
+                const hash = page.url.hash.slice(1);
+                handleScrollObjectsIntoView(hash);
+            }
+        })
     }
 
     function saveCurrentState(key: string | null) {
@@ -600,23 +596,12 @@
         app.modules.set(key, {...moduleState});
     }
 
-    async function loadPage() {
+    function setupTab() {
         let { mod, version } = page.params;
-        const hash = page.url.hash;
         const url: string = page.url.pathname;
         const name: string = mod!.substring(repo!.tree.path.length);
         const baseline: string = version ?? "current";
-        loadToolbar();
-        return loadModule(mod!, version)
-            .then(() => {
-                addTab(name, "gravity-ui:layout-header-cells-large-fill", url, baseline, () => disposeModule(mod!, version));
-                tick().then(() => {
-                    retrieveState(currentPageKey);
-                    if(hash && hash !== "") {
-                        handleScrollObjectsIntoView(hash.slice(1));
-                    }
-                })
-            })
+        addTab(name, "gravity-ui:layout-header-cells-large-fill", url, baseline, () => disposeModule(mod!, version));
     }
 
     function contextClick(item: string, id: number | string, arg?: any) {
@@ -672,12 +657,14 @@
                 app.linker = linker = null;
                 break;
             default: 
-                console.log(item, id, arg);
+                console.error('Unrecognized parameters: ', item, id, arg);
                 break;
         }
     }
 
-    let ready = loadPage();
+    onMount(() => {
+        loadToolbar();
+    })
 
 </script>
 
@@ -720,7 +707,7 @@
             <Resizable.Handle withHandle/>
             {/if}
             <Resizable.Pane order={2} defaultSize={80}>
-                {#await ready}
+                {#await data}
                 <div class="flex flex-col justify-center items-center w-full h-full text-slate-500">
                     <Loading/>
                     <h1 class="font-semibold">LOADING OBJECTS...</h1>
@@ -736,7 +723,6 @@
                 oncontextclick={contextClick}
                 ondblclick={handleObjectSelection}
                 onscroll={handleObjectsScrolling}
-                scroll={forceScroll}
                 showDeletions={showDeletionsFlag}
                 bind:selectedObject={selectedObject} 
                 />
