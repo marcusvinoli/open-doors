@@ -51,8 +51,7 @@
         linker?: Linker | null;
     } = $props();
 
-    let currentView: View = $state(view);
-    let attributeView: Attribute[] = $derived(mapAttributesIntoView(currentView, module.template));
+    let attributeView: Attribute[] = $derived(mapAttributesIntoView({...view}, module.template));
 
     let _objects: Object[] = $derived.by(() => {
         if (showDeletions) {
@@ -112,10 +111,10 @@
         <Table.Root id={id} class="min-h-0">
             <Table.Header id={id + "-header"} class="w-full min-w-96 z-20">
                 <Table.Row class="bg-slate-50">
-                    {#each currentView.items as viewItem (viewItem.key)}
+                    {#each view.items as viewItem (viewItem.key)}
                         {#if viewItem.show}
                             <Table.Head class="sticky top-0 bg-slate-50 !hover:bg-slate-200 shadow-sm">
-                                <HeaderContext bind:view={currentView} template={module.template}>
+                                <HeaderContext bind:view template={module.template}>
                                     {viewItem.attribute}
                                 </HeaderContext>
                             </Table.Head>
