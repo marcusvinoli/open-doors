@@ -9,7 +9,6 @@
     import { marked } from 'marked'
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import { newObject } from "$lib/utils/object-utils";
-    import { encodePath } from "$lib/utils/path-handler";
     import { ObjectStatus } from "$lib/components/structs/ObjectStatus";
     import { readOnlyAttributes } from "$lib/utils/attribute-utils";
     
@@ -22,7 +21,6 @@
     import type { Link } from "$lib/components/structs/Link";
     import type { Module } from "$lib/components/structs/Module";
     import type { Object } from "$lib/components/structs/Object";
-    import type { Repository } from "$lib/components/structs/Repo";
     
     import "$lib/assets/preview.css";
     
@@ -182,7 +180,7 @@
                 </div>
             </Tab.Content>
             <Tab.Content value="attributes" class="flex-1 flex flex-col min-h-0"> 
-                <h2 class="font-bold my-1">Custom Attributes</h2>
+                <h2 class="font-bold my-1">Object Attributes</h2>
                 <div class="flex flex-col gap-2 flex-1 min-h-0 overflow-auto">
                     <Table.Root>
                         <Table.Header>

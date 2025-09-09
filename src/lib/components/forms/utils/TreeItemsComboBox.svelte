@@ -5,7 +5,7 @@
     import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
     
     import { cn } from "$lib/utils.js";
-    import { onMount, tick } from "svelte";
+    import { tick } from "svelte";
     import { Button } from "$lib/components/ui/button/index.js";
     import { repository } from '$lib/stores/Repository.svelte';
     import { getIconFromTreeItemType } from '$lib/utils/tree-item-utils';
@@ -18,11 +18,13 @@
     let { 
         selectedItem = $bindable(),
         placeholder = 'Select...',
+        emptyMessage = 'No result found.',
         items,
     } : {
         selectedItem: TreeItem | null;
         placeholder?: string;
-        items: TreeItem[],
+        emptyMessage?: string;
+        items: TreeItem[];
     } = $props();
 
     let open: boolean = $state(false);
@@ -58,9 +60,9 @@
         </Popover.Trigger>
         <Popover.Content class="p-0 w-full">
             <Command.Root class="w-full">
-                <Command.Input placeholder="Search for a repo, project or folder..." />
+                <Command.Input {placeholder} />
                 <Command.List>
-                    <Command.Empty>No Folder, Project or Repo found.</Command.Empty>
+                    <Command.Empty>{emptyMessage}</Command.Empty>
                     <ScrollArea class="max-h-[150px] p-1">
                         <Command.Group class="">
                             {#each items as item}
@@ -75,7 +77,7 @@
                                     <Check class={cn("mr-1 h-4 w-4", selectedItem?.name !== item.name && "text-transparent" )}/> 
                                     <Icon icon={getIconFromTreeItemType(item)} width="15px"/>
                                     <span class="pl-1">{item.name}</span>
-                                    <span class="ml-auto pl-4 text-xs font-light italic text-right text-slate-600 truncate">{item.path?.substring(repository()?.tree.path.length)}</span>
+                                    <span class="ml-auto pl-4 text-xs font-light italic text-right text-slate-600 truncate">{item.path?.substring(repository()!.tree.path.length)}</span>
                                 </div>
                             </Command.Item>
                             {/each}
