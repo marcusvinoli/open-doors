@@ -50,51 +50,29 @@
 {#if !item.isDeleted || showDeletions}
     <div class="flex items-center hover:bg-slate-200 min-w-0 text-sm font-light select-none right-1" onclick={handleClick} role="button" tabindex="-1" onkeydown={()=>{}}>
         <div class="flex h-full">
-            {#each {length: level-1} as _}
-                <div class="w-[20px] border-r-1 border-r-slate-50 group-hover:border-r-slate-300"></div>
+            {#each {length: level} as _}
+                <div class="block w-[12px] bg-pink-200"></div>
             {/each}
         </div>
-        {#if level === 0}
-            <div class="ml-2"></div>
-        {:else}
-            <div class="flex h-full">
-                <div class="flex flex-col w-[20px]">
-                    <div class="h-[50%] w-full border-r-1 border-r-slate-50 group-hover:border-r-slate-300"></div>
-                    {#if !isLast}
-                        <div class="h-[50%] w-full border-r-1 border-r-slate-50 group-hover:border-r-slate-300"></div>
-                    {/if}
-                </div>
-                <div class="w-[10px]">
-                    <!-- 
-                    TODO: This element and the related "group-hover:" selector refers to hover effect on three.
-                    <div class="border-b-1 h-[50%] border-b-slate-50 group-hover:border-b-slate-300"></div>
-                    -->
-                </div> 
-            </div>
-        {/if}
-        <div class="flex text-left truncate items-center py-0.5 w-full mr-1 min-w-0">
+        <div class="flex text-left p-0.5 w-full mr-1 min-w-0">
             {#if isHeader()}
-                <button class="flex justify-center items-center p-0.5 group-hover:bg-slate-100 rounded-sm" onclick={toggleItem}>
+                <button class="flex justify-center items-center w-[20px] ratio-square" onclick={toggleItem}>
                     <Icon icon={open ? "gravity-ui:chevron-down" : "gravity-ui:chevron-right"} width="12px"/>
                 </button>
+                <p class={cn(
+                    'truncate font-semibold',
+                    item.isDeleted ? 'line-through italic' : ''
+                )}>
+                    {item.level + ". " + item.headline}
+                </p>
+            {:else}
+                <p class={cn(
+                    'truncate ml-[20px]',
+                    item.isDeleted ? 'line-through italic' : ''
+                )}>
+                    {item.headline}
+                </p>
             {/if}
-            <div class="cursor-pointer pl-1 flex-1 min-w-0 baseis-0">
-                {#if isHeader()}
-                    <p class={cn(
-                        'truncate font-semibold',
-                        item.isDeleted ? 'line-through italic' : ''
-                    )}>
-                        {item.level + ". " + item.headline}
-                    </p>
-                {:else}
-                    <p class={cn(
-                        'truncate',
-                        item.isDeleted ? 'line-through italic' : ''
-                    )}>
-                        {item.headline}
-                    </p>
-                {/if}
-            </div>
         </div>
     </div>
 {/if}
