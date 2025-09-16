@@ -33,19 +33,19 @@
 </script>
 
 {#if attribute.key === 'id'}
-    <div class="p-2">
+    <div class="p-2 grow">
         <p>{module.manifest.prefix}{module.manifest.separator}{value}</p>
     </div>
 {:else if attribute.key === 'content'}
     <div class={cn(
             "p-2 border-l-3",
-            "flex",
+            "flex h-full",
             (object.metadata?.status === "draft") ? "border-l-slate-500" : 
             (object.metadata?.status === "baselined") ? "border-l-sky-700" : 
             (object.metadata?.status === "deleted") ? "border-l-red-800" :
             "border-l-amber-400")}
         >
-        <div class="grow flex row">
+        <div class="grow flex row h-full">
             {#if object.header.trim() !== ""}
                 {#if object.indexParentId === 0}
                     <h1 class="font-bold text-[1.5rem]">{object.metadata?.level+'. '}{object.header}</h1>
@@ -79,6 +79,15 @@
             <Icon icon={value ? 'gravity-ui:check' : 'gravity-ui:xmark'} width="15px"/>
         </div>
     </div>
+    {:else if typeof attribute.kind === 'object'}
+        {#if 'singleOption' in attribute.kind}
+            {object.attributes![attribute.key]}
+        {:else if 'multipleOptions' in attribute.kind}
+            {@const values = object.attributes![attribute.key].split(',').map(v => v.trim()) ?? []}
+            {#each values as item}
+                {item + " "}<br>
+            {/each}
+        {/if}
     {:else} <!-- // string, real, date, time, dateTime, enumeration, optional, user, any ... -->
     <div class="p-2">
         <span>

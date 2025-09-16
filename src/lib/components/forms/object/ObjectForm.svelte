@@ -1,6 +1,7 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import Separator from "$lib/components/ui/separator/separator.svelte";
+    import DynamicInput from "$lib/components/forms/inputs/DynamicInput.svelte";
 
     import { app } from "$lib/stores/AppState.svelte";
     import { Input } from "$lib/components/ui/input/index.js";
@@ -10,7 +11,7 @@
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import { newObject } from "$lib/utils/object-utils";
     import { ObjectStatus } from "$lib/components/structs/ObjectStatus";
-    import { readOnlyAttributes } from "$lib/utils/attribute-utils";
+    import { parseTemplate, readOnlyAttributes } from "$lib/utils/attribute-utils";
     
     import * as Tab from "$lib/components/ui/tabs";
     import * as Table from "$lib/components/ui/table";
@@ -55,7 +56,11 @@
     let allowChanges: boolean = $derived(!(readOnly || (object?.deletedAt ? true : false)));
     let obj: Object = $derived.by(() => {
             if (object) {
-                return {...object} as Object;
+                let draftObj = {...object} as Object;
+                let attrs = {...object.attributes};
+                parseTemplate(module.template, attrs);
+                draftObj.attributes = attrs;
+                return {...draftObj};
             }
             return newObject(module.template);
         });
@@ -242,7 +247,7 @@
                                         {attribute.name}
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <!-- <AttributeInput bind:value={obj.attributes![attribute.key as keyof typeof object]} attributeKind={attribute.kind} disabled={!allowChanges}/> -->
+                                        <DynamicInput bind:object={obj!} {attribute} />
                                     </Table.Cell>
                                 </Table.Row>
                             {/each}
