@@ -21,7 +21,8 @@ export function buildTreeIndex(objects: Object[]) : IndexItem[] {
         return {
             id: object.id,
             level: object.metadata?.level ?? '',
-            headline: object.header || ellipsisText(object.content),
+            headline: object.header || object.content || "Object " + object.id.toString(),
+            isDeleted: (object.metadata?.status === 'deleted'),
             children: []
         }
     }

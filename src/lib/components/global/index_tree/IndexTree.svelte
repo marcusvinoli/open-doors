@@ -7,15 +7,17 @@
 
     let {
         id = "",
-        onclick,
         trees = $bindable(),
         state = $bindable(),
+        showDeletions,
+        onclick,
         onscroll,
     } : {
         id?: string,
-        onclick?: (id: string | number) => void,
         trees: IndexItem[],
         state: Map<number, boolean>,
+        showDeletions?: boolean,
+        onclick?: (id: string | number) => void,
         onscroll?: (e: any) => void,
     } = $props();
 
@@ -39,8 +41,8 @@
 
 <div class="relative h-full right-0.5 overflow-auto">
     <div id={id} class="absolute top-0 bottom-0 right-0 min-w-30 w-full overflow-x-auto">
-        {#each trees as tree}
-            <IndexTreeItem item={tree} level={0} onclick={onclick} state={state} />
+        {#each trees as tree (tree.id)}
+        <IndexTreeItem item={tree} level={0} onclick={onclick} state={state} {showDeletions}/>
         {/each}
     </div>
 </div>

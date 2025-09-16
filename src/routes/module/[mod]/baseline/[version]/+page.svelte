@@ -1,5 +1,5 @@
 <script lang="ts">
-    import IndexTree from "$lib/components/global/indextree/IndexTree.svelte";
+    import IndexTree from "$lib/components/global/index_tree/IndexTree.svelte";
     import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
     import BaselineForm from "$lib/components/forms/module/BaselineForm.svelte";
     import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
@@ -47,7 +47,7 @@
     let showRowNumberFlag: boolean = $state(false);
 
     let pageKey: string = $derived.by(() => {
-        return generateKey(page.params.mod, page.params.version??'current');
+        return generateKey(page.params.mod!, page.params.version ?? 'current');
     });
     
     function handleExportCSV() {
@@ -469,7 +469,8 @@
     }
 
     function generateKey(mod: string, version: string): string {
-        const dataFormat = `${mod.substring(repo?.tree.path.length)}-${version}`;
+        const pathLength = repo?.tree.path.length ?? 0;
+        const dataFormat = `${mod.substring(pathLength)}-${version}`;
         const sanitized = dataFormat.toLowerCase().replace(/[^a-z0-9]/g, '');
         const truncated = sanitized.length > 30 ? sanitized.substring(0, 30) : sanitized;
         return truncated;
@@ -503,17 +504,17 @@
         let {mod, version} = page.params;
         const hash = page.url.hash;
         const url: string = page.url.pathname;
-        const name: string = mod.substring(repo?.tree.path.length);
+        const name: string = (mod ?? "").substring(repo?.tree.path.length ?? 0);
         const baseline: string = version ?? "current";
         saveCurrentState();
         loadToolbar();
         return Promise.all([
-                readBaselinedModule(mod, version)
+                readBaselinedModule(mod!, baseline)
                     .then((mod) => {
                         module = mod as Module;
                         addTab(name, "gravity-ui:layout-header-cells-large-fill", url, baseline);
                     }),
-                readBaselinedObjects(mod, version)
+                readBaselinedObjects(mod!, baseline)
                     .then((objs) => {
                         objects = objs as Object[];
                         if(hash && hash !== "") {

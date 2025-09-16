@@ -1,7 +1,7 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import Loading from "$lib/components/ui/loading/Loading.svelte";
-    import IndexTree from "$lib/components/global/indextree/IndexTree.svelte";
+    import IndexTree from "$lib/components/global/index_tree/IndexTree.svelte";
     import ObjectForm from "$lib/components/forms/object/ObjectForm.svelte";
     import DynamicTable from "$lib/components/global/object_explorer/DynamicTable.svelte";
     //import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
@@ -50,7 +50,7 @@
     let module: Module | null = $state(null);
     let objects: Object[] = $state([]);
     let selectedObject: Object | null = $state(null);
-    let indexTree: IndexItem[] = $derived(buildTreeIndex([...objects]));
+    
     let indexTreeState: Map<number, boolean> = $state(new Map());
     let linker: Linker | null = $state(app.linker);
 
@@ -62,6 +62,8 @@
     let newBaselineFlag: boolean = $state(false);
     let showDeletionsFlag: boolean = $state(false);
     let showRowNumberFlag: boolean = $state(false);
+
+    let indexTree: IndexItem[] = $derived(buildTreeIndex([...objects]));
 
     let objectsScroll: {x: number, y: number} = {x: 0, y: 0};
     let indexScroll: {x: number, y: number} = {x: 0, y: 0};
@@ -688,11 +690,12 @@
         {#if treePanelFlag}
             <Resizable.Pane defaultSize={20} maxSize={40} collapsible order={1}>
                 <IndexTree
-                id={INDEX_TREE_ID}
-                bind:trees={indexTree} 
-                bind:state={indexTreeState} 
-                onclick={handleScrollObjectsIntoView}
-                onscroll={handleIndexScrolling}
+                    id={INDEX_TREE_ID}
+                    trees={indexTree} 
+                    bind:state={indexTreeState}
+                    showDeletions={showDeletionsFlag}
+                    onclick={handleScrollObjectsIntoView}
+                    onscroll={handleIndexScrolling}
                 />
             </Resizable.Pane>
             <Resizable.Handle withHandle/>
@@ -705,17 +708,17 @@
                 </div>
                 {:then}
                 <DynamicTable
-                id={OBJECT_TABLE_ID}
-                module={module!} 
-                objects={objects}
-                readOnly={readOnlyFlag} 
-                linker={linker}
-                oncontextclick={contextClick}
-                ondblclick={handleObjectSelection}
-                onscroll={handleObjectsScrolling}
-                showDeletions={showDeletionsFlag}
-                bind:view={view} 
-                bind:selectedObject={selectedObject} 
+                    id={OBJECT_TABLE_ID}
+                    module={module!}
+                    objects={objects}
+                    readOnly={readOnlyFlag}
+                    linker={linker}
+                    oncontextclick={contextClick}
+                    ondblclick={handleObjectSelection}
+                    onscroll={handleObjectsScrolling}
+                    showDeletions={showDeletionsFlag}
+                    bind:view={view}
+                    bind:selectedObject={selectedObject}
                 />
                 {:catch e}
                 <div class="flex flex-col justify-center items-center w-full h-full text-slate-500">
