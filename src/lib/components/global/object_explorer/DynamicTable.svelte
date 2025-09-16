@@ -108,7 +108,7 @@
 {#if objects.length > 0}
 <div class="relative h-full">
     <div class="absolute top-0 bottom-0 w-full overflow-auto">
-        <Table.Root id={id} class="min-h-0">
+        <Table.Root id={id} class="min-h-0 h-[1px]">
             <Table.Header id={id + "-header"} class="w-full min-w-96 z-20">
                 <Table.Row class="bg-slate-50">
                     {#each view.items as viewItem (viewItem.key)}
@@ -127,21 +127,21 @@
                     <Table.Row 
                         id="row-{object.id}" 
                         class={cn(
-                            (object.metadata?.status === 'deleted') ? 'bg-red-100 text-rose-800 line-through border-red-50' : '', 
+                            (object.metadata?.status === 'deleted') ? 'bg-red-100 text-rose-800 line-through border-red-50' : 
                             (object.id === selectedObject?.id) ? 'border-b-slate-300 border-t-slate-500 bg-slate-200' : '',
                         )}
                         ondblclick={() => onDoubleClick(object)}
                         onclick={() => onClick(object)}
                         >
                         {#each attributeView as attribute (attribute.key)}
-                            <Table.Cell class="p-0">
+                            <Table.Cell class="p-0 h-full">
                                 <RowContextMenu 
                                     object={object} 
                                     onclick={contextClick} 
                                     readOnly={readOnly} 
                                     linker={linker}
                                 >
-                                    <DynamicCell 
+                                    <DynamicCell
                                         object={object} 
                                         attribute={attribute} 
                                         module={module}

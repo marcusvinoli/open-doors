@@ -28,7 +28,7 @@
 </script>
 
 <ContextMenu.Root>
-    <ContextMenu.Trigger class="p-0">
+    <ContextMenu.Trigger class="p-0 h-full">
         {@render children?.()}
     </ContextMenu.Trigger>
     <ContextMenu.Content>

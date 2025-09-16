@@ -32,20 +32,26 @@
     
 </script>
 
-{#if attribute.key === 'id'}
-    <div class="p-2 grow">
-        <p>{module.manifest.prefix}{module.manifest.separator}{value}</p>
+{#snippet verticalCenter(content: any)}
+    <div class="p-2 h-full flex items-center">
+        {@render content()}
     </div>
-{:else if attribute.key === 'content'}
+{/snippet}
+
+{#snippet id()}
+    <p>{module.manifest.prefix}{module.manifest.separator}{value}</p>
+{/snippet}
+
+{#snippet content()}
     <div class={cn(
-            "p-2 border-l-3",
+            "px-2 border-l-3",
             "flex h-full",
             (object.metadata?.status === "draft") ? "border-l-slate-500" : 
             (object.metadata?.status === "baselined") ? "border-l-sky-700" : 
             (object.metadata?.status === "deleted") ? "border-l-red-800" :
             "border-l-amber-400")}
         >
-        <div class="grow flex row h-full">
+        <div class="grow flex row h-full justify-center items-center">
             {#if object.header.trim() !== ""}
                 {#if object.indexParentId === 0}
                     <h1 class="font-bold text-[1.5rem]">{object.metadata?.level+'. '}{object.header}</h1>
@@ -68,31 +74,58 @@
             </div>
         </div>
     </div>
-{:else}
-    {#if attribute.kind === 'general'}
-    <div class="p-2">
+{/snippet}
+
+{#snippet markdown()}
+    <div>
         {@html marked(value ?? "")}
     </div>
-    {:else if attribute.kind === 'boolean'}
-    <div class="p-2">
-        <div class="{value ? 'text-green-500' : 'text-red-500'} flex justify-center items-center">
-            <Icon icon={value ? 'gravity-ui:check' : 'gravity-ui:xmark'} width="15px"/>
-        </div>
+{/snippet}
+
+{#snippet boolean()}
+    <div class="{value ? 'text-green-500' : 'text-red-500'} flex justify-center items-center">
+        <Icon icon={value ? 'gravity-ui:check' : 'gravity-ui:xmark'} width="15px"/>
     </div>
-    {:else if typeof attribute.kind === 'object'}
-        {#if 'singleOption' in attribute.kind}
-            {object.attributes![attribute.key]}
-        {:else if 'multipleOptions' in attribute.kind}
-            {@const values = object.attributes![attribute.key].split(',').map(v => v.trim()) ?? []}
-            {#each values as item}
-                {item + " "}<br>
-            {/each}
+{/snippet}
+
+{#snippet singleOption()}
+    <p>{object.attributes![attribute.key] ?? ""}</p>
+{/snippet}
+
+{#snippet multipleOptions()}
+    {@const values = object.attributes![attribute.key]?.split(',').map(v => v.trim()) ?? []}
+    <div>
+        {#each values as item}
+            <p>{item}</p>
+        {:else}
+            <p></p>
+        {/each}
+    </div>
+{/snippet}
+
+{#snippet others()}
+    <p>{value}</p>
+{/snippet}
+
+<div class="h-full">
+    {#if attribute.key === 'id'}
+        {@render verticalCenter(id)}
+    {:else if attribute.key === 'content'}
+        {@render content()}
+    {:else}
+        {#if attribute.kind === 'general'}
+            {@render verticalCenter(markdown)}
+        {:else if attribute.kind === 'boolean'}
+            {@render verticalCenter(boolean)}
+        {:else if typeof attribute.kind === 'object'}
+            {#if 'singleOption' in attribute.kind}
+                {@render verticalCenter(singleOption)}
+            {:else if 'multipleOptions' in attribute.kind}
+                {@render verticalCenter(multipleOptions)}
+            {/if}
+        {:else}
+            <!-- // Render of other types, such as string, real, date, time, dateTime, enumeration, optional, user, any ... -->
+            {@render verticalCenter(others)}
         {/if}
-    {:else} <!-- // string, real, date, time, dateTime, enumeration, optional, user, any ... -->
-    <div class="p-2">
-        <span>
-            {value ?? ""}
-        </span>
-    </div>
     {/if}
-{/if}
+</div>
