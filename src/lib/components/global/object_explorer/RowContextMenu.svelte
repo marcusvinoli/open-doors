@@ -10,12 +10,14 @@
         readOnly,
         onclick,
         linker,
+        state,
     } : {
         object: Object;
         children?: import('svelte').Snippet;
         readOnly?: boolean,
         onclick?: (item: string, id: number | string) => void;
         linker?: Linker | null;
+        state: Map<string, string>;
     } = $props();
 
     function itemClick(id: number | string, item: string) {
@@ -35,18 +37,31 @@
         <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'properties');}}>Properties</ContextMenu.Item>
         <ContextMenu.Separator/>
         {#if !linker}
-        <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'createLink');}}>Create link</ContextMenu.Item>
+        <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'createLink');}}>Link...</ContextMenu.Item>
         {:else}
         <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopLinking');}}>Stop linking</ContextMenu.Item>
         <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stablishLink');}}>Stablish link</ContextMenu.Item>
         {/if}
         <ContextMenu.Separator/>
         <ContextMenu.Sub>
-            <ContextMenu.SubTrigger>Create an Object...</ContextMenu.SubTrigger>
+            <ContextMenu.SubTrigger>New Object</ContextMenu.SubTrigger>
             <ContextMenu.SubContent> 
-                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'newObjectAfter');}}>on same level</ContextMenu.Item>
-                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'newObjectBelow');}}>as sub-level</ContextMenu.Item>
+                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'newObjectAfter');}}>Create after</ContextMenu.Item>
+                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'newObjectBelow');}}>Create below</ContextMenu.Item>
             </ContextMenu.SubContent>
         </ContextMenu.Sub>
+        {@const movingId = state.get('moving') ? Number.parseInt(state.get('moving')!) : -1}
+        {#if movingId === -1}
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'startMoving');}}>Start moving</ContextMenu.Item>
+        {:else}
+            <ContextMenu.Sub>
+            <ContextMenu.SubTrigger disabled={object.id === movingId}>Move...</ContextMenu.SubTrigger>
+            <ContextMenu.SubContent> 
+                 <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveAfter');}}>Move after</ContextMenu.Item>
+                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveBelow');}}>Move below</ContextMenu.Item>
+            </ContextMenu.SubContent>
+        </ContextMenu.Sub>  
+         <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopMoving');}}>Stop moving</ContextMenu.Item>
+        {/if}
     </ContextMenu.Content>
 </ContextMenu.Root>

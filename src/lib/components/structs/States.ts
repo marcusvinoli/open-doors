@@ -44,6 +44,8 @@ export interface ModuleState {
         x: number,
         y: number,
     },
+    context: Map<string, string>,
+    tasks: Map<string, Task>,
 }
 
 export interface AppState {

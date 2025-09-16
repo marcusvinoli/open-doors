@@ -35,6 +35,7 @@
         scroll,
         showDeletions,
         linker,
+        context,
     } : {
         id?: string,
         module: Module;
@@ -49,6 +50,7 @@
         scroll?: {x: number, y: number};
         showDeletions?: boolean;
         linker?: Linker | null;
+        context: Map<string, string>;
     } = $props();
 
     let attributeView: Attribute[] = $derived(mapAttributesIntoView({...view}, module.template));
@@ -136,15 +138,16 @@
                         {#each attributeView as attribute (attribute.key)}
                             <Table.Cell class="p-0 h-full">
                                 <RowContextMenu 
-                                    object={object} 
+                                    {object} 
+                                    {readOnly} 
+                                    {linker}
+                                    state={context}
                                     onclick={contextClick} 
-                                    readOnly={readOnly} 
-                                    linker={linker}
                                 >
                                     <DynamicCell
-                                        object={object} 
-                                        attribute={attribute} 
-                                        module={module}
+                                        {object} 
+                                        {attribute} 
+                                        {module}
                                         showLinks={true}
                                     />
                                 </RowContextMenu>

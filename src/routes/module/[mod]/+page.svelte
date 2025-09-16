@@ -10,17 +10,17 @@
     import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
     //import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
 
-    import { app, disposeModule } from "$lib/stores/AppState.svelte";
+    import { app } from "$lib/stores/AppState.svelte";
     import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import { addTab, setActiveTab } from "$lib/stores/Tabs.svelte";
+    import { setActiveTab } from "$lib/stores/Tabs.svelte";
     import { confirm, message } from '@tauri-apps/api/dialog';
     import { absolutePath, encodePath, relativePath } from "$lib/utils/path-handler";
     import { buildTreeIndex } from "$lib/utils/index-tree.utils";
     import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar.svelte";
     import { computeIndexLevelChild, computeIndexLevelSibilings, newObject } from "$lib/utils/object-utils";
-    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, readModuleFromPath, readObjects, restoreObject, updateTemplate } from "$lib/controllers/Module";
+    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteModule, deleteObject, exportCSV, exportXlsx, readModuleFromPath, readObjects, restoreObject, updateTemplate } from "$lib/controllers/Module";
 
     import * as Resizable from "$lib/components/ui/resizable";
 
@@ -44,8 +44,7 @@
     let { data }: PageProps = $props();
 
     let repo: Repository | null = $derived(app.repository);
-    let moduleState: ModuleState | null = $derived(app.currentModule);
-
+    
     let view: View = $state(defaultView);
     let module: Module | null = $state(null);
     let objects: Object[] = $state([]);
@@ -53,6 +52,7 @@
     
     let indexTreeState: Map<number, boolean> = $state(new Map());
     let linker: Linker | null = $state(app.linker);
+    let moduleTasks: Map<string, Task> = $state(app.currentModule?.tasks ?? new Map());
 
     let templateFlag: boolean = $state(false);
     let readOnlyFlag: boolean = $state(false);
@@ -64,6 +64,7 @@
     let showRowNumberFlag: boolean = $state(false);
 
     let indexTree: IndexItem[] = $derived(buildTreeIndex([...objects]));
+    let context: Map<string, string> = $state(new Map());
 
     let objectsScroll: {x: number, y: number} = {x: 0, y: 0};
     let indexScroll: {x: number, y: number} = {x: 0, y: 0};
@@ -94,18 +95,40 @@
         }
     })
 
+    function addModuleTask(task: Task) {
+        moduleTasks.set(task.id, task);
+        app.currentModule!.tasks = new Map(moduleTasks);
+    }
+    
+    function removeModuleTask(id: string) {
+        moduleTasks.delete(id);
+        app.currentModule!.tasks = new Map(moduleTasks);
+    }
+
+    function addGlobalTask(task: Task) {
+        const id = task.id + "_" + currentPageKey;
+        app.tasks.set(id, task);
+        app.tasks = new Map(app.tasks);
+    }
+
+    function removeGlobalTask(id: string) {
+        app.tasks.delete(id + "_" + currentPageKey);
+        app.tasks = new Map(app.tasks);
+    }
+
     async function handleExportCSV() {
         if (!module) {
             return;
         }
-        const taskID = 'csvExporter' + currentPageKey;
+        const taskId = 'csv_exporting';
         let csvTask: Task = {
+            id: taskId,
             job: "CSV Exporter",
             status: "running",
             icon: "line-md:uploading-loop",
             tooltip: "Export " + module?.manifest.title + " to .CSV",
         };
-        app.tasks.set(taskID, csvTask);
+        addGlobalTask(csvTask);
         exportCSV(module?.path)
             .then(() => {
                 csvTask.status = "done";
@@ -114,9 +137,9 @@
                 csvTask.status = "error";
             })
             .finally(() => {
-                app.tasks.set(taskID, csvTask)
+                addGlobalTask(csvTask)
                 tick().then(() => {
-                    app.tasks.delete(taskID)
+                    removeGlobalTask(taskId);
                 })
             })
     }
@@ -125,14 +148,15 @@
         if (!module) {
             return;
         }
-        const taskID = 'xlsxExporter' + currentPageKey;
+        const taskId= 'xlsx_exporting';
         let csvTask: Task = {
+            id: taskId,
             job: "XLSX Exporter",
             status: "running",
             icon: "line-md:uploading-loop",
             tooltip: "Export " + module?.manifest.title + " to .XLSX",
         };
-        app.tasks.set(taskID, csvTask);
+        addGlobalTask(csvTask);
         exportXlsx(module?.path)
             .then(() => {
                 csvTask.status = "done";
@@ -141,9 +165,9 @@
                 csvTask.status = "error";
             })
             .finally(() => {
-                app.tasks.set(taskID, csvTask)
+                addGlobalTask(csvTask);
                 tick().then(() => {
-                    app.tasks.delete(taskID)
+                    removeGlobalTask(taskId);
                 })
             })
     }
@@ -558,6 +582,8 @@
         selectedObject = res.currentObject;
         indexTree = res.indexTree.tree;
         indexTreeState = res.indexTree.state;
+        context = res.context;
+        moduleTasks = res.tasks;
         await tick().then(() => {
             setScrollPosition(INDEX_TREE_ID, res.indexTree.scroll.x, res.indexTree.scroll.y);
             setScrollPosition(OBJECT_TABLE_ID + OBJECT_TABLE_CONTAINER_SUFFIX, res.scroll.x, res.scroll.y);
@@ -594,31 +620,37 @@
             },
             filter: null,
             scroll: objectsScroll,
+            context: context,
+            tasks: moduleTasks,
         };
         app.modules.set(key, {...moduleState});
     }
 
     function contextClick(item: string, id: number | string, arg?: any) {
         switch(item) {
-            case 'properties':
-                selectedObject = objects.find(obj => (obj.id == id)) ?? null;
+            case 'properties': {
+                selectedObject = objects.find(obj => (obj.id === id)) ?? null;
                 objectFormFlag = true;
                 break;
-            case 'newObject':
+            }
+            case 'newObject': {
                 selectedObject = newObject(module?.template);
                 objectFormFlag = true;
                 break;
-            case 'newObjectAfter': // Object on same level
-                let sibiling = computeIndexLevelSibilings(objects, id as number);
-                selectedObject = newObject(module?.template, sibiling.parentId, sibiling.indexLevel);
+            }
+            case 'newObjectAfter': { // Object on same level
+                let indexes = computeIndexLevelSibilings(objects, id as number);
+                selectedObject = newObject(module?.template, indexes.parentId, indexes.indexLevel);
                 objectFormFlag = true;
                 break;
-            case 'newObjectBelow': // Object as sub-level
-                let subItem = computeIndexLevelChild(objects, id as number);
-                selectedObject = newObject(module?.template, subItem.parentId, subItem.indexLevel);
+            }
+            case 'newObjectBelow': { // Object as sub-level
+                let indexes = computeIndexLevelChild(objects, id as number);
+                selectedObject = newObject(module?.template, indexes.parentId, indexes.indexLevel);
                 objectFormFlag = true;
                 break;
-            case 'createLink': 
+            }
+            case 'createLink': {
                 let newLinker = {
                     from: {
                         path: relativePath(app.repository!.tree.path, module!.path),
@@ -629,7 +661,8 @@
                 }
                 app.linker = linker = newLinker;
                 break;
-            case 'stablishLink':
+            }
+            case 'stablishLink': {
                 if (!linker) {
                     return;
                 }
@@ -647,9 +680,66 @@
                     }
                 );
                 break;
-            case 'stopLinking': 
+            }
+            case 'stopLinking': {
                 app.linker = linker = null;
                 break;
+            }
+            case 'startMoving': {
+                selectedObject = objects.find(obj => (obj.id === id)) ?? null;
+                context.set('moving', id.toString());
+                const taskId = 'moving_' + currentPageKey;
+                const task: Task = {
+                    id: taskId,
+                    job: "Moving Object",
+                    status: "running",
+                    icon: "gravity-ui:arrow-up-arrow-down",
+                    tooltip: "Moving object " + module?.manifest.prefix + module?.manifest.separator + id,
+                };
+                addModuleTask(task);
+                break;
+            }
+            case 'moveAfter': {
+                const movingObjectId: number = context.get('moving') ? Number.parseInt(context.get('moving')!) : -1;
+                let movingObject: Object | null = objects.find(obj => (obj.id === movingObjectId)) ?? null;
+                if (!movingObject) {
+                    context.delete('moving');
+                    removeModuleTask('moving_' + currentPageKey);
+                    return;
+                }
+                let moveSibilings = computeIndexLevelSibilings(objects, id as number);
+                movingObject.indexParentId = moveSibilings.parentId;
+                movingObject.indexLevel = moveSibilings.indexLevel;
+                handleObjectDraftCreation(movingObject!).then(() => {
+                    context.delete('moving');
+                    removeModuleTask('moving_' + currentPageKey);
+                });
+                break;
+            }
+            case 'moveBelow': {
+                const movingObjectId: number = context.get('moving') ? Number.parseInt(context.get('moving')!) : -1;
+                let movingObject: Object | null = objects.find(obj => (obj.id === movingObjectId)) ?? null;
+                if (!movingObject || movingObject.id === id) {
+                    context.delete('moving');
+                    removeModuleTask('moving_' + currentPageKey);
+                    return;
+                }
+                let moveChild = computeIndexLevelChild(objects, id as number);
+                movingObject.indexParentId = moveChild.parentId;
+                movingObject.indexLevel = moveChild.indexLevel;
+                handleObjectDraftCreation(movingObject!).then(() => {
+                    context.delete('moving');
+                    removeModuleTask('moving_' + currentPageKey);
+                });
+                break;
+            }
+            case 'stopMoving': {
+                selectedObject = null;
+                context.delete('moving');
+                const taskId = 'moving_' + currentPageKey;
+                removeModuleTask('moving_' + currentPageKey);
+                break;
+            }
             default: 
                 console.error('Unrecognized parameters: ', item, id, arg);
                 break;
@@ -717,6 +807,7 @@
                     ondblclick={handleObjectSelection}
                     onscroll={handleObjectsScrolling}
                     showDeletions={showDeletionsFlag}
+                    context={context}
                     bind:view={view}
                     bind:selectedObject={selectedObject}
                 />

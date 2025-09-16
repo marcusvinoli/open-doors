@@ -6,13 +6,15 @@ import type { Module } from "$lib/components/structs/Module";
 import type { Object } from "$lib/components/structs/Object";
 import type { AppState, ModuleState } from "$lib/components/structs/States";
 import type { IndexItem } from "$lib/components/structs/IndexItem";
+import type { Task } from "$lib/components/structs/Task";
+
 import { defaultView } from "$lib/components/structs/View";
 
 export let app : AppState = $state({
     repository: null,
     user: null,
     modules: new Map(),
-    tasks: new Map(),
+    tasks: new Map<string, Task>(),
     linker: null,
     currentModule: null,
 });
@@ -61,7 +63,9 @@ export async function loadModule(path: string, version?: string) {
             scroll: {
                 x: 0,
                 y: 0
-            }
+            },
+            context: new Map<string, string>(),
+            tasks: new Map<string, Task>(),
         };
         const oldModule = app.modules.get(modKey);
         if (oldModule) {
@@ -71,6 +75,8 @@ export async function loadModule(path: string, version?: string) {
         newModule.objects = objects;
         newModule.indexTree.tree = indexTree;
         app.modules.set(modKey, newModule);
+        app.currentModule = newModule;
+        app.currentModule.tasks = oldModule?.tasks ?? new Map<string, Task>();
     })
 }
 
