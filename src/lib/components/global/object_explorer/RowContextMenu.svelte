@@ -35,16 +35,18 @@
     </ContextMenu.Trigger>
     <ContextMenu.Content>
         <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'properties');}}>Properties</ContextMenu.Item>
-        <ContextMenu.Separator/>
+        <ContextMenu.Separator class="mx-1"/>
         {#if !linker}
-        <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'createLink');}}>Link...</ContextMenu.Item>
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'createLink');}}>Link...</ContextMenu.Item>
         {:else}
-        <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopLinking');}}>Stop linking</ContextMenu.Item>
-        <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stablishLink');}}>Stablish link</ContextMenu.Item>
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopLinking');}}>Stop linking</ContextMenu.Item>
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stablishLink');}}>Stablish link</ContextMenu.Item>
         {/if}
-        <ContextMenu.Separator/>
+        <ContextMenu.Separator class="mx-1"/>
         <ContextMenu.Sub>
-            <ContextMenu.SubTrigger>New Object</ContextMenu.SubTrigger>
+            <ContextMenu.SubTrigger>
+                <p>New Object</p>
+            </ContextMenu.SubTrigger>
             <ContextMenu.SubContent> 
                 <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'newObjectAfter');}}>Create after</ContextMenu.Item>
                 <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'newObjectBelow');}}>Create below</ContextMenu.Item>
@@ -55,13 +57,13 @@
             <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'startMoving');}}>Start moving</ContextMenu.Item>
         {:else}
             <ContextMenu.Sub>
-            <ContextMenu.SubTrigger disabled={object.id === movingId}>Move...</ContextMenu.SubTrigger>
-            <ContextMenu.SubContent> 
-                 <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveAfter');}}>Move after</ContextMenu.Item>
-                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveBelow');}}>Move below</ContextMenu.Item>
-            </ContextMenu.SubContent>
-        </ContextMenu.Sub>  
-         <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopMoving');}}>Stop moving</ContextMenu.Item>
+                <ContextMenu.SubTrigger disabled={object.id === movingId}>Move...</ContextMenu.SubTrigger>
+                <ContextMenu.SubContent> 
+                    <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveAfter');}}>Move after</ContextMenu.Item>
+                    <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveBelow');}}>Move below</ContextMenu.Item>
+                </ContextMenu.SubContent>
+            </ContextMenu.Sub>  
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopMoving');}}>Stop moving</ContextMenu.Item>
         {/if}
     </ContextMenu.Content>
 </ContextMenu.Root>
