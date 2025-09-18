@@ -4,11 +4,8 @@
     import IndexTree from "$lib/components/global/index_tree/IndexTree.svelte";
     import ObjectForm from "$lib/components/forms/object/ObjectForm.svelte";
     import DynamicTable from "$lib/components/global/object_explorer/DynamicTable.svelte";
-    //import ToolbarGroup from "$lib/components/global/toolbar/ToolbarGroup.svelte";
     import BaselineForm from "$lib/components/forms/module/BaselineForm.svelte";
-    //import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
     import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
-    //import ToolbarDropdown from "$lib/components/global/toolbar/ToolbarDropdown.svelte";
 
     import { app } from "$lib/stores/AppState.svelte";
     import { onMount, tick } from "svelte";
@@ -18,9 +15,9 @@
     import { confirm, message } from '@tauri-apps/api/dialog';
     import { absolutePath, encodePath, relativePath } from "$lib/utils/path-handler";
     import { buildTreeIndex } from "$lib/utils/index-tree.utils";
-    import { addToolbarItem, clearToolbar } from "$lib/stores/Toolbar.svelte";
+    import { addToolbarItem, clearToolbar, setToolbar } from "$lib/stores/Toolbar.svelte";
     import { computeIndexLevelChild, computeIndexLevelSibilings, newObject } from "$lib/utils/object-utils";
-    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteModule, deleteObject, exportCSV, exportXlsx, readModuleFromPath, readObjects, restoreObject, updateTemplate } from "$lib/controllers/Module";
+    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, readObjects, restoreObject, updateTemplate } from "$lib/controllers/Module";
 
     import * as Resizable from "$lib/components/ui/resizable";
 
@@ -34,8 +31,8 @@
     import type { PageProps } from './$types';
     import type { IndexItem } from "$lib/components/structs/IndexItem";
     import type { Repository } from "$lib/components/structs/Repo";
-    import type { ModuleState, Linker } from "$lib/components/structs/States";
-    import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
+    import type { ModuleState, Linker, ModuleFlags } from "$lib/components/structs/States";
+    import type { Toolbar, ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
     
     const OBJECT_TABLE_ID = 'object-table';
     const OBJECT_TABLE_CONTAINER_SUFFIX = '-container';
@@ -44,30 +41,27 @@
     let { data }: PageProps = $props();
 
     let repo: Repository | null = $derived(app.repository);
-    
     let view: View = $state(defaultView);
     let module: Module | null = $state(null);
     let objects: Object[] = $state([]);
     let selectedObject: Object | null = $state(null);
-    
-    let indexTreeState: Map<number, boolean> = $state(new Map());
     let linker: Linker | null = $state(app.linker);
-    let moduleTasks: Map<string, Task> = $state(app.currentModule?.tasks ?? new Map());
-
-    let templateFlag: boolean = $state(false);
-    let readOnlyFlag: boolean = $state(false);
-    let treePanelFlag: boolean = $state(false);
-    let showLinksFlag: boolean = $state(false);
-    let objectFormFlag: boolean = $state(false);
-    let newBaselineFlag: boolean = $state(false);
-    let showDeletionsFlag: boolean = $state(false);
-    let showRowNumberFlag: boolean = $state(false);
-
+    let tasks: Map<string, Task> = $state(app.currentModule?.tasks ?? new Map());
     let indexTree: IndexItem[] = $derived(buildTreeIndex([...objects]));
+    let indexTreeState: Map<number, boolean> = $state(new Map());
     let context: Map<string, string> = $state(new Map());
-
     let objectsScroll: {x: number, y: number} = {x: 0, y: 0};
     let indexScroll: {x: number, y: number} = {x: 0, y: 0};
+    let flags: ModuleFlags = $state({
+        showNewBaselineDialog: false,
+        showTemplateDialog: false,
+        showRowsNumbering: false,
+        showObjectDialog: false,
+        showIndexPanel: false,
+        showDeletions: false,
+        showLinks: false,
+        readOnly: false,
+    });
 
     let previousPageKey: string | null = null;
     let currentPageKey: string = $derived(generateModuleStateKey(page.params.mod!, page.params.version ?? 'current'));
@@ -95,14 +89,251 @@
         }
     })
 
+    let toolbar: Toolbar = $state({
+        items: [
+            {
+                type: 'group',
+                items: [
+                    {
+                        type: 'button',
+                        tooltip: 'Home',
+                        icon: 'gravity-ui:house',
+                        onclick: () => {
+                            goto("/home")
+                        },
+                        disabled: false,
+                    },
+                    {
+                        type: 'button',
+                        tooltip: 'Show/Hide index panel',
+                        icon: 'gravity-ui:layout-header-side-content',
+                        onclick: () => {
+                            flags.showIndexPanel = !flags.showIndexPanel;
+                        },
+                        disabled: false,
+                    }
+                ]
+            },
+            {
+                type: 'group',
+                items: [
+                    {
+                        type: 'dropdown',
+                        button: {
+                            type: 'button',
+                            tooltip: 'New...',
+                            icon: 'gravity-ui:circle-plus',
+                            disabled: false,
+                        },
+                        items: [
+                            {
+                                type: 'button',
+                                tooltip: 'New Object',
+                                icon: 'gravity-ui:square-chart-bar',
+                                onclick: () => {
+                                    if (!flags.showObjectDialog) {
+                                        if (objects.length === 0) {
+                                            selectedObject = newObject(module?.template);
+                                        } else {
+                                            const lastObject = objects[objects.length - 1];
+                                            let sibiling = computeIndexLevelSibilings(objects, lastObject.id as number);
+                                            selectedObject = newObject(module?.template, sibiling.parentId, sibiling.indexLevel);
+                                        }
+                                        flags.showObjectDialog = true;
+                                    }
+                                },
+                                get disabled() {
+                                    return flags.readOnly;
+                                }
+                            },
+                            {
+                                type: 'button',
+                                tooltip: 'New Baseline',
+                                icon: 'gravity-ui:tag',
+                                onclick: () => {
+                                    flags.showNewBaselineDialog = !flags.showNewBaselineDialog;
+                                },
+                                disabled: false,
+                            }
+                        ]
+                    },
+                    {
+                        type: 'toggle',
+                        buttonTrue: {
+                            type: 'button',
+                            tooltip: 'Switch to Edit mode',
+                            icon: 'ph:pencil-simple-slash-bold',
+                            disabled: false,
+                        },
+                        buttonFalse: {
+                            type: 'button',
+                            tooltip: 'Switch to Read-Only mode',
+                            icon: 'ph:pencil-simple-bold',
+                            disabled: false,
+                        },
+                        get status() {
+                            return flags.readOnly;
+                        },
+                        onchange: (status: boolean) => {
+                            flags.readOnly = status;
+                        }
+                    }
+                ]
+            },
+            {
+                type: 'group',
+                items: [
+                    // TODO: Reserved for Future Implementations
+                    /* {
+                        type: 'dropdown',
+                        button: {
+                            type: 'button',
+                            tooltip: 'Views',
+                            icon: 'gravity-ui:layout-list',
+                            disabled: false,
+                        },
+                        items: [
+                            {
+                                type: 'group',
+                                items: [
+                                    {
+                                        type: 'dropdown',
+                                        button: {
+                                            type: 'button',
+                                            tooltip: 'Apply...',
+                                            disabled: false,
+                                        },
+                                        items: [
+                                            {
+                                                type: 'button',
+                                                tooltip: 'Default View'
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        type: 'button',
+                                        tooltip: 'View settings',
+                                        disabled: false,
+                                    },
+                                ],
+                            },
+                            {
+                                type: 'group',
+                                items: [
+                                    {
+                                        type: 'button',
+                                        tooltip: 'Show or Hide deleted objects',
+                                        onclick: () => {
+                                            flags.showDeletions = !flags.showDeletions;
+                                        },
+                                        disabled: false,
+                                    },
+                                ],
+                            },
+                        ]
+                    }, 
+                    */
+                    {
+                        type: 'button',
+                        tooltip: 'Module Attributes',
+                        icon: 'gravity-ui:rectangles-4',
+                        onclick: () => {
+                            flags.showTemplateDialog = !flags.showTemplateDialog;
+                        },
+                        disabled: false,
+                    },
+                    {
+                        type: 'toggle',
+                        buttonTrue: {
+                            type: 'button',
+                            tooltip: 'Hide deleted objects',
+                            icon: 'gravity-ui:square-dashed-text',
+                            disabled: false,
+                        },
+                        buttonFalse: {
+                            type: 'button',
+                            tooltip: 'Show deleted objects',
+                            icon: 'gravity-ui:square-chart-bar',
+                            disabled: false,
+                        },
+                        get status() { 
+                            return flags.showDeletions; 
+                        },
+                        onchange: (status: boolean) => {
+                            flags.showDeletions = status;
+                        },
+                    },
+                    // TODO: Reserved for Future Implementations
+                    /* {
+                        type: 'toggle',
+                        buttonTrue: {
+                            type: 'button',
+                            tooltip: 'Apply filter',
+                            icon: 'gravity-ui:funnel',
+                            disabled: false,
+                        },
+                        buttonFalse: {
+                            type: 'button',
+                            tooltip: 'Remove filter',
+                            icon: 'gravity-ui:funnel-xmark',
+                            disabled: false,
+                        },
+                        get status() { 
+                            
+                        },
+                        onchange: (status: boolean) => {
+                            
+                        },
+                    }, 
+                    */
+                ]
+            },
+            {
+                type: 'group',
+                items: [
+                    {
+                        type: 'dropdown',
+                        button: {
+                            type: 'button',
+                            tooltip: 'Export...',
+                            icon: 'gravity-ui:file-arrow-right-out',
+                            onclick: () => {},
+                            disabled: false,
+                        },
+                        items: [
+                            {
+                                type: 'button',
+                                tooltip: 'Microsoft Excel (.xlsx)',
+                                icon: 'ph:microsoft-excel-logo-fill',
+                                onclick: () => {
+                                    handleExportXLSX()
+                                },
+                                disabled: false,
+                            },
+                            {
+                                type: 'button',
+                                tooltip: 'Comma-Separeted Value (.csv)',
+                                icon: 'ph:file-csv',
+                                onclick: () => {
+                                    handleExportCSV()
+                                },
+                                disabled: false,
+                            }
+                        ]
+                    },
+                ]
+            },
+        ]
+    });
+
     function addModuleTask(task: Task) {
-        moduleTasks.set(task.id, task);
-        app.currentModule!.tasks = new Map(moduleTasks);
+        tasks.set(task.id, task);
+        app.currentModule!.tasks = new Map(tasks);
     }
     
     function removeModuleTask(id: string) {
-        moduleTasks.delete(id);
-        app.currentModule!.tasks = new Map(moduleTasks);
+        tasks.delete(id);
+        app.currentModule!.tasks = new Map(tasks);
     }
 
     function addGlobalTask(task: Task) {
@@ -172,222 +403,11 @@
             })
     }
 
-    function loadToolbar() {
-        clearToolbar();
-    
-        let homeButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Home",
-            icon: "gravity-ui:house",
-            action: () => {
-                goto("/home")
-            },
-        }
-
-        let showTree: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Show/Hide tree panel",
-            icon: "gravity-ui:layout-header-side-content",
-            action: () => {
-                treePanelFlag = !treePanelFlag;
-            },
-        }
-
-        let templateManager: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Custom Attributes",
-            icon: "gravity-ui:rectangles-4",
-            action: () => {
-                templateFlag = !templateFlag;
-            }
-        }
-
-        let newButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "New...",
-            icon: "gravity-ui:circle-plus",
-            action: () => {},
-        }
-    
-        let newBaselineButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "New Baseline",
-            icon: "gravity-ui:tag",
-            action: () => {
-                newBaselineFlag = !newBaselineFlag;
-            },
-        }
-
-        let newObjectButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "New Object",
-            icon: "gravity-ui:square-chart-bar",
-            action: () => {
-                if (!objectFormFlag) {
-                    if (objects.length === 0) {
-                        selectedObject = newObject(module?.template);
-                    } else {
-                        const lastObject = objects[objects.length - 1];
-                        let sibiling = computeIndexLevelSibilings(objects, lastObject.id as number);
-                        selectedObject = newObject(module?.template, sibiling.parentId, sibiling.indexLevel);
-                    }
-                    objectFormFlag = true;
-                }
-            },
-        }
-
-        let exportButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Export module...",
-            icon: "gravity-ui:file-arrow-right-out",
-            action: () => {},
-        }
-
-        let exportExcelButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Microsoft Excel (.xlsx)",
-            icon: "ph:microsoft-excel-logo-fill",
-            action: () => {
-                handleExportXLSX()
-            },
-        }
-
-        let exportCSVButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Comma-Separeted Value (.csv)",
-            icon: "ph:file-csv",
-            action: () => {
-                handleExportCSV()
-            },
-        }
-
-        let readOnlyModeButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Toggle Edit Mode",
-            icon: "lucide:pencil-off",
-            action: () => {
-                readOnlyFlag = true;
-            },
-        }
-
-        let editModeButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Toggle Read-Only Mode",
-            icon: "lucide:pencil",
-            action: () => {
-                readOnlyFlag = false;
-            },
-        }
-
-        /* let viewModeButton: ToolbarToggleType = {
-            type: "toggle",
-            buttonOn: editModeButton,
-            buttonOff: readOnlyModeButton,
-            status: readOnlyFlag,
-        } */
-
-        let showDeletionsButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Showing deletions",
-            icon: "gravity-ui:square-dashed-text",
-            action: () => {
-                showDeletionsFlag = true;
-            },
-        }
-
-        let dontShowDeletionsButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Show deletions",
-            icon: "gravity-ui:square-chart-bar",
-            action: () => {
-                showDeletionsFlag = false;
-            },
-        }
-
-        let deletionsModeButton: ToolbarToggleType = {
-            type: "toggle",
-            buttonOn: showDeletionsButton,
-            buttonOff: dontShowDeletionsButton,
-            status: showDeletionsFlag,
-        }
-        
-        let creationGroup: ToolbarDropdownType = {
-            button: newButton,
-            items: [
-                {
-                    items: [
-                        newObjectButton,
-                    ],
-                    type: "buttonsGroup",
-                },
-                {
-                    items: [
-                        newBaselineButton,
-                    ],
-                    type: "buttonsGroup",
-                }
-            ],
-            type: "dropdown",
-        }
-
-        let expGroup: ToolbarDropdownType = {
-            button: exportButton,
-            items: [
-                {
-                    items: [
-                        exportExcelButton,
-                    ],
-                    type: "buttonsGroup",
-                },
-                {
-                    items: [
-                        exportCSVButton,
-                    ],
-                    type: "buttonsGroup",
-                },
-            ],
-            type: "dropdown"
-        }
-    
-        let navigationGroup: ToolbarGroupType = {
-            items: [homeButton],
-            type: "buttonsGroup"
-        }
-    
-        let newGroup: ToolbarGroupType = {
-            items: [creationGroup],
-            type: "buttonsGroup"
-        }
-        
-        let exportGroup: ToolbarGroupType = {
-            items: [expGroup],
-            type: "buttonsGroup"
-        }
-
-        let viewGrouplView: ToolbarGroupType = {
-            items: [showTree, 
-                //viewModeButton, 
-                deletionsModeButton],
-            type: "buttonsGroup"
-        }
-
-        let templateButton: ToolbarGroupType = {
-            items: [templateManager],
-            type: "buttonsGroup"
-        }
-
-        addToolbarItem(navigationGroup);
-        addToolbarItem(newGroup);
-        addToolbarItem(viewGrouplView);
-        addToolbarItem(exportGroup);
-        addToolbarItem(templateButton);
-    }
-
     async function handleObjectCreation(obj: Object) {
         try {
             await createObject(module!.path, obj);
             selectedObject = null;
-            objectFormFlag = false;
+            flags.showObjectDialog = false;
             loadAllObjects(module!.path);
         } catch (err) {
             console.error(err);
@@ -398,7 +418,7 @@
         try {
             const objs = await createDraftObject(module!.path, obj);
             selectedObject = null;
-            objectFormFlag = false;
+            flags.showObjectDialog = false;
             await loadAllObjects(module!.path);
         } catch (err) {
             console.error(err);
@@ -409,7 +429,7 @@
         const confirmed = await confirm('Do you really want to delete this Object?', 'Deleting object ' + module!.manifest.prefix + module!.manifest.separator + obj.id);
         if (!confirmed) {
             selectedObject = null;
-            objectFormFlag = false;
+            flags.showObjectDialog = false;
             return;
         }
         return deleteObject(module!.path, obj.id)
@@ -421,7 +441,7 @@
             })
             .finally(() => {
                 selectedObject = null;
-                objectFormFlag = false;
+                flags.showObjectDialog = false;
             })
     }
 
@@ -432,7 +452,7 @@
         }
         restoreObject(module!.path, obj.id)
             .then(() => {
-                objectFormFlag = true;
+                flags.showObjectDialog = true;
                 loadAllObjects(module!.path);
             })
             .catch((err) => {
@@ -440,7 +460,7 @@
             })
             .finally(() => {
                 selectedObject = null;
-                objectFormFlag = false;
+                flags.showObjectDialog = false;
             })
     }
 
@@ -505,7 +525,7 @@
 
     function handleObjectSelection(id: string | number) {
         selectedObject = objects.find(obj => obj.id === id) ?? null;
-        objectFormFlag = true;
+        flags.showObjectDialog = true;
     }
 
     function handleScrollObjectsIntoView(id: string | number) {
@@ -568,14 +588,7 @@
         if (!res) {
             return;      
         }
-        newBaselineFlag = res.flags.showNewBaselineDialog;
-        templateFlag = res.flags.showTemplateDialog;
-        showRowNumberFlag = res.flags.showRowsNumbering;
-        objectFormFlag = res.flags.showObjectDialog;
-        treePanelFlag = res.flags.showIndexPanel;
-        showDeletionsFlag = res.flags.showDeletions;
-        showLinksFlag = res.flags.showLinks;
-        readOnlyFlag = res.flags.readOnly;
+        flags = res.flags;
         module = res.module;
         objects = res.objects;
         view = res.currentView;
@@ -583,7 +596,7 @@
         indexTree = res.indexTree.tree;
         indexTreeState = res.indexTree.state;
         context = res.context;
-        moduleTasks = res.tasks;
+        tasks = res.tasks;
         await tick().then(() => {
             setScrollPosition(INDEX_TREE_ID, res.indexTree.scroll.x, res.indexTree.scroll.y);
             setScrollPosition(OBJECT_TABLE_ID + OBJECT_TABLE_CONTAINER_SUFFIX, res.scroll.x, res.scroll.y);
@@ -599,18 +612,9 @@
             return;
         }
         const moduleState: ModuleState = {
-            flags: {
-                showNewBaselineDialog: newBaselineFlag,
-                showTemplateDialog: templateFlag,
-                showRowsNumbering: showRowNumberFlag,
-                showObjectDialog: objectFormFlag,
-                showIndexPanel: treePanelFlag,
-                showDeletions: showDeletionsFlag,
-                showLinks: showLinksFlag,
-                readOnly: readOnlyFlag,
-            },
+            flags,
+            objects,
             module: module!,
-            objects: objects,
             currentView: view,
             currentObject: selectedObject,
             indexTree: {
@@ -621,7 +625,7 @@
             filter: null,
             scroll: objectsScroll,
             context: context,
-            tasks: moduleTasks,
+            tasks: tasks,
         };
         app.modules.set(key, {...moduleState});
     }
@@ -630,24 +634,24 @@
         switch(item) {
             case 'properties': {
                 selectedObject = objects.find(obj => (obj.id === id)) ?? null;
-                objectFormFlag = true;
+                flags.showObjectDialog = true;
                 break;
             }
             case 'newObject': {
                 selectedObject = newObject(module?.template);
-                objectFormFlag = true;
+                flags.showObjectDialog = true;
                 break;
             }
             case 'newObjectAfter': { // Object on same level
                 let indexes = computeIndexLevelSibilings(objects, id as number);
                 selectedObject = newObject(module?.template, indexes.parentId, indexes.indexLevel);
-                objectFormFlag = true;
+                flags.showObjectDialog = true;
                 break;
             }
             case 'newObjectBelow': { // Object as sub-level
                 let indexes = computeIndexLevelChild(objects, id as number);
                 selectedObject = newObject(module?.template, indexes.parentId, indexes.indexLevel);
-                objectFormFlag = true;
+                flags.showObjectDialog = true;
                 break;
             }
             case 'createLink': {
@@ -747,14 +751,16 @@
     }
 
     onMount(() => {
-        loadToolbar();
+        clearToolbar();
+        setToolbar(toolbar);
+        //loadToolbar();
     })
 
 </script>
 
 {#if module}
     <ObjectForm
-        bind:openDialog={objectFormFlag}
+        bind:openDialog={flags.showObjectDialog}
         object={selectedObject} 
         module={module!}
         onsave={handleObjectCreation}
@@ -765,25 +771,25 @@
         onunlink={handleLinkDeletion}
     />
     <BaselineForm 
-        bind:openDialog={newBaselineFlag} 
+        bind:openDialog={flags.showNewBaselineDialog} 
         module={module!}
         onbaselinecreation={handleBaselineCreation}
     />
     <AttributesForm 
-        bind:openDialog={templateFlag}
+        bind:openDialog={flags.showTemplateDialog}
         module={module!}
         ontemplateupdate={handleTemplateUpdate}
     />
 {/if}
 <div class="bg-slate-50 h-full py-1">
     <Resizable.PaneGroup direction="horizontal">
-        {#if treePanelFlag}
+        {#if flags.showIndexPanel}
             <Resizable.Pane defaultSize={20} maxSize={40} collapsible order={1}>
                 <IndexTree
                     id={INDEX_TREE_ID}
                     trees={indexTree} 
                     bind:state={indexTreeState}
-                    showDeletions={showDeletionsFlag}
+                    showDeletions={flags.showDeletions}
                     onclick={handleScrollObjectsIntoView}
                     onscroll={handleIndexScrolling}
                 />
@@ -801,12 +807,12 @@
                     id={OBJECT_TABLE_ID}
                     module={module!}
                     objects={objects}
-                    readOnly={readOnlyFlag}
+                    readOnly={flags.readOnly}
                     linker={linker}
                     oncontextclick={contextClick}
                     ondblclick={handleObjectSelection}
                     onscroll={handleObjectsScrolling}
-                    showDeletions={showDeletionsFlag}
+                    showDeletions={flags.showDeletions}
                     context={context}
                     bind:view={view}
                     bind:selectedObject={selectedObject}

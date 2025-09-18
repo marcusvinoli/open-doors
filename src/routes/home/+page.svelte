@@ -1,30 +1,28 @@
 <script lang="ts">
     import Icon from '@iconify/svelte';
+    import Loading from '$lib/components/ui/loading/Loading.svelte';
     import TreeView from '$lib/components/global/treeview/TreeView.svelte';
     import PanelView from '$lib/components/global/panel_view/PanelView.svelte';
-
     import CreateFolderForms from '$lib/components/forms/folder/CreateFolderForms.svelte';
-    import CreateProjectForms from "$lib/components/forms/project/CreateProjectForms.svelte"
     import CreateModuleForms from '$lib/components/forms/module/CreateModuleForms.svelte';
+    import CreateProjectForms from "$lib/components/forms/project/CreateProjectForms.svelte"
 
     import { app } from '$lib/stores/AppState.svelte';
     import { goto } from '$app/navigation';
-    import { currentItem, goBack, goTo } from '$lib/stores/PanelView.svelte';
-    import { onMount } from 'svelte';
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import { reloadRepository } from '$lib/controllers/Repository';
-    import { addTab, setActiveTab } from '$lib/stores/Tabs.svelte';
-    import { loadAuthorInformation } from '$lib/controllers/User';
     import { getIconFromTreeItemType } from '$lib/utils/tree-item-utils';
-    import { addToolbarItem, clearToolbar } from '$lib/stores/Toolbar.svelte';
+    import { clearToolbar, setToolbar } from '$lib/stores/Toolbar.svelte';
+    import { currentItem, goBack, goTo } from '$lib/stores/PanelView.svelte';
     
     import * as Resizable from "$lib/components/ui/resizable";
     
     import type { Module } from '$lib/components/structs/Module';
     import type { Project } from '$lib/components/structs/Project';
+    import type { Toolbar } from '$lib/components/global/toolbar/Toolbar';
     import type { TreeItem } from '$lib/components/structs/Tree';
-    import type { ToolbarGroupType, ToolbarButtonType, ToolbarDropdownType } from '$lib/components/global/toolbar/Toolbar';
-    import Loading from '$lib/components/ui/loading/Loading.svelte';
+
+    import { load } from './+page';
 
     let newProjectDialog: boolean = $state(false);
     let newFolderDialog: boolean = $state(false);
@@ -52,9 +50,9 @@
 
     function onFolderCreation(folderTreeItem: TreeItem) {
         reloadRepository()
-            .then(() => {
-                goTo(folderTreeItem);
-            })
+        .then(() => {
+            goTo(folderTreeItem);
+        })
     }
 
     function onProjectCreation(project: Project) {
@@ -65,98 +63,77 @@
     }
 
     function loadHomeToolbar() {
-        clearToolbar();
-
-        let homeButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Home",
-            icon: "gravity-ui:house",
-            action: () => {
-                goHome()
-            },
-        }
-
-        let backButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "Back",
-            icon: "gravity-ui:arrow-left",
-            action: () => {
-                goBack()
-            },
-        }
-
-        let newButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "New...",
-            icon: "gravity-ui:circle-plus",
-            action: () => {},
-        }
-
-        let newProjectButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "New Project",
-            icon: "gravity-ui:folder-open-fill",
-            action: openNewProjectDialog,
-        }
-
-        let newFolderButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "New Folder",
-            icon: "gravity-ui:folder-open",
-            action: openNewFolderDialog,
-        }
-
-        let newModuleButton: ToolbarButtonType = {
-            type: "button",
-            tooltip: "New Module",
-            icon: "gravity-ui:layout-header-cells-large-fill",
-            action: openNewModuleDialog,
-        }
-
-        let creationGroup: ToolbarDropdownType = {
-            button: newButton,
+        const toolbar: Toolbar = {
             items: [
                 {
+                    type: 'group',
                     items: [
-                        newProjectButton, 
-                        newFolderButton, 
-                        newModuleButton
-                    ],
-                    type: "buttonsGroup",
+                        {
+                            type: 'button',
+                            tooltip: 'Home',
+                            icon: 'gravity-ui:house',
+                            onclick: () => {
+                                goHome();
+                            },
+                            disabled: false,
+                        },
+                        {
+                            type: 'button',
+                            tooltip: 'Back',
+                            icon: 'gravity-ui:arrow-left',
+                            onclick: () => {
+                                goBack()
+                            },
+                            disabled: false,
+                        }
+                    ]
+                },
+                {
+                    type: 'group',
+                    items: [
+                        {
+                            type: 'dropdown',
+                            button: {
+                                type: 'button',
+                                icon: 'gravity-ui:circle-plus',
+                                tooltip: 'New...',
+                                disabled: false,
+                            },
+                            items: [
+                                {
+                                    type: 'button',
+                                    tooltip: 'New Project',
+                                    icon: 'gravity-ui:folder-open-fill',
+                                    onclick: openNewProjectDialog,
+                                    disabled: false,
+                                },
+                                {
+                                    type: 'button',
+                                    tooltip: 'New Folder',
+                                    icon: 'gravity-ui:folder-open',
+                                    onclick: openNewFolderDialog,
+                                    disabled: false,
+                                },
+                                {
+                                    type: 'button',
+                                    tooltip: 'New Module',
+                                    icon: 'gravity-ui:layout-header-cells-large-fill',
+                                    onclick: openNewModuleDialog,
+                                    disabled: false,
+                                },
+                            ]
+                        },
+                    ]
                 }
-            ],
-            type: "dropdown",
+            ]
         }
-
-        let navigationGroup: ToolbarGroupType = {
-            items: [homeButton, backButton],
-            type: "buttonsGroup"
-        }
-
-        let newGroup: ToolbarGroupType = {
-            items: [creationGroup],
-            type: "buttonsGroup"
-        }
-
-        addToolbarItem(navigationGroup);
-        addToolbarItem(newGroup);
+        setToolbar(toolbar);
     }
-
-    async function loadHomepage() : Promise<void> {
-        return new Promise((resolve, reject) => {
-            reloadRepository().then(() => loadAuthorInformation());
-            addTab("Home", "gravity-ui:house", "/home");
-            loadHomeToolbar();
-            setActiveTab("/home");
-            return resolve();
-        })
-    }
-
-    onMount(() => {
-        loadHomepage();
-    })
-
-    const result = loadHomepage();
+    
+    let result: Promise<void> = load().then(() => {
+        clearToolbar();
+        loadHomeToolbar();
+    });
 
 </script>
 

@@ -1,15 +1,20 @@
-import type { Toolbar, ToolbarGroupType } from "$lib/components/global/toolbar/Toolbar";
+import type { Toolbar, ToolbarItemType } from "$lib/components/global/toolbar/Toolbar";
 
-let _toolbarItems: ToolbarGroupType[] = $state([]);
+let _toolbarItems: Toolbar = $state({ items: [] });
 
-export function toolbarItems() {
+export function toolbar() {
     return _toolbarItems;
 }
 
-export function addToolbarItem(item: ToolbarGroupType) {
-    _toolbarItems.push(item);
+export function addToolbarItem(item: ToolbarItemType) {
+    _toolbarItems.items.push(item);
 };
 
+export function setToolbar(toolbar: Toolbar) {
+    _toolbarItems = toolbar;
+}
+
+
 export function clearToolbar() {
-    _toolbarItems = [];
+    _toolbarItems.items = [];
 }

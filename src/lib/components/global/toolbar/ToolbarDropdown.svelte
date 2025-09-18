@@ -1,45 +1,81 @@
 <script lang="ts">
     import Icon from '@iconify/svelte';
-    import Button from '$lib/components/ui/button/button.svelte';
-    import ToolbarDropdownItem from './ToolbarDropdownItem.svelte';
     
-    import * as Tooltip from "$lib/components/ui/tooltip";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 
-    import type { ToolbarDropdownType, ToolbarItemInterface } from "./Toolbar";
-    
-    interface Props {
-        dropdown: ToolbarItemInterface;
-    }
+    import type { ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarItemType } from "./Toolbar";
 
-    let { dropdown }: Props = $props();
-    let dd: ToolbarDropdownType = $derived(dropdown as ToolbarDropdownType); 
+    import ToolbarButton from './ToolbarButton.svelte';
+    
+    let { 
+        dropdown 
+    } : {
+        dropdown: ToolbarDropdownType;
+    } = $props();
+
+    let isOpened: boolean = $state(false);
 
 </script>
 
-<DropdownMenu.Root>
+{#snippet dropdownButton(button: ToolbarButtonType)}
+    <DropdownMenu.Item onclick={button.onclick} disabled={button.disabled}>
+        <div class="flex flex-row items-center gap-2">
+            {#if button.icon}
+                {@const icon = typeof button.icon === 'function' ? button.icon() : button.icon}
+                <Icon {icon} width="10px"/>
+            {/if}
+            <p class="text-sm">{button.tooltip}</p>
+        </div>
+    </DropdownMenu.Item>
+{/snippet}
+
+{#snippet dropdownGroup(group: ToolbarGroupType, lastItem?: boolean)}
+    <DropdownMenu.Group>
+        {#each group.items as item}
+            {@render dropdownItem(item)}
+        {/each}
+    </DropdownMenu.Group>
+    {#if !lastItem}
+    <DropdownMenu.Separator class="m-1"/>
+    {/if}
+{/snippet}
+
+{#snippet dropdownDropdown(dropdown: ToolbarDropdownType)}
+    <DropdownMenu.Sub>
+        <DropdownMenu.SubTrigger>
+            <div class="flex flex-row items-center gap-2">
+            {#if dropdown.button.icon}
+                {@const icon = typeof dropdown.button.icon === 'function' ? dropdown.button.icon() : dropdown.button.icon}
+                <Icon {icon} width="10px"/>
+            {/if}
+            <p class="text-sm">{dropdown.button.tooltip}</p>
+        </div>
+        </DropdownMenu.SubTrigger>
+        <DropdownMenu.SubContent>
+            {#each dropdown.items as item}
+                {@render dropdownItem(item)}
+            {/each}
+        </DropdownMenu.SubContent>
+    </DropdownMenu.Sub>
+{/snippet}
+
+{#snippet dropdownItem(item: ToolbarItemType, lastItem?: boolean)}
+    {#if item.type === 'button'}
+        {@render dropdownButton(item as ToolbarButtonType)}
+    {:else if item.type === 'group'}
+        {@render dropdownGroup(item as ToolbarGroupType, lastItem)}
+    {:else if item.type === 'dropdown'}
+        {@render dropdownDropdown(item as ToolbarDropdownType)}
+    {/if}
+{/snippet}
+
+<DropdownMenu.Root bind:open={isOpened}>
     <DropdownMenu.Trigger>
-        <Tooltip.Provider>
-            <Tooltip.Root delayDuration={200}>
-                <Tooltip.Trigger>
-                    <Button variant="ghost" class="cursor-default">
-                        <Icon icon={dd.button.icon} width="20px"/>
-                    </Button>
-                </Tooltip.Trigger>
-                <Tooltip.Content>
-                    <p>{dd.button.tooltip}</p>
-                </Tooltip.Content>
-            </Tooltip.Root>
-        </Tooltip.Provider>
+        <ToolbarButton button={dropdown.button} class={(isOpened ? 'bg-slate-200' : '')}/>
     </DropdownMenu.Trigger>
     <DropdownMenu.Content>
-        {#each dd.items as dropdownGroup, index}
-            {#each dropdownGroup.items as item}
-                <ToolbarDropdownItem item={item}/>         
-            {/each}
-            {#if index < dd.items.length - 1}
-                <DropdownMenu.Separator />
-            {/if}
+        {#each dropdown.items as item, i}
+            {@render dropdownItem(item, (i === dropdown.items.length - 1))}
         {/each}
     </DropdownMenu.Content>
-  </DropdownMenu.Root>
+</DropdownMenu.Root>
