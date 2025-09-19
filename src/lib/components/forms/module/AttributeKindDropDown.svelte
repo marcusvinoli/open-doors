@@ -11,38 +11,42 @@
     import * as Command from "$lib/components/ui/command/index.js";
     import * as Popover from "$lib/components/ui/popover/index.js";
 
+    import type { AttributeKind } from '$lib/components/structs/Attributes';
+
     const attributeKindList: any[] = [
         {
-            name: "String",
-            dataType: "string",
-            icon: "gravity-ui:text"
+            name: 'String',
+            dataType: 'string',
+            icon: 'gravity-ui:text',
         },
         {
-            name: "Markdown",
-            dataType: "general",
-            icon: "gravity-ui:logo-markdown"
+            name: 'Markdown',
+            dataType: 'general',
+            icon: 'gravity-ui:logo-markdown',
         },
         {
-            name: "Single Option",
-            dataType: "singleOption",
-            icon: "gravity-ui:circle-check"
+            name: 'Boolean',
+            dataType: 'boolean',
+            icon: 'gravity-ui:copy-check-xmark'
         },
         {
-            name: "Multiple Option",
-            dataType: "multipleOptions",
-            icon: "gravity-ui:square-check"
+            name: 'Single Option',
+            dataType: { singleOption: [] },
+            icon: 'gravity-ui:circle-check',
         },
         {
-            name: "Boolean",
-            dataType: "boolean",
-            icon: "gravity-ui:copy-check-xmark"
+            name: 'Multiple Options',
+            dataType: { multipleOptions: [] },
+            icon: 'gravity-ui:square-check',
         },
     ];
     
     let { 
-        attributeKind = $bindable(null)
+        attributeKind = $bindable(),
+        class: className = "",
     } : { 
-        attributeKind: string | null; 
+        attributeKind: AttributeKind;
+        class?: string;
     } = $props();
 
     let selection: string | null = $state(null);
@@ -52,40 +56,44 @@
     function closeAndFocusTrigger() {
         openCombobox = false;
         tick().then(() => {
-        triggerRef.focus();
+            triggerRef.focus();
         });
     }
 
     function handleClick(item: string | null) {
-        attributeKind = null;
         selection = item;
         if (!item) {
             return;
         }
-        let seleIndex = attributeKindList.findIndex(attr => {return (attr.name === selection)})
-        if (seleIndex < 0) {
+        let index = attributeKindList.findIndex(attr => {return (attr.name === selection)})
+        if (index < 0) {
             return
         }
-        attributeKind = attributeKindList[seleIndex].dataType;
+        attributeKind = attributeKindList[index].dataType;
     }
 
     onMount(() => {
-        if(attributeKind) {
-            let seleIndex = attributeKindList.findIndex(item => {return (item.dataType === attributeKind)})
-            if (seleIndex < 0) { 
-                seleIndex = 0;
-                
+        let index = attributeKindList.findIndex(item => {
+            if (typeof item.dataType === 'string' && item.dataType === attributeKind) {
+                return true;
             }
-            selection = attributeKindList[seleIndex].name;
-        } else {
-            selection = null;
+            if (typeof item.dataType === 'object' && typeof  attributeKind === 'object') {
+                const keyItem = Object.keys(item.dataType)[0];
+                const keyInput = Object.keys( attributeKind)[0];
+                return keyItem === keyInput;
+            }
+            return false;
+        });
+        if (index < 0) {
+            index = 0;
         }
+        selection = attributeKindList[index].name;
     })
     
 </script>
 
 <Popover.Root bind:open={openCombobox}>
-    <Popover.Trigger bind:ref={triggerRef} class="flex justify-between w-full max-w-96">
+    <Popover.Trigger bind:ref={triggerRef} class={cn("flex justify-between w-full", className)}>
         {#snippet child({ props })}
             <Button
                 variant="outline"

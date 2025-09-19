@@ -1,17 +1,19 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
-    import Input from "$lib/components/ui/input/input.svelte";
-    import AttributeKindDropDown from "./AttributeKindDropDown.svelte"
+    import Separator from "$lib/components/ui/separator/separator.svelte";
+    import AttributeForm from "./AttributeForm.svelte";
 
     import { Button } from "$lib/components/ui/button/index.js";
-    import { isValidAttributeName } from "$lib/utils/name-validator";
+    import { readOnlyAttributes } from "$lib/utils/attribute-utils";
+    import { getAttributeValueKind, getDataValues } from "./AttributeKindDropDown";
 
+    import * as Tooltip from "$lib/components/ui/tooltip";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import * as Table from "$lib/components/ui/table";
 
     import type { Module } from "$lib/components/structs/Module";
-    import type { Attribute, AttributeKind } from "$lib/components/structs/Attributes";
     import type { Template } from "$lib/components/structs/Template";
+    import type { Attribute, AttributeKind } from "$lib/components/structs/Attributes";
 
     let { 
         openDialog = $bindable(false), 
@@ -25,188 +27,204 @@
         ontemplateupdate?: (template: Template) => void;
     } = $props();
 
-    let tempTemplate: Template = $state({... module.template} as Template);
-    let newAttributeName: string = $state("");
-    let newAttributeDescription: string = $state("");
-    let newAttributeKind: string | null = $state(null);
-    let newAllowedValues: string | null = $state(null);
-    let disableValueList: boolean = $derived(!(newAttributeKind === 'singleOption' || newAttributeKind === 'multipleOptions'));
-    let disableAddButton: boolean = $derived(!((isValidAttributeName(newAttributeName) && (newAttributeKind)) && (isValidAttributeName(newAllowedValues)&&(!disableValueList) || disableValueList)));
+    let template: Template = $derived($state.snapshot(module.template) as Template);
+    let fields: Attribute[] = $derived([...template.fields]);
+    let openEditDialog: boolean = $state(false);
 
+    let tempAttribute: Attribute = $state({
+        isMandatory: false,
+        kind: 'string',
+        name: '',
+        description: '',
+        key: '',
+    });
+    
     function closeDialog() {
-        clearFields();
+        closeEditDialog();
         openDialog = false;
+    }
+    
+    function closeEditDialog() {
+        clearFields();
+        openEditDialog = false;
     }
 
     function clearFields() {
-        newAttributeName = "";
-        newAttributeDescription = "";
-        newAttributeKind = null;
-        newAllowedValues = null;
-    }
-
-    function generateKey(input: string): string {
-        const sanitized = input.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const truncated = sanitized.length > 30 ? sanitized.substring(0, 30) : sanitized;
-        const randomized = truncated + String(Math.floor(Math.random()*100).toString()).padStart(3, '0');
-        return randomized;
-    }
-
-    function generateDataKind(attributeKind: string | null, allowedValues?: string | null): AttributeKind {
-        switch (attributeKind) {
-            case "singleOption":
-                return { singleOption: allowedValues!.split(",").map(s => s.trim()) };
-            case "multipleOptions": 
-                return { multipleOptions: allowedValues!.split(",").map(s => s.trim()) };
-            case "boolean":
-                return 'boolean';
-            case "general":
-                return 'general';
-            default: // For string, integer, real, date, time, dateTime, 
-                return 'string';
-        }
-    }
-
-    function addAttribute() {
-        if (newAttributeName && !newAttributeKind) {
-            return;
-        }
-
-        let newAttr: Attribute = {
-            isMandatory: false, // TODO: A validation of this field should be included on software.
-            name: newAttributeName,
-            description: newAttributeDescription,
-            kind: generateDataKind(newAttributeKind, newAllowedValues),
-            key: generateKey(newAttributeName),
+        tempAttribute = {
+            isMandatory: false,
+            kind: 'string',
+            name: '',
+            description: '',
+            key: '',
         };
+    }
 
-        tempTemplate.fields = [...tempTemplate.fields, newAttr];
-        console.log($state.snapshot(tempTemplate));
-        clearFields();
+    function addAttribute(attribute: Attribute) {
+        let index = fields.findIndex(attr => (attr.key === attribute.key));
+        if (index < 0) {
+            fields.push(attribute);
+        } else {
+            fields[index] = {...attribute};
+        }
+        fields = [...fields];
+        closeEditDialog();
     }
 
     function removeAttribute(key: string) {
-        let index = tempTemplate.fields.findIndex(attr => (attr.key === key));
+        let index = fields.findIndex(attr => (attr.key === key));
         if (index < 0) {
             return;
         }
-        tempTemplate.fields.splice(index, 1);
+        fields.splice(index, 1);
+        fields = [...fields];
+        clearFields();
     }
 
-    function getAttributeKind(attributeKind: AttributeKind) {
-        switch (attributeKind) {
-            case "string":
-                return "String";
-            case "general": // TODO: Include number, date, time, dateTime, etc...
-                return "Markdown";
-            case "boolean":
-                return "True/False";
-            default: // TODO: Include number, date, time, dateTime, etc...
-                let dataKind = Object.keys(attributeKind)[0];
-                if (dataKind === "singleOption") {
-                    return "Single Option";
-                } else if (dataKind === "multipleOption") {
-                    return "Multiple Option";
-                } else {
-                    return "Text";
-                }
-        }
-    }
-
-    function getDataValues(attributeKind: AttributeKind) {
-        switch (attributeKind) {
-            case "string":
-                return "Text";
-            case "general": // TODO: Include number, date, time, dateTime, etc...
-                return "Formatted text";
-            case "boolean":
-                return "True/False";
-            default: // TODO: Include number, date, time, dateTime, etc...
-                let dataKind = Object.keys(attributeKind)[0];
-                let dataValues = Object.values(attributeKind)[0] as string[];
-                if (dataKind === "singleOption" || dataKind === "multipleOptions") {
-                    return "Options: " + dataValues.join(", ");
-                } else {
-                    return "Other";
-                }
-        }
+    function editAttribute(attribute: Attribute) {
+        tempAttribute = attribute
+        openEditDialog = true;
     }
 
     function handleSaveTemplate() {
         if (ontemplateupdate) {
-            ontemplateupdate(tempTemplate);
+            template.fields = [...fields];
+            ontemplateupdate(template);
         }
         closeDialog();
     }
 
 </script>
 
+{#snippet attributesValues(attrKind: AttributeKind)}
+    {@const val = getDataValues(attrKind)}
+    <div>
+        {#if typeof val === 'string'}
+            <p>{val}</p>
+        {:else}
+            {#each val as s}
+                <p>{s}</p>
+            {/each}
+        {/if}
+    </div>
+{/snippet}
+
+
 <Dialog.Root bind:open={openDialog}>
     <Dialog.Content class="flex flex-col min-w-[80%] max-h-[90%] min-h-[80%]">
-        <Dialog.Header class="pt-2 pb-1">
-            <Dialog.Title>Custom Attributes of Module {module.manifest.prefix}</Dialog.Title>
-            <Dialog.Description>{module.manifest.title} module</Dialog.Description>
-        </Dialog.Header>
-        <Table.Root class="">
-            <Table.Header class="">
-                <Table.Row class="border-b-[1px]">
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Attribute</Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Description</Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[200px]">Data Type</Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Values</Table.Head>
-                    <Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[30px]"></Table.Head>
-                </Table.Row>
-            </Table.Header>
-            <Table.Body>
-                {#each tempTemplate.fields as attribute}
-                <Table.Row>
-                    <Table.Cell>
-                        {attribute.name}
-                    </Table.Cell>
-                    <Table.Cell class="whitespace-normal">
-                        {attribute.description}
-                    </Table.Cell>
-                    <Table.Cell class="max-w-[100px]">
-                        { getAttributeKind(attribute.kind) }
-                    </Table.Cell>
-                    <Table.Cell>
-                        { getDataValues(attribute.kind) }
-                    </Table.Cell>
-                    <Table.Cell class="max-w-[30px] pl-1 pr-2">
-                        <Button variant="ghost" class="hover:text-red-600" onclick={() => removeAttribute(attribute.key)}>
-                            <Icon icon="gravity-ui:circle-minus" width="20px" />
-                        </Button>
-                    </Table.Cell>
-                </Table.Row>
-                {/each}
-                {#if !readOnly}
-                    <Table.Row class="">
-                        <Table.Cell class="pl-2 pr-1">
-                            <Input bind:value={newAttributeName} placeholder="Name..." class="px-2 py-1 w-full" autocomplete="off"/>
-                        </Table.Cell>
-                        <Table.Cell class="pl-2 pr-1">
-                            <Input bind:value={newAttributeDescription} placeholder="Description..." class="px-2 py-1 w-full" autocomplete="off"/>
-                        </Table.Cell>
-                        <Table.Cell class="px-1">
-                            <AttributeKindDropDown bind:attributeKind={newAttributeKind} />
-                        </Table.Cell>
-                        <Table.Cell class="px-1">
-                            <Input bind:value={newAllowedValues} placeholder="Comma, Separeted, Values" class="px-2 py-1 w-full" disabled={disableValueList}/>
-                        </Table.Cell>
-                        <Table.Cell class="w-[30px] pl-1 pr-2">
-                            <Button variant="ghost" class="hover:text-blue-600" onclick={addAttribute} disabled={disableAddButton}>
-                                <Icon icon="gravity-ui:circle-plus" width="20px" />
-                            </Button>
-                        </Table.Cell>
-                    </Table.Row>
+        <AttributeForm 
+            bind:open={openEditDialog}
+            attribute={tempAttribute}
+            ondelete={removeAttribute}
+            onclose={closeEditDialog}
+            onsave={addAttribute}
+            />
+        <Dialog.Header class="pt-1">
+            <Dialog.Title>Attributes of Module {module.manifest.prefix}</Dialog.Title>
+            <Dialog.Description>
+                <p>{module.manifest.title}</p>
+                {#if readOnly}
+                    <p>
+                        <Icon icon="ph:pencil-simple-slash" width="20px" />
+                        Read-Only Mode. No changes can be made.
+                    </p>
                 {/if}
-            </Table.Body>
-        </Table.Root>
-        <div class="grow"></div>
+            </Dialog.Description>
+        </Dialog.Header>
+        <Tooltip.Provider ignoreNonKeyboardFocus>
+            <Table.Root>
+                <Table.Header>
+                    <Table.Row class="border-b-[1px]">
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Attribute</Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Description</Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Data Type</Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Values</Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[30px]"></Table.Head>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {#each readOnlyAttributes.filter(ro => (ro.key !== 'header' && ro.key !== 'content')) as roAttribute (roAttribute.key)}
+                        <Table.Row>
+                            <Table.Cell>
+                                <p>{roAttribute.name}</p>
+                            </Table.Cell>
+                            <Table.Cell class="whitespace-normal">
+                                <p>{roAttribute.description}</p>
+                            </Table.Cell>
+                            <Table.Cell class="max-w-[100px]">
+                                <p>{getAttributeValueKind(roAttribute.kind)}</p>
+                            </Table.Cell>
+                            <Table.Cell>
+                                <p>Auto-Generated</p>
+                            </Table.Cell>
+                            <Table.Cell>
+                                <Tooltip.Root>
+                                    <Tooltip.Trigger>
+                                        <Button variant="ghost" size="icon" disabled>
+                                            <Icon icon="ph:pencil-simple-slash" width="20px" />
+                                        </Button>
+                                    </Tooltip.Trigger>
+                                    <Tooltip.Content>
+                                        <p>Read-only attribute</p>
+                                    </Tooltip.Content>
+                                </Tooltip.Root>
+                            </Table.Cell>
+                        </Table.Row>
+                    {/each}
+                    {#each fields as attribute (attribute.key)}
+                        <Table.Row>
+                            <Table.Cell>
+                                <p>{attribute.name}</p>
+                            </Table.Cell>
+                            <Table.Cell class="whitespace-normal">
+                                <p>{attribute.description}</p>
+                            </Table.Cell>
+                            <Table.Cell class="max-w-[120px]">
+                                <p>{getAttributeValueKind(attribute.kind)}</p>
+                            </Table.Cell>
+                            <Table.Cell>
+                                {@render attributesValues(attribute.kind)}
+                            </Table.Cell>
+                            <Table.Cell>
+                                <Tooltip.Root>
+                                    <Tooltip.Trigger>
+                                        <Button variant="ghost" onclick={() => editAttribute(attribute)}>
+                                            <Icon icon="ph:pencil-simple" width="20px" />
+                                        </Button>
+                                    </Tooltip.Trigger>
+                                    <Tooltip.Content>
+                                        <p>Edit</p>
+                                    </Tooltip.Content>
+                                </Tooltip.Root>
+                            </Table.Cell>
+                        </Table.Row>
+                    {/each}
+                </Table.Body>
+            </Table.Root>
+        </Tooltip.Provider>
+        <div>
+            <Button 
+                variant="secondary" 
+                onclick={() => editAttribute({
+                    isMandatory: false,
+                    kind: 'string',
+                    name: '',
+                    description: '',
+                    key: '',
+                })}>
+                <Icon icon="gravity-ui:square-plus" width="20px" />
+                Add Custom Attribute
+            </Button>
+        </div>
+        <Separator/>
         <Dialog.Footer>
-            <Button variant="secondary" onclick={closeDialog}>Cancel</Button>
-            <Button onclick={handleSaveTemplate}>Save Changes</Button>
+            <Button variant="secondary" onclick={closeDialog}>
+                <Icon icon="gravity-ui:xmark" width="20px" />
+                Cancel
+            </Button>
+            <Button onclick={handleSaveTemplate}>
+                <Icon icon="gravity-ui:floppy-disk" width="20px" />
+                Save Changes
+            </Button>
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>
-
