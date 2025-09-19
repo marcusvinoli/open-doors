@@ -1,5 +1,6 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
+    import Input from "$lib/components/ui/input/input.svelte";
     import Dropdown from "./Dropdown.svelte";
     import Combobox from "./Combobox.svelte";
     
@@ -46,7 +47,6 @@
                 } else {
                     newVal = val.toString();
                 }
-                console.log('newVal', newVal);
                 object.attributes[attribute.key] = newVal;
             } else {
                 delete object.attributes[attribute.key];
@@ -117,16 +117,18 @@
         </div>
     </div>
     {:else if typeof attribute.kind === 'object'}
-        {#if 'singleOption' in attribute.kind}
-            <Dropdown items={attribute.kind.singleOption} bind:selected={bindValue.value} placeholder=""/>
-        {:else if 'multipleOptions' in attribute.kind}
-            <Combobox items={attribute.kind.multipleOptions} bind:selected={bindValue.value} placeholder=""/>
-        {/if}
-    {:else} <!-- // string, real, date, time, dateTime, enumeration, optional, user, any ... -->
+        <div class="p-2">
+            {#if 'singleOption' in attribute.kind}
+                <Dropdown items={attribute.kind.singleOption} bind:selected={bindValue.value} placeholder=""/>
+            {:else if 'multipleOptions' in attribute.kind}
+                <Combobox items={attribute.kind.multipleOptions} bind:selected={bindValue.value} placeholder=""/>
+            {/if}
+        </div>
+    {:else}
+    <!--// TODO: Implements inputs for other AttributeKinds, as for now, all other are being treated as a String-->
+    <!-- // string, real, date, time, dateTime, enumeration, optional, user, any ... -->
     <div class="p-2">
-        <span>
-            {bindValue.value ?? ""}
-        </span>
+        <Input id="name" class="col-span-6" autocomplete="off" bind:value={bindValue.value}/>
     </div>
     {/if}
 {/if}
