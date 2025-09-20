@@ -3,6 +3,7 @@
     import Input from "$lib/components/ui/input/input.svelte";
     import Dropdown from "./Dropdown.svelte";
     import Combobox from "./Combobox.svelte";
+    import Selection from "./Selection.svelte";
     
     import { cn } from "$lib/utils";
     import { marked } from "marked";
@@ -15,9 +16,11 @@
     let { 
         object = $bindable(),
         attribute,
+        readOnly = false,
     } : {
         object: Object;
         attribute: Attribute;
+        readOnly?: boolean;
     } = $props();
 
     type ObjectKey = keyof typeof object;
@@ -107,7 +110,7 @@
 {:else}
     {#if attribute.kind === 'general'}
     <div class="p-2">
-        <Textarea bind:value={bindValue.value}/>
+        <Textarea bind:value={bindValue.value} readonly={readOnly}/>
         {@html marked(bindValue.value)}
     </div>
     {:else if attribute.kind === 'boolean'}
@@ -119,16 +122,14 @@
     {:else if typeof attribute.kind === 'object'}
         <div class="p-2">
             {#if 'singleOption' in attribute.kind}
-                <Dropdown items={attribute.kind.singleOption} bind:selected={bindValue.value} placeholder=""/>
+                <Selection items={attribute.kind.singleOption} bind:selection={bindValue.value} {readOnly}/>
             {:else if 'multipleOptions' in attribute.kind}
-                <Combobox items={attribute.kind.multipleOptions} bind:selected={bindValue.value} placeholder=""/>
+                <Selection items={attribute.kind.multipleOptions} bind:selection={bindValue.value} {readOnly} multiple/>
             {/if}
         </div>
     {:else}
-    <!--// TODO: Implements inputs for other AttributeKinds, as for now, all other are being treated as a String-->
-    <!-- // string, real, date, time, dateTime, enumeration, optional, user, any ... -->
     <div class="p-2">
-        <Input id="name" class="col-span-6" autocomplete="off" bind:value={bindValue.value}/>
+        <Input id="name" class="col-span-6" autocomplete="off" bind:value={bindValue.value} readonly={readOnly}/>
     </div>
     {/if}
 {/if}
