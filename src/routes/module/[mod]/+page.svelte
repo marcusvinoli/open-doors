@@ -764,6 +764,7 @@
         object={selectedObject} 
         module={module!}
         onsave={handleObjectCreation}
+        readOnly={flags.readOnly}
         onsavedraft={handleObjectDraftCreation}
         ondelete={handleObjectExclusion}
         onrestore={handleObjectRestoring}

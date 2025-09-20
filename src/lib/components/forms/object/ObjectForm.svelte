@@ -142,7 +142,14 @@
             <Dialog.Title>New Object</Dialog.Title>
             <Dialog.Description>New object properties</Dialog.Description>
             {:else}
-            <Dialog.Title>{module.manifest.prefix}{module.manifest.separator}{obj.id}</Dialog.Title>
+            <Dialog.Title>
+                <div class="flex items-center pb-1">
+                    {#if readOnly}
+                    <Icon icon="ph:pencil-simple-slash" width="25px"  class="mr-1"/>
+                    {/if}
+                    {module.manifest.prefix}{module.manifest.separator}{obj.id}
+                </div>
+            </Dialog.Title>
             <Dialog.Description>Object properties</Dialog.Description>
             {/if}
         </Dialog.Header>
@@ -170,11 +177,11 @@
                 <div class="flex flex-col gap-2 p-2 flex-1 min-h-0 overflow-auto">
                     <div class="grid grid-cols-8">
                         <Label for="name" class="text-right col-span-1">Header</Label>
-                        <Input id="name" bind:value={objHeader} class="col-span-7" disabled={!allowChanges} autocomplete="off"/>
+                        <Input id="name" bind:value={objHeader} class="col-span-7" readonly={!allowChanges} autocomplete="off"/>
                     </div>
                     <div class="grid flex-2 grid-cols-8">
                         <Label for="name" class="text-right col-span-1">Content</Label>
-                        <Textarea id="name" class="text_area h-full col-span-7 border-input bg-background selection:bg-primary dark:bg-input/30 selection:text-primary-foreground ring-offset-background placeholder:text-muted-foreground shadow-xs flex w-full min-w-0 rounded-md border px-3 outline-none transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none" inputmode="text" bind:value={objContent} disabled={!allowChanges}/>
+                        <Textarea id="name" class="text_area h-full col-span-7 border-input bg-background selection:bg-primary dark:bg-input/30 selection:text-primary-foreground ring-offset-background placeholder:text-muted-foreground shadow-xs flex w-full min-w-0 rounded-md border px-3 outline-none transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none" inputmode="text" bind:value={objContent} readonly={!allowChanges}/>
                     </div>
                     <div class="flex-2 min-h-15 grid grid-cols-8">
                         <Label for="name" class="text-right col-span-1">Preview</Label>
@@ -247,7 +254,7 @@
                                         {attribute.name}
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <DynamicInput bind:object={obj!} {attribute} />
+                                        <DynamicInput bind:object={obj!} {attribute} {readOnly}/>
                                     </Table.Cell>
                                 </Table.Row>
                             {/each}
