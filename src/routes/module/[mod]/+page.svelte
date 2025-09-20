@@ -32,8 +32,10 @@
     import type { IndexItem } from "$lib/components/structs/IndexItem";
     import type { Repository } from "$lib/components/structs/Repo";
     import type { ModuleState, Linker, ModuleFlags } from "$lib/components/structs/States";
-    import type { Toolbar, ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
+    import type { Toolbar, ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarItemType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
     import ViewsForm from "$lib/components/forms/module/ViewsForm.svelte";
+    import ToolbarItem from "$lib/components/global/toolbar/ToolbarItem.svelte";
+    import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
     
     const OBJECT_TABLE_ID = 'object-table';
     const OBJECT_TABLE_CONTAINER_SUFFIX = '-container';
@@ -197,21 +199,37 @@
                             {
                                 type: 'group',
                                 items: [
-                                    // TODO: Reserved for Future Implementations
-                                    /* {
+                                    {
                                         type: 'dropdown',
                                         button: {
                                             type: 'button',
-                                            tooltip: 'Apply...',
+                                            tooltip: 'Select View...',
                                             disabled: false,
                                         },
-                                        items: [
-                                            {
+                                        get items() {
+                                            let readOnlyView: ToolbarButtonType = {
                                                 type: 'button',
-                                                tooltip: 'Default View'
+                                                tooltip: 'Default View',
+                                                disabled: false,
+                                                onclick() {
+                                                    view = defaultView
+                                                }
                                             }
-                                        ]
-                                    }, */
+                                            let result: ToolbarItemType[] = [ readOnlyView ];
+                                            module!.views.forEach(v => {
+                                                const button: ToolbarButtonType = {
+                                                    type: 'button',
+                                                    tooltip: v.name,
+                                                    disabled: false,
+                                                    onclick() {
+                                                        view = {...v};
+                                                    }
+                                                }
+                                                result.push(button);
+                                            })
+                                            return result;
+                                        }
+                                    },
                                     {
                                         type: 'button',
                                         tooltip: 'View settings',
@@ -222,6 +240,8 @@
                                     },
                                 ],
                             },
+                            // TODO: Reserved for Future Implementations
+                            /*
                             {
                                 type: 'group',
                                 items: [
@@ -233,8 +253,17 @@
                                         },
                                         disabled: false,
                                     },
+                                    {
+                                        type: 'button',
+                                        tooltip: 'Show or Hide deleted objects',
+                                        onclick: () => {
+                                            flags.showDeletions = !flags.showDeletions;
+                                        },
+                                        disabled: false,
+                                    },
                                 ],
                             },
+                            */
                         ]
                     }, 
                    
