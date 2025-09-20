@@ -121,12 +121,13 @@
         <Dialog.Header class="pt-1">
             <Dialog.Title>Attributes of Module {module.manifest.prefix}</Dialog.Title>
             <Dialog.Description>
-                <p>{module.manifest.title}</p>
                 {#if readOnly}
-                    <p>
+                    <div class="flex gap-2">
                         <Icon icon="ph:pencil-simple-slash" width="20px" />
                         Read-Only Mode. No changes can be made.
-                    </p>
+                    </div>
+                {:else}
+                    <p>{module.manifest.description}</p>
                 {/if}
             </Dialog.Description>
         </Dialog.Header>
