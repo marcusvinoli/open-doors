@@ -155,9 +155,9 @@
                     <Label for="name" class="text-right col-span-2">Values</Label>
                     <div class="col-span-6 max-h-40 overflow-auto">
                         <Table.Root class="box-border">
-                            <Table.Header class="z-10">
+                            <Table.Header>
                                 <Table.Row class="bg-slate-100">
-                                    <Table.Head class="sticky top-0 p-0 z-10 shadow-sm">
+                                    <Table.Head class="sticky top-0 p-0 z-1 shadow-sm">
                                         <div class="flex items-center gap-2 px-2 py-1.5 box-content bg-slate-100">
                                             <Input bind:value={tempAttrValue} autocomplete="off" placeholder="Add new Value..."/>
                                             <div class="text-slate-400">

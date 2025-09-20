@@ -134,11 +134,11 @@
             <Table.Root>
                 <Table.Header>
                     <Table.Row class="border-b-[1px]">
-                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Attribute</Table.Head>
-                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Description</Table.Head>
-                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Data Type</Table.Head>
-                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm">Values</Table.Head>
-                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm w-[30px]"></Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm z-1">Attribute</Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm z-1">Description</Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm z-1">Data Type</Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm z-1">Values</Table.Head>
+                        <Table.Head class="sticky top-0 bg-slate-50 shadow-sm z-1 w-[30px]"></Table.Head>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>

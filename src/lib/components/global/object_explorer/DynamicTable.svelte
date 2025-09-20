@@ -115,7 +115,7 @@
                 <Table.Row class="bg-slate-50">
                     {#each view.items as viewItem (viewItem.key)}
                         {#if viewItem.show}
-                            <Table.Head class="sticky top-0 bg-slate-50 !hover:bg-slate-200 shadow-sm">
+                            <Table.Head class="sticky top-0 bg-slate-50 !hover:bg-slate-200 shadow-sm z-1">
                                 <HeaderContext bind:view template={module.template}>
                                     {viewItem.attribute}
                                 </HeaderContext>
