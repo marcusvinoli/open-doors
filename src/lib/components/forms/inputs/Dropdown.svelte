@@ -55,7 +55,7 @@
                 aria-expanded={open}
                 class="justify-between w-full font-regular"
                 >
-                <p class="w-full text-left">{value}</p>
+                <p class="w-full text-left truncate">{value}</p>
                 <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             {/snippet}
