@@ -180,11 +180,11 @@
                         <Input id="name" bind:value={objHeader} class="col-span-7" readonly={!allowChanges} autocomplete="off"/>
                     </div>
                     <div class="grid flex-2 grid-cols-8">
-                        <Label for="name" class="text-right col-span-1">Content</Label>
-                        <Textarea id="name" class="text_area h-full col-span-7 border-input bg-background selection:bg-primary dark:bg-input/30 selection:text-primary-foreground ring-offset-background placeholder:text-muted-foreground shadow-xs flex w-full min-w-0 rounded-md border px-3 outline-none transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none" inputmode="text" bind:value={objContent} readonly={!allowChanges}/>
+                        <Label for="content" class="text-right col-span-1">Content</Label>
+                        <Textarea id="content" class="text_area h-full col-span-7 border-input bg-background selection:bg-primary dark:bg-input/30 selection:text-primary-foreground ring-offset-background placeholder:text-muted-foreground shadow-xs flex w-full min-w-0 rounded-md border px-3 outline-none transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none" inputmode="text" bind:value={objContent} readonly={!allowChanges}/>
                     </div>
                     <div class="flex-2 min-h-15 grid grid-cols-8">
-                        <Label for="name" class="text-right col-span-1">Preview</Label>
+                        <Label for="preview-window" class="text-right col-span-1">Preview</Label>
                         <div class="preview col-span-7 h-full overflow-auto bg-slate-100" id="preview-window">
                             {@html marked((objHeader ? "# " + objHeader + "\n" : "") + objContent)}
                         </div>
