@@ -196,7 +196,7 @@
                                 <Table.Cell>
                                     <div class="flex items-center justify-center gap-2 text-amber-600 rounded bg-amber-100 p-2 select-none">
                                         <Icon icon="gravity-ui:triangle-exclamation" width="20px" />
-                                        At least one Attribute must be specified.
+                                        At least one Attribute must be selected.
                                     </div>
                                 </Table.Cell>
                             </Table.Row>

@@ -171,7 +171,7 @@
         <div>
             <Button variant="secondary" onclick={() => openEditDialog()} >
                 <Icon icon="gravity-ui:square-plus" width="20px" />
-                Add Custom Attribute
+                Add Custom View
             </Button>
         </div>
         <ViewForm 
