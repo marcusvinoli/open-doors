@@ -15,9 +15,9 @@
     import { confirm, message } from '@tauri-apps/api/dialog';
     import { absolutePath, encodePath, relativePath } from "$lib/utils/path-handler";
     import { buildTreeIndex } from "$lib/utils/index-tree.utils";
-    import { addToolbarItem, clearToolbar, setToolbar } from "$lib/stores/Toolbar.svelte";
+    import { clearToolbar, setToolbar } from "$lib/stores/Toolbar.svelte";
     import { computeIndexLevelChild, computeIndexLevelSibilings, newObject } from "$lib/utils/object-utils";
-    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, readObjects, restoreObject, updateTemplate } from "$lib/controllers/Module";
+    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, readObjects, restoreObject, updateTemplate, updateViews } from "$lib/controllers/Module";
 
     import * as Resizable from "$lib/components/ui/resizable";
 
@@ -33,6 +33,7 @@
     import type { Repository } from "$lib/components/structs/Repo";
     import type { ModuleState, Linker, ModuleFlags } from "$lib/components/structs/States";
     import type { Toolbar, ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
+    import ViewsForm from "$lib/components/forms/module/ViewsForm.svelte";
     
     const OBJECT_TABLE_ID = 'object-table';
     const OBJECT_TABLE_CONTAINER_SUFFIX = '-container';
@@ -57,6 +58,7 @@
         showTemplateDialog: false,
         showRowsNumbering: false,
         showObjectDialog: false,
+        showViewsDialog: false,
         showIndexPanel: false,
         showDeletions: false,
         showLinks: false,
@@ -183,8 +185,7 @@
             {
                 type: 'group',
                 items: [
-                    // TODO: Reserved for Future Implementations
-                    /* {
+                    {
                         type: 'dropdown',
                         button: {
                             type: 'button',
@@ -196,7 +197,8 @@
                             {
                                 type: 'group',
                                 items: [
-                                    {
+                                    // TODO: Reserved for Future Implementations
+                                    /* {
                                         type: 'dropdown',
                                         button: {
                                             type: 'button',
@@ -209,11 +211,14 @@
                                                 tooltip: 'Default View'
                                             }
                                         ]
-                                    },
+                                    }, */
                                     {
                                         type: 'button',
                                         tooltip: 'View settings',
                                         disabled: false,
+                                        onclick() {
+                                            flags.showViewsDialog = true;
+                                        },
                                     },
                                 ],
                             },
@@ -232,7 +237,7 @@
                             },
                         ]
                     }, 
-                    */
+                   
                     {
                         type: 'button',
                         tooltip: 'Module Attributes',
@@ -470,6 +475,16 @@
                 module!.template = template as Template;
             })
             .catch((err) => {
+                console.error(err);
+            })
+    }
+
+    async function handleViewsUpdate(views: View[]) {
+        updateViews(module!.path, views)
+            .then(views => {
+                module!.views = views as View[]
+            })
+            .catch(err => {
                 console.error(err);
             })
     }
@@ -759,10 +774,11 @@
 </script>
 
 {#if module}
+    {@const mod = module}
     <ObjectForm
         bind:openDialog={flags.showObjectDialog}
         object={selectedObject} 
-        module={module!}
+        module={mod}
         onsave={handleObjectCreation}
         readOnly={flags.readOnly}
         onsavedraft={handleObjectDraftCreation}
@@ -771,14 +787,21 @@
         onlinkvisit={handleLinkVisit}
         onunlink={handleLinkDeletion}
     />
+    <ViewsForm 
+        bind:openDialog={flags.showViewsDialog}
+        readOnly={flags.readOnly}
+        module={mod}
+        onviewsupdate={handleViewsUpdate}
+    />
     <BaselineForm 
         bind:openDialog={flags.showNewBaselineDialog} 
-        module={module!}
+        module={mod}
         onbaselinecreation={handleBaselineCreation}
     />
     <AttributesForm 
         bind:openDialog={flags.showTemplateDialog}
-        module={module!}
+        module={mod}
+        readOnly={flags.readOnly}
         ontemplateupdate={handleTemplateUpdate}
     />
 {/if}

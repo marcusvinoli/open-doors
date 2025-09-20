@@ -13,5 +13,5 @@ pub struct ViewItem {
 pub struct View {
     pub name: String,
     pub description: String,
-    pub fields: Vec<ViewItem>,
+    pub items: Vec<ViewItem>,
 }

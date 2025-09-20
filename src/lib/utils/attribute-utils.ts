@@ -11,7 +11,7 @@ export function parseTemplate(template: Template, attributes: AttributeHashMap) 
 
 export const readOnlyAttributes : Attribute[] = [
     { key: 'id', name: 'ID', kind: 'general', description: 'Unique Identifier', isMandatory: true },
-    { key: 'content', name: 'Object content', kind: 'string', description: 'Object contet', isMandatory: true },
+    { key: 'content', name: 'Content', kind: 'string', description: 'Object contet', isMandatory: true },
     { key: 'createdAt', name: 'Created at', kind: 'dateTime', description: 'Creation date', isMandatory: true },
     { key: 'updatedAt', name: 'Updated at', kind: 'dateTime', description: 'Last update date', isMandatory: true },
     { key: 'deletedAt', name: 'Deleted at', kind: 'dateTime', description: 'Deletion date', isMandatory: false },

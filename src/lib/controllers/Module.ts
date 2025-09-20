@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api";
 import { reloadRepository } from "./Repository";
 
 import type { Link } from '$lib/components/structs/Link';
+import type { View } from '$lib/components/structs/View';
 import type { Module} from "$lib/components/structs/Module"
 import type { Object } from "$lib/components/structs/Object";
 import type { Template } from "$lib/components/structs/Template";
@@ -98,6 +99,10 @@ export function restoreObject(modulePath: String, id: number) {
 
 export function updateTemplate(modulePath: string, template: Template) {
     return invoke('update_template', {path: modulePath, template: template})
+}
+
+export function updateViews(modulePath: string, views: View[]) {
+    return invoke('update_views', {path: modulePath, views})
 }
 
 export function saveTemplate(modulePath: String, template: Template) {

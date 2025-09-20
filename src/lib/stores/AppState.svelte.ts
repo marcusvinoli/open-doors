@@ -42,6 +42,7 @@ export async function loadModule(path: string, version?: string) {
                 showTemplateDialog: false,
                 showRowsNumbering: false,
                 showObjectDialog: false,
+                showViewsDialog: false,
                 showIndexPanel: false,
                 showDeletions: false,
                 showLinks: false,

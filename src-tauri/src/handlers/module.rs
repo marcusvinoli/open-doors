@@ -2,7 +2,7 @@ use std::{path::PathBuf, sync::Mutex};
 use git2::Repository as GitRepository;
 use tauri::{command, State}; 
 
-use crate::core::{error::OpenDoorsError, module::{Baseline, Module, ModuleManifest, Object, Template}, tree::TreeItem, Link};
+use crate::core::{error::OpenDoorsError, module::{Baseline, Module, ModuleManifest, Object, Template, View}, tree::TreeItem, Link};
 
 #[command] 
 pub fn create_module(state: State<'_, Mutex<Option<GitRepository>>>, man: ModuleManifest, parent: TreeItem) -> Result<Module, OpenDoorsError> {
@@ -106,6 +106,13 @@ pub fn update_template(state: State<'_, Mutex<Option<GitRepository>>>, path: Pat
 	let repo = state.lock().unwrap();
 	let module = Module::read(&path)?;
 	Ok(module.update_template(&repo, template)?)
+}
+
+#[command]
+pub fn update_views(state: State<'_, Mutex<Option<GitRepository>>>, path: PathBuf, views: Vec<View>) -> Result<Vec<View>, OpenDoorsError> {
+	let repo = state.lock().unwrap();
+	let module = Module::read(&path)?;
+	Ok(module.update_views(&repo, views)?)
 }
 
 #[command]

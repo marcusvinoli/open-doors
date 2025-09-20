@@ -1,19 +1,23 @@
 <script lang="ts">
+    import { cn } from "$lib/utils";
     import { Button } from "$lib/components/ui/button/index.js";
     import { ChevronsUpDown } from "lucide-svelte";
     
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";  
+    import ScrollArea from "$lib/components/ui/scroll-area/scroll-area.svelte";
     
     let {
         items = [],
         selection = $bindable(null),
         multiple = false,
         readOnly = false,
+        class: customClass = "",
     } : {
         items: string[];
         selection: string | string[] | null;
         multiple?: boolean;
         readOnly?: boolean;
+        class?: string;
     } = $props();
     
     let open: boolean = $state(false);
@@ -37,28 +41,32 @@
 {#snippet content()}
     {#if !multiple && (typeof value === 'string')}
         <DropdownMenu.RadioGroup bind:value={value}>
-            {#each items as item}
-                <DropdownMenu.RadioItem 
-                    value={item}
-                >
-                    {item}
-                </DropdownMenu.RadioItem>
-            {/each}
+            <ScrollArea>
+                {#each items as item}
+                    <DropdownMenu.RadioItem 
+                        value={item}
+                    >
+                        {item}
+                    </DropdownMenu.RadioItem>
+                {/each}
+            </ScrollArea>
         </DropdownMenu.RadioGroup>
         {:else}
         <DropdownMenu.Group>
-            {#each items as item}
-                <DropdownMenu.CheckboxItem 
-                    checked={value?.includes(item)}  
-                    onclick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleClick(item)
-                    }}
-                >
-                    {item}
-                </DropdownMenu.CheckboxItem>
-            {/each}
+            <ScrollArea>
+                {#each items as item}
+                    <DropdownMenu.CheckboxItem 
+                        checked={value?.includes(item)}  
+                        onclick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleClick(item)
+                        }}
+                    >
+                        {item}
+                    </DropdownMenu.CheckboxItem>
+                {/each}
+            </ScrollArea>
         </DropdownMenu.Group>
     {/if}
 {/snippet}
@@ -70,14 +78,17 @@
                 variant="outline"
                 role="combobox"
                 aria-expanded={open}
-                class="justify-between w-full font-regular"
+                class={cn(
+                    "justify-between w-full font-regular",
+                    customClass
+                    )}
                 disabled={readOnly}
                 >
-                <p class="w-full text-left">{(typeof value === 'string' && value) ? value : Array.isArray(value) ? value.join(', ') : ''}</p>
+                <p class="truncate text-left">{(typeof value === 'string' && value) ? value : Array.isArray(value) ? value.join(', ') : ''}</p>
                 <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
         </DropdownMenu.Trigger>
-        <DropdownMenu.Content class="w-full">
+        <DropdownMenu.Content class="w-full max-h-50">
             {@render content()}
         </DropdownMenu.Content>
     </DropdownMenu.Root>

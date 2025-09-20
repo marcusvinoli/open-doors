@@ -305,6 +305,18 @@ impl Module {
 		todo!()
 	}
 
+	pub fn read_views(&self) -> Result<Vec<View>, ModuleError> {
+		Ok(mid::read_yml_file::<Vec<View>,_>(&self.path, defs::OD_VIEWS_FILE_NAME)?)
+	}
+
+	pub fn update_views(&self, repo: &Option<Repository>, view: Vec<View>) -> Result<Vec<View>, ModuleError> {
+		let repo = Module::repo(&repo)?;
+		let view_path = mid::create_yml_file(&self.path, defs::OD_VIEWS_FILE_NAME, &view)?;
+		git::add_file(&repo, &view_path.to_string_lossy())?;
+		git::git_commit(&repo, &format!("Updated Views for module {}.", self.manifest.prefix))?;
+		Ok(self.read_views()?)
+	}
+
 	pub fn create_template(&self, repo: &Option<Repository>, template: Template) -> Result<Template, ModuleError> {
 		let repo = Module::repo(&repo)?;
 		let template_path = mid::create_yml_file(&self.path, defs::OD_TEMPLATE_FILE_NAME, &template)?;

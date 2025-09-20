@@ -6,7 +6,7 @@ export interface ViewItem {
 
 export interface View {
     name: string,
-    description: String,
+    description: string,
     items: ViewItem[],
 }
 
@@ -23,21 +23,6 @@ export const defaultView: View = {
             key: 'content',
             show: true,
             attribute: 'Content',
-        },
-        {
-            key: 'author',
-            show: false,
-            attribute: 'Author',
-        },
-        {
-            key: 'createdAt',
-            show: false,
-            attribute: 'Created At',
-        },
-        {
-            key: 'updatedAt',
-            show: false,
-            attribute: 'Updated At',
         },
     ]
 }

@@ -26,6 +26,7 @@ export interface ModuleFlags {
     showTemplateDialog: boolean;
     showRowsNumbering: boolean;
     showObjectDialog: boolean;
+    showViewsDialog: boolean;
     showIndexPanel: boolean;
     showDeletions: boolean;
     showLinks: boolean;
