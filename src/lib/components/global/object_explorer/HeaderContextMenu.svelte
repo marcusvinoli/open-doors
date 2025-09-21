@@ -9,18 +9,18 @@
         view = $bindable(),
         template,
         showLinks = $bindable(true),
-        showNumbering = $bindable(false),
+        showRowNumbering = $bindable(false),
         children
     } : {
         view: View;
         template?: Template;
         showLinks?: boolean;
-        showNumbering?: boolean;
+        showRowNumbering?: boolean;
         children?: import('svelte').Snippet;
     } = $props();
 
     function toggleNumbering() {
-        showNumbering = !showNumbering;
+        showRowNumbering = !showRowNumbering;
     }
 
     function toggleLinks() {
@@ -80,7 +80,7 @@
         </ContextMenu.Sub>
         <ContextMenu.Separator/>
         <ContextMenu.Item onclick={toggleNumbering}>
-            {(showNumbering)? "Hide" : "Show"} Row Number
+            {(showRowNumbering)? "Hide" : "Show"} Row Number
         </ContextMenu.Item>
         <ContextMenu.Item onclick={toggleLinks}>
             {(showLinks)? "Hide" : "Show"} Object Links

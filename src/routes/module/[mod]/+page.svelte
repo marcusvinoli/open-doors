@@ -869,6 +869,8 @@
                     context={context}
                     bind:view={view}
                     bind:selectedObject={selectedObject}
+                    bind:showLinks={flags.showLinks}
+                    bind:showRowNumbering={flags.showRowsNumbering}
                 />
                 {:catch e}
                 <div class="flex flex-col justify-center items-center w-full h-full text-slate-500">

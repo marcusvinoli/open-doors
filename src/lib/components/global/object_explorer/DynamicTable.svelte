@@ -34,6 +34,8 @@
         onclick,
         scroll,
         showDeletions,
+        showLinks = $bindable(false),
+        showRowNumbering = $bindable(),
         linker,
         context,
     } : {
@@ -49,6 +51,8 @@
         onclick?: (id: string | number) => void;
         scroll?: {x: number, y: number};
         showDeletions?: boolean;
+        showLinks?: boolean;
+        showRowNumbering?: boolean;
         linker?: Linker | null;
         context: Map<string, string>;
     } = $props();
@@ -113,10 +117,15 @@
         <Table.Root id={id} class="min-h-0 h-[1px]">
             <Table.Header id={id + "-header"} class="w-full min-w-96 z-20">
                 <Table.Row class="bg-slate-50">
+                    {#if showRowNumbering}
+                        <Table.Head class="sticky top-0 bg-slate-50 !hover:bg-slate-200 shadow-sm z-1">
+                            #
+                        </Table.Head>
+                    {/if}
                     {#each view.items as viewItem (viewItem.key)}
                         {#if viewItem.show}
                             <Table.Head class="sticky top-0 bg-slate-50 !hover:bg-slate-200 shadow-sm z-1">
-                                <HeaderContext bind:view template={module.template}>
+                                <HeaderContext bind:view bind:showLinks bind:showRowNumbering template={module.template}>
                                     {viewItem.attribute}
                                 </HeaderContext>
                             </Table.Head>
@@ -125,7 +134,7 @@
                 </Table.Row>
             </Table.Header>
             <Table.Body>
-                {#each _objects as object (object.updatedAt)}
+                {#each _objects as object, i (object.updatedAt)}
                     <Table.Row 
                         id="row-{object.id}" 
                         class={cn(
@@ -135,6 +144,11 @@
                         ondblclick={() => onDoubleClick(object)}
                         onclick={() => onClick(object)}
                         >
+                        {#if showRowNumbering}
+                            <Table.Head class="sticky top-0 bg-slate-50 !hover:bg-slate-200 shadow-sm z-1">
+                                {i}
+                            </Table.Head>
+                        {/if}
                         {#each attributeView as attribute (attribute.key)}
                             <Table.Cell class="p-0 h-full">
                                 <RowContextMenu 
@@ -148,7 +162,7 @@
                                         {object} 
                                         {attribute} 
                                         {module}
-                                        showLinks={true}
+                                        {showLinks}
                                     />
                                 </RowContextMenu>
                             </Table.Cell>
