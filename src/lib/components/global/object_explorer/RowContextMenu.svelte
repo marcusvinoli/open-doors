@@ -41,7 +41,15 @@
         {:else}
             <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopLinking');}}>Stop linking</ContextMenu.Item>
             <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stablishLink');}}>Stablish link</ContextMenu.Item>
-        {/if}
+            {/if}
+        <ContextMenu.Separator class="mx-1"/>
+            {#if object.metadata?.status === 'draft'}
+                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'commitDraftObject');}}>Commit</ContextMenu.Item>
+            {/if}
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'commitAllDrafts');}}>Commit all</ContextMenu.Item>
+            {#if object.metadata?.status === 'deleted'}
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'restoreObject');}}>Restore object</ContextMenu.Item>
+            {/if}
         <ContextMenu.Separator class="mx-1"/>
         <ContextMenu.Sub>
             <ContextMenu.SubTrigger>

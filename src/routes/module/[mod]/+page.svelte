@@ -788,6 +788,30 @@
                 removeModuleTask('moving_' + currentPageKey);
                 break;
             }
+            case 'commitDraftObject': {
+                const obj: Object | null = objects.find(obj => (obj.id === id)) ?? null;
+                if (!obj) {
+                    return;
+                }
+                handleObjectCreation(obj);
+                break;
+            }
+            case 'commitAllDrafts': {
+                objects.forEach(o => {
+                    if (o.metadata?.status === 'draft') {
+                        handleObjectCreation(o);
+                    }
+                })
+                break;
+            }
+            case 'restoreObject': {
+                const obj: Object | null = objects.find(obj => (obj.id === id)) ?? null;
+                if (!obj) {
+                    return;
+                }
+                handleObjectRestoring(obj);
+                break;
+            }
             default: 
                 console.error('Unrecognized parameters: ', item, id, arg);
                 break;
