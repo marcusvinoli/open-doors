@@ -21,9 +21,10 @@
     } = $props();
     
     let open: boolean = $state(false);
-    let triggerRef = $state<HTMLButtonElement>(null!);
-
-    let value = $derived(selection);
+    let value: string | string[] | null = $derived.by(() => {
+        console.log($state.snapshot(selection));
+        return selection;
+    });
     
     function handleClick(item: string) {
         if (typeof value !== 'string' && value) {
@@ -40,18 +41,19 @@
 
 {#snippet content()}
     {#if !multiple && (typeof value === 'string')}
-        <DropdownMenu.RadioGroup bind:value={value}>
+        <DropdownMenu.RadioGroup bind:value={selection as string}>
             <ScrollArea>
                 {#each items as item}
                     <DropdownMenu.RadioItem 
                         value={item}
+                        onclick={() => {value = item;}}
                     >
                         {item}
                     </DropdownMenu.RadioItem>
                 {/each}
             </ScrollArea>
         </DropdownMenu.RadioGroup>
-        {:else}
+    {:else}
         <DropdownMenu.Group>
             <ScrollArea>
                 {#each items as item}
@@ -84,7 +86,9 @@
                     )}
                 disabled={readOnly}
                 >
-                <p class="truncate text-left">{(typeof value === 'string' && value) ? value : Array.isArray(value) ? value.join(', ') : ''}</p>
+                <p class="truncate text-left">
+                    {(Array.isArray(value)) ? value.join(', ') : selection}
+                </p>
                 <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
         </DropdownMenu.Trigger>
