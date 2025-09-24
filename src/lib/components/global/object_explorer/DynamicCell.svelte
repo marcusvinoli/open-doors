@@ -83,8 +83,8 @@
 {/snippet}
 
 {#snippet boolean()}
-    <div class="{value ? 'text-green-500' : 'text-red-500'} flex justify-center items-center">
-        <Icon icon={value ? 'gravity-ui:check' : 'gravity-ui:xmark'} width="15px"/>
+    <div class="{value === 'True' ? 'text-green-500' : 'text-red-500'} flex justify-center items-center">
+        <Icon icon={value === 'True' ? 'gravity-ui:check' : 'gravity-ui:xmark'} width="15px"/>
     </div>
 {/snippet}
 

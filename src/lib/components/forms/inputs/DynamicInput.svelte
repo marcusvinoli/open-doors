@@ -1,17 +1,20 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import Input from "$lib/components/ui/input/input.svelte";
-    import Dropdown from "./Dropdown.svelte";
-    import Combobox from "./Combobox.svelte";
     import Selection from "./Selection.svelte";
     
     import { cn } from "$lib/utils";
     import { marked } from "marked";
+    import { Button } from "$lib/components/ui/button";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import { readOnlyAttributes } from "$lib/utils/attribute-utils";
     
     import type { Object } from "$lib/components/structs/Object";
     import type { Attribute } from "$lib/components/structs/Attributes";
+
+    import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
+    import Label from "$lib/components/ui/label/label.svelte";
+    import { useId } from "bits-ui";
     
     let { 
         object = $bindable(),
@@ -25,6 +28,9 @@
 
     type ObjectKey = keyof typeof object;
     type AttributeKey = keyof typeof attribute;
+
+    // TODO: Currently, this derived state is only being used for 'boolean' type. Some experiments might be required in order to expand the use of this for other types.
+    let currentValue = $derived(safeReadAttributes(attribute));
 
     function isCustomAttribute(attribute: Attribute) : boolean {
         return (!readOnlyAttributes.includes(attribute));
@@ -61,10 +67,22 @@
 
     function safeReadAttributes(attribute: Attribute) {
         if (isCustomAttribute(attribute) && hasCustomAttribute(attribute)) {
-            if ((typeof attribute.kind === 'object') && ('multipleOptions' in attribute.kind)) {
-                return object.attributes?.[attribute.key as AttributeKey]?.split(',').map(v => v.trim()).filter(v => v.length > 0) ?? [];
+            if ((typeof attribute.kind === 'object')) {
+                if ('multipleOptions' in attribute.kind) {
+                    return object.attributes?.[attribute.key as AttributeKey]?.split(',').map(v => v.trim()).filter(v => v.length > 0) ?? [];
+                } else if ('singleOption' in attribute.kind) {
+                    return object.attributes?.[attribute.key as AttributeKey]?.toString();
+                }
             }
-            return object.attributes?.[attribute.key as AttributeKey]?.toString();
+            if ((typeof attribute.kind === 'string')) {
+                switch (attribute.kind) {
+                    case 'boolean': {
+                        return object.attributes?.[attribute.key as AttributeKey]?.toString() === 'True' ? 'True' : 'False';
+                    }
+                    default: 
+                    return object.attributes?.[attribute.key as AttributeKey]?.toString() ?? '';
+                }
+            }
         }
         //TODO:  Maybe a `null` should be returned;
         return object[attribute.key as ObjectKey]?.toString() ?? '';
@@ -108,28 +126,51 @@
         </div>
     </div>
 {:else}
+<div class="flex gap-2">
     {#if attribute.kind === 'general'}
-    <div class="p-2">
         <Textarea bind:value={bindValue.value} readonly={readOnly}/>
-        {@html marked(bindValue.value)}
-    </div>
+        <!-- TODO: Add a preview feature for Markdown also for an attribute view. -->
+        <!-- {@html marked(currentValue?.toString() ?? "")} -->
     {:else if attribute.kind === 'boolean'}
-    <div class="p-2">
-        <div class="{bindValue.value ? 'text-green-500' : 'text-red-500'} flex justify-center items-center">
-            <Icon icon={bindValue.value ? 'gravity-ui:check' : 'gravity-ui:xmark'} width="15px"/>
-        </div>
-    </div>
+        {@const fieldid = useId()}
+        {@const idTrue = useId()}
+        {@const idFalse = useId()}
+        <RadioGroup.Root value={currentValue?.toString()} class="flex py-2 gap-4" id={fieldid}>
+            <div class="text-green-500 flex justify-center items-center">
+                <RadioGroup.Item value="True" id={idTrue}
+                    aria-checked=true
+                    onclick={(e) => {
+                        safeWriteAttribute(attribute, 'True');
+                    }
+                }/>
+                <Label for={idTrue}> 
+                    <Icon icon='gravity-ui:check' class="ml-1" width="18px"/>
+                </Label>
+            </div>
+            <div class="text-red-500 flex justify-center items-center">
+                <RadioGroup.Item value="False" id={idFalse} 
+                    onclick={(e) => {
+                        safeWriteAttribute(attribute, 'False');
+                    }
+                }/>
+                <Label for={idFalse} >
+                    <Icon icon='gravity-ui:xmark' class="ml-1" width="18px"/>
+                </Label>
+            </div>
+        </RadioGroup.Root>
     {:else if typeof attribute.kind === 'object'}
-        <div class="p-2">
-            {#if 'singleOption' in attribute.kind}
-                <Selection items={attribute.kind.singleOption} bind:selection={bindValue.value} {readOnly}/>
-            {:else if 'multipleOptions' in attribute.kind}
-                <Selection items={attribute.kind.multipleOptions} bind:selection={bindValue.value} {readOnly} multiple/>
-            {/if}
-        </div>
+        {#if 'singleOption' in attribute.kind}
+            <Selection items={attribute.kind.singleOption} bind:selection={bindValue.value} {readOnly}/>
+        {:else if 'multipleOptions' in attribute.kind}
+            <Selection items={attribute.kind.multipleOptions} bind:selection={bindValue.value} {readOnly} multiple/>
+        {/if}
     {:else}
-    <div class="p-2">
         <Input id="name" class="col-span-6" autocomplete="off" bind:value={bindValue.value} readonly={readOnly}/>
-    </div>
     {/if}
+    <!-- TODO: Reserved for future implementations. User may want to clear the attributes and for Booleans of Single-Options this is a little trick to do on current implementation.
+    <Button variant="ghost" class="text-slate-400" disabled={readOnly} >
+        <Icon icon='gravity-ui:eraser' width="15px"/>
+    </Button> 
+    -->
+</div>
 {/if}
