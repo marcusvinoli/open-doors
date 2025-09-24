@@ -21,10 +21,7 @@
     } = $props();
     
     let open: boolean = $state(false);
-    let value: string | string[] | null = $derived.by(() => {
-        console.log($state.snapshot(selection));
-        return selection;
-    });
+    let value: string | string[] | null = $derived(selection);
     
     function handleClick(item: string) {
         if (typeof value !== 'string' && value) {
