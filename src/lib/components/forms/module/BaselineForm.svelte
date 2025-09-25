@@ -142,7 +142,7 @@
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="desc" class="text-right col-span-1">Description</Label>
-                <Input multiple id="desc" bind:value={newBaselineDescription}  class="col-span-3" />
+                <Input multiple id="desc" bind:value={newBaselineDescription}  class="col-span-3" autocomplete="off"/>
             </div>
         {/if}
         </div>
