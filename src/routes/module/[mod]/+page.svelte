@@ -2,6 +2,7 @@
     import Icon from "@iconify/svelte";
     import Loading from "$lib/components/ui/loading/Loading.svelte";
     import IndexTree from "$lib/components/global/index_tree/IndexTree.svelte";
+    import ViewsForm from "$lib/components/forms/module/ViewsForm.svelte";
     import ObjectForm from "$lib/components/forms/object/ObjectForm.svelte";
     import DynamicTable from "$lib/components/global/object_explorer/DynamicTable.svelte";
     import BaselineForm from "$lib/components/forms/module/BaselineForm.svelte";
@@ -33,9 +34,7 @@
     import type { Repository } from "$lib/components/structs/Repo";
     import type { ModuleState, Linker, ModuleFlags } from "$lib/components/structs/States";
     import type { Toolbar, ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarItemType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
-    import ViewsForm from "$lib/components/forms/module/ViewsForm.svelte";
-    import ToolbarItem from "$lib/components/global/toolbar/ToolbarItem.svelte";
-    import ToolbarButton from "$lib/components/global/toolbar/ToolbarButton.svelte";
+
     
     const OBJECT_TABLE_ID = 'object-table';
     const OBJECT_TABLE_CONTAINER_SUFFIX = '-container';
@@ -558,7 +557,9 @@
     }
 
     async function handleBaselineCreation(baseline: Baseline) {
-        createBaseline(module!.path, baseline)
+        const user = app.user!.toString() ?? " <>";
+        const newBaseline: Baseline = { ...baseline, createdBy: user };
+        createBaseline(module!.path, newBaseline)
             .then((baselines) => {
                 module!.baselines = baselines as Baseline[]
             })
