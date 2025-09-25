@@ -145,8 +145,7 @@ impl Module {
 		obj.add_metadata(ObjectStatus::Updated, &self.links);
 		if obj.deleted_at.is_some() {
 			obj.set_status(ObjectStatus::Deleted);
-		} 
-		if let Some(lts) = self.get_latest_baseline() {
+		} else if let Some(lts) = self.get_latest_baseline() {
 			if obj.updated_at < lts.created_at {
 				obj.set_status(ObjectStatus::Baselined);
 			}
@@ -190,7 +189,9 @@ impl Module {
 
 	pub fn delete_object(&mut self, repo: &Option<Repository>, id: usize) -> Result<Object, ModuleError> {
 		let mut obj = self.find_object(id)?;
-		obj.deleted_at = Some(Utc::now());
+		let now = Utc::now();
+		obj.deleted_at = Some(now.clone());
+		obj.updated_at = now.into();
 		let obj_path = self.prepare_object(&mut obj)?;
 		let repo = Module::repo(&repo)?;
 		git::add_file(&repo, &obj_path)?;
