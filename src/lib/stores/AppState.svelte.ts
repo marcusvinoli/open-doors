@@ -1,12 +1,12 @@
-import { generateModuleKey } from "$lib/utils/module-utils";
-import { readModuleFromPath, readObjects } from "$lib/controllers/Module";
 import { buildTreeIndex } from "$lib/utils/index-tree.utils";
+import { generateModuleKey } from "$lib/utils/module-utils";
+import { readBaselinedObjects, readModuleFromPath, readObjects } from "$lib/controllers/Module";
 
+import type { Task } from "$lib/components/structs/Task";
 import type { Module } from "$lib/components/structs/Module";
 import type { Object } from "$lib/components/structs/Object";
-import type { AppState, ModuleState } from "$lib/components/structs/States";
 import type { IndexItem } from "$lib/components/structs/IndexItem";
-import type { Task } from "$lib/components/structs/Task";
+import type { AppState, ModuleState } from "$lib/components/structs/States";
 
 import { defaultView } from "$lib/components/structs/View";
 
@@ -19,6 +19,13 @@ export let app : AppState = $state({
     currentModule: null,
 });
 
+function loadObjectsPromise(path: string, version?: string): Promise<Object[]> {
+    if (version && version !== 'current') {
+        return readBaselinedObjects(path, version) as Promise<Object[]>;
+    }
+    return readObjects(path) as Promise<Object[]>
+}
+
 // TODO: Migrate here all core logic for application state (e.g.: load repo, load user...)
 export async function loadModule(path: string, version?: string) {
     const modKey: string = generateModuleKey(app.repository!.tree.path, path, version);
@@ -30,7 +37,7 @@ export async function loadModule(path: string, version?: string) {
             .then((mod) => {
                 module = mod as Module;
             }),
-        readObjects(path)
+        loadObjectsPromise(path, version)
             .then((objs) => {
                 objects = [...objs as Object[]];
                 indexTree = buildTreeIndex(objects);
@@ -45,8 +52,8 @@ export async function loadModule(path: string, version?: string) {
                 showViewsDialog: false,
                 showIndexPanel: false,
                 showDeletions: false,
-                showLinks: false,
-                readOnly: false,
+                showLinks: true,
+                readOnly: true,
             },
             module: module,
             objects: [],
