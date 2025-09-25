@@ -34,7 +34,7 @@
         onclick,
         scroll,
         showDeletions,
-        showLinks = $bindable(false),
+        showLinks = $bindable(),
         showRowNumbering = $bindable(),
         linker,
         context,

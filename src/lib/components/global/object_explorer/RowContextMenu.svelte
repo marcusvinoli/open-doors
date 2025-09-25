@@ -37,11 +37,12 @@
         <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'properties');}}>Properties</ContextMenu.Item>
         <ContextMenu.Separator class="mx-1"/>
         {#if !linker}
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'createLink');}}>Link...</ContextMenu.Item>
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'createLink');}} disabled={readOnly}>Link...</ContextMenu.Item>
         {:else}
             <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopLinking');}}>Stop linking</ContextMenu.Item>
             <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stablishLink');}}>Stablish link</ContextMenu.Item>
-            {/if}
+        {/if}
+        {#if !readOnly}
         <ContextMenu.Separator class="mx-1"/>
             {#if object.metadata?.status === 'draft'}
                 <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'commitDraftObject');}}>Commit</ContextMenu.Item>
@@ -50,9 +51,10 @@
             {#if object.metadata?.status === 'deleted'}
             <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'restoreObject');}}>Restore object</ContextMenu.Item>
             {/if}
+        {/if}
         <ContextMenu.Separator class="mx-1"/>
         <ContextMenu.Sub>
-            <ContextMenu.SubTrigger>
+            <ContextMenu.SubTrigger disabled={readOnly}>
                 <p>New Object</p>
             </ContextMenu.SubTrigger>
             <ContextMenu.SubContent> 
@@ -61,11 +63,11 @@
             </ContextMenu.SubContent>
         </ContextMenu.Sub>
         {@const movingId = state.get('moving') ? Number.parseInt(state.get('moving')!) : -1}
-        {#if movingId === -1}
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'startMoving');}}>Start moving</ContextMenu.Item>
+        {#if (movingId === -1) }
+            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'startMoving');}} disabled={readOnly}>Start moving</ContextMenu.Item>
         {:else}
             <ContextMenu.Sub>
-                <ContextMenu.SubTrigger disabled={object.id === movingId}>Move...</ContextMenu.SubTrigger>
+                <ContextMenu.SubTrigger disabled={(object.id === movingId) || readOnly}>Move...</ContextMenu.SubTrigger>
                 <ContextMenu.SubContent> 
                     <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveAfter');}}>Move after</ContextMenu.Item>
                     <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveBelow');}}>Move below</ContextMenu.Item>

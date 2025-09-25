@@ -6,13 +6,8 @@
     
     import type { Module } from "$lib/components/structs/Module";
     import type { Object } from "$lib/components/structs/Object";
-    import type { Template } from "$lib/components/structs/Template";
-    import type { ViewItem } from "$lib/components/structs/View";
-    import type { ModuleManifest } from "$lib/components/structs/ModuleManifest";
-    import type { Attribute, AttributeKind } from "$lib/components/structs/Attributes";
+    import type { Attribute } from "$lib/components/structs/Attributes";
 
-    import { ObjectStatus } from "$lib/components/structs/ObjectStatus";
-    
     let { 
         object,
         attribute,
@@ -22,7 +17,7 @@
         object: Object;
         attribute: Attribute;
         module: Module;
-        showLinks: boolean;
+        showLinks?: boolean;
     } = $props();
 
     type ObjectKey = keyof typeof object;
