@@ -5,8 +5,8 @@ export interface Baseline {
     description: string,
     status: BaselineStatus,
     createdAt: DateTime,
-    createdBy: User,
+    createdBy: User  | string,
     deletedAt: DateTime | null,
-    deletedBy: User | null,
+    deletedBy: User | string | null,
     hash: string | null,
 }
