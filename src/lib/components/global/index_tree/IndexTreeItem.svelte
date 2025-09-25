@@ -60,14 +60,14 @@
                     <Icon icon={open ? "gravity-ui:chevron-down" : "gravity-ui:chevron-right"} width="12px"/>
                 </button>
                 <p class={cn(
-                    'truncate font-semibold',
+                    'truncate font-semibold select-none',
                     item.isDeleted ? 'line-through italic' : ''
                 )}>
                     {item.level + ". " + item.headline}
                 </p>
             {:else}
                 <p class={cn(
-                    'truncate ml-[20px]',
+                    'truncate ml-[20px] select-none',
                     item.isDeleted ? 'line-through italic' : ''
                 )}>
                     {item.headline}
