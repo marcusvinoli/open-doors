@@ -11,12 +11,11 @@ function setupTab(url: string, mod: string, version?: string) {
     const baseline : string = version ?? 'current';
     const icon: string = 'gravity-ui:layout-header-cells-large-fill';
     addTab(name, icon, url, baseline);
-}
+};
 
 export const load: PageLoad = async ({ params, url }) => {
     const mod: string = params.mod;
     const version: string = params.version;
-    console.log(mod, version);
     await loadModule(mod, version);
     setupTab(url.pathname, mod, version);
 };
