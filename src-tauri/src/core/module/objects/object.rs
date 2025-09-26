@@ -2,10 +2,9 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 
-use crate::core::{user::User, Link, Links};
+use crate::core::{Link, Links};
 
 use super::{Metadata, ObjectStatus};
-
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
@@ -15,7 +14,7 @@ pub struct Object {
     pub index_level: String,
     pub header: String,
     pub content: String,
-    pub author: User,
+    pub author: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     #[serde(skip_serializing_if="Option::is_none")]

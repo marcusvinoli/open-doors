@@ -1,9 +1,9 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use regex::Regex;
-use xlsxwriter::{Format, Workbook, Worksheet, XlsxError};
+use xlsxwriter::{format, Format, Workbook, Worksheet, XlsxError};
 
-use crate::core::module::{Attribute, Module, Object, Template};
+use crate::core::module::{template, Attribute, Module, Object, Template, View, ViewItem};
 
 pub struct XlsxOptions {
 	sheet_name: Option<String>,
@@ -72,6 +72,57 @@ impl XlsxExporter {
 		Ok(())
 	}
 
+	pub fn _export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, option: &XlsxOptions) -> Result<(), XlsxError> {
+		let show_attributes: HashMap<String, bool> = view.items.iter().into_iter().map(|item| (item.key.clone(), item.show)).collect();
+		let columns: Vec<Attribute> = module.template.fields.iter().filter(|attr| show_attributes.get(&attr.key).copied().unwrap_or(false)).cloned().collect();
+		
+
+		Ok(())
+	}
+
+	fn _write_headers(ws: &mut Worksheet, attributes: &Vec<Attribute>) -> Result<(), XlsxError> {
+		let mut col = 0;
+		attributes.iter().try_for_each(|attr| {
+			ws.write_string(0, col, &attr.name, 
+				Some(Format::new()
+				.set_bold()
+				.set_border_bottom(
+					format::FormatBorder::Thin
+				)))?;
+			col += 1;
+			Ok(())
+		})
+	}
+
+	fn _write_row(ws: &mut Worksheet, attribute: &Attribute, object: Object) -> Result<(), XlsxError> {
+		Ok(())
+	}
+
+	fn _get_attribute_value(attribute: &Attribute, object: &Object, module: &Module) -> String {
+		match attribute.key.as_str() {
+			"id" => format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id()),
+			"header" => object.header.clone(),
+			"content" => object.content.clone(),
+			"index_parent_id" => object.index_parent_id.to_string(),
+			"index_level" => object.index_level.clone(),
+			"author" => object.author.clone(),
+			"created_at" => object.created_at.to_string(),
+			"updated_at" => object.updated_at.to_string(),
+			"deleted_at" => if object.deleted_at.is_none() { "".into() } else { object.deleted_at.unwrap().to_string() },
+			_ => {
+				if let Some(attributes) = &object.attributes {
+					if let Some(value) = attributes.get(&attribute.key) {
+						value.to_string()
+					} else {
+						String::new()
+					}
+				} else {
+					String::new()
+				}
+			}
+		}
+	}
+
 	fn write_header(ws: &mut Worksheet, template: &Template) -> Result<(), XlsxError> {
 		let mut binding: Format = Format::new();
   		let bold_fmt = binding.set_bold();
@@ -114,7 +165,7 @@ impl XlsxExporter {
 			}
 
 			ws.write_string(row, 0, &format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id()), format.clone())?;
-			ws.write_string(row, 2, &format!("{} <{}>", object.author.name, object.author.email), None)?;
+			ws.write_string(row, 2, &object.author, None)?;
 
 			<Vec<Attribute> as Clone>::clone(&template.fields).into_iter().for_each(|field| {
 				ws.write_string(row, col, 
@@ -136,12 +187,12 @@ impl XlsxExporter {
 	}
 
 	fn remove_markdown(input: &str) -> String {
-		let re_bold = Regex::new(r"\*\*(.*?)\*\*").unwrap();     // Bold: **text**
-		let re_italic = Regex::new(r"\*(.*?)\*").unwrap();        // Italic: *text*
-		let re_italic_underline = Regex::new(r"_(.*?)_").unwrap();     // Underscore Underline: _text_
-		let re_header = Regex::new(r"#+\s*(.*)").unwrap();        // Header: # Headers
-		let re_links = Regex::new(r"\[.*?\]\(.*?\)").unwrap();    // Links: [text](link)
-		let re_inline_code = Regex::new(r"`(.*?)`").unwrap();     // Code: `code`
+		let re_bold = Regex::new(r"\*\*(.*?)\*\*").unwrap();     	// Bold: **text**
+		let re_italic = Regex::new(r"\*(.*?)\*").unwrap();        	// Italic: *text*
+		let re_italic_underline = Regex::new(r"_(.*?)_").unwrap();	// Underscore Underline: _text_
+		let re_header = Regex::new(r"#+\s*(.*)").unwrap();        	// Header: # Headers
+		let re_links = Regex::new(r"\[.*?\]\(.*?\)").unwrap();    	// Links: [text](link)
+		let re_inline_code = Regex::new(r"`(.*?)`").unwrap();     	// Code: `code`
 	
 		let result = re_bold.replace_all(input, "$1");
 		let result = re_italic.replace_all(&result, "$1");

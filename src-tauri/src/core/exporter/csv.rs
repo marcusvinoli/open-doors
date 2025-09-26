@@ -73,7 +73,7 @@ impl CsvObjectInterface {
 		let author: String;
 		
 		id = format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id());
-		author = format!("{} <{}>", object.author.name, object.author.email);
+		author = object.author;
 		content = if object.header != String::from("") {
 			format!("{}{}{}", object.header, LINE_ENDING, object.content)
 		} else {

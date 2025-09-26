@@ -1,11 +1,11 @@
 use core::str;
-use std::{cmp::max, collections::HashMap, path::{Path, PathBuf}, result};
+use std::{cmp::max, collections::HashMap, path::{Path, PathBuf}};
 
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
 use git2::{Repository, Tree, TreeEntry, ObjectType};
 
-use crate::core::{error::ModuleError, git, middleware as mid, module::objects, User};
+use crate::core::{error::ModuleError, git, middleware as mid, User};
 use super::{definitions as defs, Baseline, BaselineStatus, Link, Links, Object, ObjectStatus, SemVer, Template, View};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -348,7 +348,7 @@ impl Module {
 		let baseline: Baseline = Baseline { 
 			version: SemVer::from(&semver),
 			created_at: Utc::now(),
-			created_by: user,
+			created_by: user.to_string(),
 			description,
 			hash: Some(hash),
 			deleted_at: None,
@@ -380,7 +380,7 @@ impl Module {
 		self.baselines.iter_mut().for_each(|bl| {
 			if bl.version == *version {
 				bl.deleted_at = Some(Utc::now());
-				bl.deleted_by = Some(user.to_owned());
+				bl.deleted_by = Some(user.to_string());
 				bl.status = BaselineStatus::Deleted;
 			}
 		});

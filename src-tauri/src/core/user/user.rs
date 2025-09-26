@@ -17,6 +17,10 @@ impl User {
         user.email = sig.email().unwrap_or_default().into();
         Ok(user)
     }
+
+    pub fn to_string(&self) -> String {
+        format!("{} <{}>", self.name, self.email)
+    }
 }
 
 impl Serialize for User {
