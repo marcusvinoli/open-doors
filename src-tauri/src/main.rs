@@ -52,6 +52,7 @@ fn main() {
 		od_handlers::module::read_baselined_module,
 		od_handlers::exporters::export_csv,
 		od_handlers::exporters::export_xlsx,
+		od_handlers::exporters::_export_xlsx,
 		])
 		.setup(|app| {
 			app.manage(Mutex::new(Option::<Repository>::None));

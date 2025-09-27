@@ -18,7 +18,7 @@
     import { buildTreeIndex } from "$lib/utils/index-tree.utils";
     import { clearToolbar, setToolbar } from "$lib/stores/Toolbar.svelte";
     import { computeIndexLevelChild, computeIndexLevelSibilings, newObject } from "$lib/utils/object-utils";
-    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, readObjects, restoreObject, updateTemplate, updateViews } from "$lib/controllers/Module";
+    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, exportXlsxCurrentView, readObjects, restoreObject, updateTemplate, updateViews } from "$lib/controllers/Module";
 
     import * as Resizable from "$lib/components/ui/resizable";
 
@@ -421,7 +421,24 @@
             tooltip: "Export " + module?.manifest.title + " to .XLSX",
         };
         addGlobalTask(csvTask);
-        exportXlsx(module?.path)
+        const fileName: string = module.manifest.prefix + '_current.xlsx';
+        console.log(fileName, module, view, objects);
+        exportXlsxCurrentView(fileName, module, view, objects)
+            .then(() => {
+                csvTask.status = "done";
+            })
+            .catch((e) => {
+                csvTask.status = "error";
+                console.error(e);
+            })
+            .finally(() => {
+                addGlobalTask(csvTask);
+                tick().then(() => {
+                    removeGlobalTask(taskId);
+                })
+            })
+
+        /* exportXlsx(module?.path)
             .then(() => {
                 csvTask.status = "done";
             })
@@ -433,7 +450,7 @@
                 tick().then(() => {
                     removeGlobalTask(taskId);
                 })
-            })
+            }) */
     }
 
     async function handleObjectCreation(obj: Object) {

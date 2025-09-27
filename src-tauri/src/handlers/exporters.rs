@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use tauri::command;
 
-use crate::core::{error::OpenDoorsError, exporter::{csv::{CsvExporter, CsvOptions}, xlsx::{XlsxExporter, XlsxOptions}}, module::{Object, Module}};
+use crate::core::{error::OpenDoorsError, exporter::{csv::{CsvExporter, CsvOptions}, xlsx::{XlsxExporter, XlsxOptions}}, module::{Module, Object, Template, View}};
 
 #[command] 
 pub fn export_csv(module_path: PathBuf, file_path: PathBuf) -> Result<bool, OpenDoorsError> {
@@ -20,4 +20,10 @@ pub fn export_xlsx(module_path: PathBuf, file_path: PathBuf) -> Result<(), OpenD
 	let file_name: String = format!("{}_{}.xlsx", module.manifest.prefix, module.baselines.pop().unwrap_or_default().version.to_string());
 	let options: XlsxOptions = XlsxOptions::builder().default_view(true).show_deleted(false).build();
 	Ok(XlsxExporter::export(&file_path, &file_name, &module, &objects, &options)?)
+}
+
+#[command]
+pub fn _export_xlsx(destination: PathBuf, file_name: String, module: Module, view: View, objects: Vec<Object>) -> Result<(), OpenDoorsError> {
+	let options: XlsxOptions = XlsxOptions::builder().default_view(true).show_deleted(true).build();
+	Ok(XlsxExporter::_export_view(&destination, &file_name, &module, &view, &objects, &options)?)
 }

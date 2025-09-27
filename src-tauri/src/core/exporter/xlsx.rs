@@ -1,9 +1,11 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use chrono::{DateTime, Datelike, Local, Timelike, Utc};
 use regex::Regex;
-use xlsxwriter::{format, Format, Workbook, Worksheet, XlsxError};
+use pulldown_cmark::{Parser, Event, Tag};
+use xlsxwriter::{format, prelude::DateTime as XlsxDateTime, Format, Workbook, Worksheet, XlsxError};
 
-use crate::core::module::{Attribute, Module, Object, ObjectStatus, Template, View};
+use crate::core::module::{Attribute, AttributeKind, READ_ONLY_ATTRIBUTES, Module, Object, ObjectStatus, Template, View, ViewItem};
 
 pub struct XlsxOptions {
 	sheet_name: Option<String>,
@@ -72,7 +74,7 @@ impl XlsxExporter {
 		Ok(())
 	}
 
-	pub fn _export_view(path: &PathBuf, filename: &String, module: &Module, objects: &Vec<Object>, view: &View, option: &XlsxOptions) -> Result<(), XlsxError> {
+	pub fn _export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, objects: &Vec<Object>, option: &XlsxOptions) -> Result<(), XlsxError> {
 		let wb: Workbook = Workbook::new(&path.join(filename).to_string_lossy())?;
 		let mut ws: Worksheet = wb.add_worksheet(None)?;
 		let objects: Vec<Object> = objects.iter().filter(|obj| {
@@ -87,46 +89,147 @@ impl XlsxExporter {
 			}
 			true
 		}).cloned().collect();
-		let show_attributes: HashMap<String, bool> = view.items.iter().map(|item| (item.key.clone(), item.show)).collect();
-		let attributes: Vec<Attribute> = module.template.fields.iter().filter(|attr| show_attributes.get(&attr.key).copied().unwrap_or(false)).cloned().collect();
 		
-		XlsxExporter::write_headers(&mut ws, &attributes)?;
-		XlsxExporter::write_rows(&mut ws, &attributes, &objects)?;
+		let mut attribute_list: HashMap<String, &Attribute> = HashMap::new();
+		let mut attributes: Vec<Attribute> = Vec::new();
+		
+		let _ = READ_ONLY_ATTRIBUTES.iter().map(|attribute| attribute_list.insert(attribute.key.clone(), attribute));
+		let _ = module.template.fields.iter().map(|attribute| attribute_list.insert(attribute.key.clone(), attribute));
+		
+		for view_item in &view.items {
+			if view_item.show {
+				if let Some(attribute) = attribute_list.get(&view_item.key) {
+					attributes.push((*attribute).clone());
+				}
+			}
+		}
 
+		XlsxExporter::write_headers(&mut ws, &attributes)?;
+		XlsxExporter::write_rows(&mut ws, &module ,&attributes, &objects)?;
+		
+		wb.close()?;
 		Ok(())
 	}
 
 	fn write_headers(ws: &mut Worksheet, attributes: &Vec<Attribute>) -> Result<(), XlsxError> {
 		let mut col = 0;
-		attributes.iter().try_for_each(|attr| {
-			ws.write_string(0, col, &attr.name, 
+		for attribute in attributes {
+			ws.write_string(0, col, &attribute.name, 
 				Some(Format::new()
 				.set_bold()
 				.set_border_bottom(
 					format::FormatBorder::Thin
 				)))?;
 			col += 1;
-			Ok(())
-		})
+		}
+		Ok(())
 	}
 
-	fn write_rows(ws: &mut Worksheet, attributes: &Vec<Attribute>, objects: &Vec<Object>) -> Result<(), XlsxError> {
+	fn write_rows(ws: &mut Worksheet, module: &Module, attributes: &Vec<Attribute>, objects: &Vec<Object>) -> Result<(), XlsxError> {
 		let mut row: u32 = 1;
-		objects.iter().for_each(|object| {
-			let mut col: u16 = 0;
-			attributes.iter().for_each(|attribute| {
+		let mut col: u16 = 0;
+		for object in objects {
+			for attribute in attributes {
+				let mut content: String = String::new();
 				let content: String = XlsxExporter::get_attribute_value(&attribute, &object);
-				XlsxExporter::write_cell(ws, row, col, &content);
+
+				XlsxExporter::write_cell(ws, row, col, &attribute.kind, &content)?;
 				col += 1;
-			});
+			}
 			row += 1;
-		});
+			col = 0;
+		}
 		Ok(())
 	}
 
-	fn write_cell(ws: &mut Worksheet, row: u32, col: u16, content: &String) -> Result<(), XlsxError> {
-		ws.write_string(row, col, &content, None)?;
+	fn write_cell(ws: &mut Worksheet, row: u32, col: u16, kind: &AttributeKind, content: &String) -> Result<(), XlsxError> {
+		match kind {
+			AttributeKind::Integer => {
+				if let Ok(number) = content.parse::<f64>() {
+					ws.write_number(row, col, number, None)?;
+				} else {
+					ws.write_string(row, col, &content, None)?;
+				}
+			},
+			AttributeKind::DateTime => {
+				if let Ok(datetime) =  DateTime::parse_from_rfc3339(&content) {
+					let datetime = XlsxDateTime::new(
+						datetime.year() as i16, 
+						datetime.month() as i8, 
+						datetime.day() as i8,
+						datetime.hour() as i8,
+						datetime.minute() as i8,
+						datetime.second() as f64
+					); 
+					ws.write_datetime(row, col, &datetime, Some(&Format::new().set_num_format("mmm d yyyy hh:mm AM/PM")))?;
+				} else {
+					ws.write_string(row, col, &content, None)?;
+				}
+			}
+			_ => {
+				ws.write_string(row, col, &content, None)?;
+			}
+		}
 		Ok(())
+	}
+
+	fn write_content_cell(ws: &mut Worksheet, row: u32, col: u16, object: &Object) -> Result<(), XlsxError> {
+
+		Ok(())
+	}
+
+	fn to_rich_string(content: &String) -> Vec<(String, Format)> {
+		let parser = Parser::new(content);
+
+		let mut current_format: Option<Format> = None;
+		let mut current_text = String::new();
+
+		let mut rich_string_segments: Vec<(&Format, String)> = Vec::new();
+
+		for event in parser {
+			match event {
+				Event::Text(text) => {
+					current_text.push_str(&text);
+				}
+				Event::Start(Tag::Strong) => {
+					if !current_text.is_empty() {
+						rich_string_segments.push((current_format, std::mem::take(&mut current_text)));
+					}
+					current_format = &format_bold;
+				}
+				Event::End(Tag::Strong) => {
+					if !current_text.is_empty() {
+						rich_string_segments.push((current_format, std::mem::take(&mut current_text)));
+					}
+					current_format = &format_normal;
+				}
+				Event::Start(Tag::Emphasis) => {
+					if !current_text.is_empty() {
+						rich_string_segments.push((current_format, std::mem::take(&mut current_text)));
+					}
+					current_format = &format_italic;
+				}
+				Event::End(Tag::Emphasis) => {
+					if !current_text.is_empty() {
+						rich_string_segments.push((current_format, std::mem::take(&mut current_text)));
+					}
+					current_format = &format_normal;
+				}
+				// Ignora outros eventos (parágrafos, cabeçalhos, etc.)
+				_ => {}
+			}
+		}
+
+		if !current_text.is_empty() {
+			rich_string_segments.push((current_format, current_text));
+		}
+
+		let rich_string_refs: Vec<(String, Format)> = rich_string_segments
+			.iter()
+			.map(|(format, text)| (text.to_string(), *format.clone()))
+			.collect();
+
+		return rich_string_refs;
 	}
 
 	fn get_attribute_value(attribute: &Attribute, object: &Object) -> String {

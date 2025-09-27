@@ -134,3 +134,14 @@ export async function exportXlsx(modulePath: String) {
         return invoke('export_xlsx', {modulePath: modulePath, filePath: path})
     }
 }
+
+export async function exportXlsxCurrentView(fileName: string, module: Module, view: View, objects: Object[]) {
+    const folder = await open({
+        directory: true,
+        multiple: false,
+    });
+    if (folder) {
+        let destination = folder as string;
+        return invoke('_export_xlsx', {destination, fileName, module, view, objects})
+    }
+}
