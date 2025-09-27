@@ -3,13 +3,13 @@ use std::{collections::HashMap, path::PathBuf};
 use regex::Regex;
 use xlsxwriter::{format, Format, Workbook, Worksheet, XlsxError};
 
-use crate::core::module::{template, Attribute, Module, Object, Template, View, ViewItem};
+use crate::core::module::{Attribute, Module, Object, ObjectStatus, Template, View};
 
 pub struct XlsxOptions {
 	sheet_name: Option<String>,
 	default_view: bool, // Reserved for future usage. 
 	show_deleted: bool,
-	rich_text: bool,
+	formatted: bool,
 }
 
 impl XlsxOptions {
@@ -52,7 +52,7 @@ impl XlsxOptionsBuilder {
 			sheet_name: self.sheet_name,
 			default_view: self.default_view,
 			show_deleted: self.show_deleted, 
-			rich_text: self.rich_text
+			formatted: self.rich_text
 		}
 	}
 }
@@ -72,15 +72,31 @@ impl XlsxExporter {
 		Ok(())
 	}
 
-	pub fn _export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, option: &XlsxOptions) -> Result<(), XlsxError> {
-		let show_attributes: HashMap<String, bool> = view.items.iter().into_iter().map(|item| (item.key.clone(), item.show)).collect();
-		let columns: Vec<Attribute> = module.template.fields.iter().filter(|attr| show_attributes.get(&attr.key).copied().unwrap_or(false)).cloned().collect();
+	pub fn _export_view(path: &PathBuf, filename: &String, module: &Module, objects: &Vec<Object>, view: &View, option: &XlsxOptions) -> Result<(), XlsxError> {
+		let wb: Workbook = Workbook::new(&path.join(filename).to_string_lossy())?;
+		let mut ws: Worksheet = wb.add_worksheet(None)?;
+		let objects: Vec<Object> = objects.iter().filter(|obj| {
+			if !option.show_deleted {
+				if let Some(metadata) = &obj.metadata {
+					if metadata.status == ObjectStatus::Deleted {
+						return false;
+					}
+					return true;
+				}
+				return false;
+			}
+			true
+		}).cloned().collect();
+		let show_attributes: HashMap<String, bool> = view.items.iter().map(|item| (item.key.clone(), item.show)).collect();
+		let attributes: Vec<Attribute> = module.template.fields.iter().filter(|attr| show_attributes.get(&attr.key).copied().unwrap_or(false)).cloned().collect();
 		
+		XlsxExporter::write_headers(&mut ws, &attributes)?;
+		XlsxExporter::write_rows(&mut ws, &attributes, &objects)?;
 
 		Ok(())
 	}
 
-	fn _write_headers(ws: &mut Worksheet, attributes: &Vec<Attribute>) -> Result<(), XlsxError> {
+	fn write_headers(ws: &mut Worksheet, attributes: &Vec<Attribute>) -> Result<(), XlsxError> {
 		let mut col = 0;
 		attributes.iter().try_for_each(|attr| {
 			ws.write_string(0, col, &attr.name, 
@@ -94,13 +110,28 @@ impl XlsxExporter {
 		})
 	}
 
-	fn _write_row(ws: &mut Worksheet, attribute: &Attribute, object: Object) -> Result<(), XlsxError> {
+	fn write_rows(ws: &mut Worksheet, attributes: &Vec<Attribute>, objects: &Vec<Object>) -> Result<(), XlsxError> {
+		let mut row: u32 = 1;
+		objects.iter().for_each(|object| {
+			let mut col: u16 = 0;
+			attributes.iter().for_each(|attribute| {
+				let content: String = XlsxExporter::get_attribute_value(&attribute, &object);
+				XlsxExporter::write_cell(ws, row, col, &content);
+				col += 1;
+			});
+			row += 1;
+		});
 		Ok(())
 	}
 
-	fn _get_attribute_value(attribute: &Attribute, object: &Object, module: &Module) -> String {
+	fn write_cell(ws: &mut Worksheet, row: u32, col: u16, content: &String) -> Result<(), XlsxError> {
+		ws.write_string(row, col, &content, None)?;
+		Ok(())
+	}
+
+	fn get_attribute_value(attribute: &Attribute, object: &Object) -> String {
 		match attribute.key.as_str() {
-			"id" => format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id()),
+			"id" => object.id().to_string(),
 			"header" => object.header.clone(),
 			"content" => object.content.clone(),
 			"index_parent_id" => object.index_parent_id.to_string(),
