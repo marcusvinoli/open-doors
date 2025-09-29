@@ -8,7 +8,6 @@ use super::utils::get_attribute_value;
 
 pub struct XlsxOptions {
 	sheet_name: Option<String>,
-	default_view: bool, // Reserved for future usage. 
 	show_deleted: bool,
 	formatted: bool,
 }
@@ -51,7 +50,6 @@ impl XlsxOptionsBuilder {
 	pub fn build(self) -> XlsxOptions {
 		XlsxOptions {
 			sheet_name: self.sheet_name,
-			default_view: self.default_view,
 			show_deleted: self.show_deleted, 
 			formatted: self.rich_text
 		}
