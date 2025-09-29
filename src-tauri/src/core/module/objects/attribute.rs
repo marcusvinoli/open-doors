@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all="camelCase")]
 pub enum AttributeKind {
     #[default]

@@ -1,7 +1,5 @@
 use pulldown_cmark::{Parser, Event, Tag};
 
-use crate::core::exporter::xlsx::XlsxExporter;
-
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Hash)]
 pub struct RichTextFormat {
 	pub font_name: Option<String>,
@@ -152,5 +150,11 @@ impl RichText {
 		}
 
 		result
+	}
+
+	pub fn clear_format(&self) -> String {
+		let mut result: String = String::new();
+		self.segments.iter().for_each(|(text, _format)| result.push_str(&text));
+		return  result;
 	}
 }

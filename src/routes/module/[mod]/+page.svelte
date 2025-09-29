@@ -18,7 +18,7 @@
     import { buildTreeIndex } from "$lib/utils/index-tree.utils";
     import { clearToolbar, setToolbar } from "$lib/stores/Toolbar.svelte";
     import { computeIndexLevelChild, computeIndexLevelSibilings, newObject } from "$lib/utils/object-utils";
-    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, exportXlsxCurrentView, readObjects, restoreObject, updateTemplate, updateViews } from "$lib/controllers/Module";
+    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCsvCurrentView, exportXlsxCurrentView, readObjects, restoreObject, updateTemplate, updateViews } from "$lib/controllers/Module";
 
     import * as Resizable from "$lib/components/ui/resizable";
 
@@ -33,7 +33,7 @@
     import type { IndexItem } from "$lib/components/structs/IndexItem";
     import type { Repository } from "$lib/components/structs/Repo";
     import type { ModuleState, Linker, ModuleFlags } from "$lib/components/structs/States";
-    import type { Toolbar, ToolbarButtonType, ToolbarDropdownType, ToolbarGroupType, ToolbarItemType, ToolbarToggleType } from "$lib/components/global/toolbar/Toolbar";
+    import type { Toolbar, ToolbarButtonType, ToolbarItemType } from "$lib/components/global/toolbar/Toolbar";
 
     
     const OBJECT_TABLE_ID = 'object-table';
@@ -392,8 +392,8 @@
             icon: "line-md:uploading-loop",
             tooltip: "Export " + module?.manifest.title + " to .CSV",
         };
-        addGlobalTask(csvTask);
-        exportCSV(module?.path)
+        const fileName: string = module.manifest.prefix + '_current.csv';
+        exportCsvCurrentView(fileName, module, view, objects)
             .then(() => {
                 csvTask.status = "done";
             })
@@ -436,20 +436,6 @@
                     removeGlobalTask(taskId);
                 })
             })
-
-        /* exportXlsx(module?.path)
-            .then(() => {
-                csvTask.status = "done";
-            })
-            .catch(() => {
-                csvTask.status = "error";
-            })
-            .finally(() => {
-                addGlobalTask(csvTask);
-                tick().then(() => {
-                    removeGlobalTask(taskId);
-                })
-            }) */
     }
 
     async function handleObjectCreation(obj: Object) {

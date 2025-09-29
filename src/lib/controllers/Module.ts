@@ -113,25 +113,14 @@ export async function createBaseline(modulePath: String, baseline: Baseline) {
     return invoke('create_baseline', {path: modulePath, baseline})
 }
 
-export async function exportCSV(modulePath: String) {
+export async function exportCsvCurrentView(fileName: string, module: Module, view: View, objects: Object[]) {
     const folder = await open({
         directory: true,
         multiple: false
     });
     if (folder) {
-        let path = folder as string;
-        return invoke('export_csv', {modulePath: modulePath, filePath: path})
-    }
-}
-
-export async function exportXlsx(modulePath: String) {
-    const folder = await open({
-        directory: true,
-        multiple: false
-    });
-    if (folder) {
-        let path = folder as string;
-        return invoke('export_xlsx', {modulePath: modulePath, filePath: path})
+        let destination = folder as string;
+        return invoke('export_csv', {destination, fileName, module, view, objects})
     }
 }
 
@@ -142,6 +131,6 @@ export async function exportXlsxCurrentView(fileName: string, module: Module, vi
     });
     if (folder) {
         let destination = folder as string;
-        return invoke('_export_xlsx', {destination, fileName, module, view, objects})
+        return invoke('export_xlsx', {destination, fileName, module, view, objects})
     }
 }

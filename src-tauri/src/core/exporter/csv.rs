@@ -1,20 +1,12 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, fs::File, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
-use csv::WriterBuilder;
-use regex::Regex;
+use csv::{Error as CsvError, Writer};
 
-use crate::core::module::{Module, Object};
-
-#[cfg(windows)]
-const LINE_ENDING : &str = "\r\n";
-#[cfg(not(windows))]
-const LINE_ENDING : &str = "\n";
+use crate::core::{exporter::{rich_text::RichText, utils::get_attribute_value}, module::{Attribute, AttributeKind, Module, Object, ObjectStatus, View, READ_ONLY_ATTRIBUTES}};
 
 pub struct CsvOptions {
-	default_view: bool, // Reserved for future usage. 
 	show_deleted: bool,
-	keep_markdown: bool,
 }
 
 impl CsvOptions {
@@ -25,17 +17,11 @@ impl CsvOptions {
 
 #[derive(Debug, Default)]
 pub struct CsvOptionsBuilder {
-	default_view: bool,
 	show_deleted: bool,
 	keep_markdown:bool,
 }
 
 impl CsvOptionsBuilder {
-	pub fn default_view(mut self, yes: bool) -> Self {
-		self.default_view = yes;
-		self
-	}
-
 	pub fn show_deleted(mut self, yes: bool) -> Self {
 		self.show_deleted = yes;
 		self
@@ -48,9 +34,7 @@ impl CsvOptionsBuilder {
 
 	pub fn build(self) -> CsvOptions {
 		CsvOptions { 
-			default_view: self.default_view, 
 			show_deleted: self.show_deleted,
-			keep_markdown: self.keep_markdown,
 		}
 	}
 }
@@ -62,85 +46,107 @@ struct CsvObjectInterface {
 	author: String,
 }
 
-impl CsvObjectInterface {
-	pub fn from_objects(module: &Module, objects: Vec<Object>, keep_markdown: bool) -> Vec<CsvObjectInterface> {
-		objects.into_iter().map(|obj| CsvObjectInterface::from_object(&module, obj, keep_markdown)).collect()
-	}
-
-	pub fn from_object(module: &Module, object: Object, keep_markdown: bool) -> CsvObjectInterface {
-		let id: String;
-		let mut content: String;
-		let author: String;
-		
-		id = format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id());
-		author = object.author;
-		content = if object.header != String::from("") {
-			format!("{}{}{}", object.header, LINE_ENDING, object.content)
-		} else {
-			object.content
-		};
-
-		if !keep_markdown {
-			content = CsvObjectInterface::remove_markdown(&content);
-		} 
-
-		CsvObjectInterface {
-			id,
-			content,
-			author,
-		}
-	}
-
-	fn remove_markdown(input: &str) -> String {
-		let re_bold = Regex::new(r"\*\*(.*?)\*\*").unwrap();     // Bold: **text**
-		let re_italic = Regex::new(r"\*(.*?)\*").unwrap();        // Italic: *text*
-		let re_italic_underline = Regex::new(r"_(.*?)_").unwrap();     // Underscore Underline: _text_
-		let re_header = Regex::new(r"#+\s*(.*)").unwrap();        // Header: # Headers
-		let re_links = Regex::new(r"\[.*?\]\(.*?\)").unwrap();    // Links: [text](link)
-		let re_inline_code = Regex::new(r"`(.*?)`").unwrap();     // Code: `code`
-	
-		let result = re_bold.replace_all(input, "$1");
-		let result = re_italic.replace_all(&result, "$1");
-		let result = re_italic_underline.replace_all(&result, "$1");
-		let result = re_header.replace_all(&result, "$1");
-		let result = re_links.replace_all(&result, "$1 ($2)");
-		let result = re_inline_code.replace_all(&result, "$1");
-
-		result.to_string()
-	}
-}
-
-pub struct CsvExporter {
-
-}
+pub struct CsvExporter {}
 
 impl CsvExporter {
-	pub fn export<T: Into<String> + ?Sized>(path: &PathBuf, filename: T, module: &Module, objects: Vec<Object>, options: &CsvOptions) -> bool {
-		let objects: Vec<Object> = if options.show_deleted {
-			objects
-		} else {
-			objects.into_iter().filter(|o| o.deleted_at.is_none()).collect()
-		};
-		
-		let file_path: PathBuf = path.join(Into::<String>::into(filename));
-
-		let csv_int: Vec<CsvObjectInterface> = CsvObjectInterface::from_objects(module, objects, options.keep_markdown);
-
-		if let Ok(mut csv) = WriterBuilder::new()
-			.flexible(true)
-			.has_headers(true)
-			.from_path(file_path) {
-				let mut result: bool = true;
-				csv_int.into_iter().for_each(|dt| {
-					if csv.serialize(dt).is_ok() {
-						result = result & true;
-					} else {
-						result = result & false;
+	pub fn export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, objects: &Vec<Object>, options: &CsvOptions) -> Result<(), CsvError> {
+		let mut csv = Writer::from_path(&path.join(filename).to_string_lossy().to_string())?;
+		let objects: Vec<Object> = objects.iter().filter(|obj| {
+			if !options.show_deleted {
+				if let Some(metadata) = &obj.metadata {
+					if metadata.status == ObjectStatus::Deleted {
+						return false;
 					}
-				});
-				return result;
+					return true;
+				}
+				return false;
 			}
-		false
+			true
+		}).cloned().collect();
+		let mut attribute_list: HashMap<String, Attribute> = HashMap::new();
+		let mut attributes: Vec<Attribute> = Vec::new();
+
+		for read_only_attribute in READ_ONLY_ATTRIBUTES.clone() {
+			attribute_list.insert(read_only_attribute.key.to_string(), read_only_attribute.clone());
+		}
+		
+		for custom_attribute in module.template.fields.clone() {
+			attribute_list.insert(custom_attribute.key.to_string(), custom_attribute.clone());
+		}
+
+		for view_item in &view.items {
+			if view_item.show {
+				if let Some(attribute) = attribute_list.get(&view_item.key) {
+					attributes.push((*attribute).clone());
+				}
+			}
+		}
+		Self::write_header(&mut csv, &attributes)?;
+		Self::write_rows(&mut csv, &module, &attributes, &objects)?;
+		csv.flush()?;
+		
+		Ok(())
+	}
+	
+	fn write_header(csv: &mut Writer<File>, attributes: &Vec<Attribute>) -> Result<(), CsvError> {
+		let mut header: Vec<String> = Vec::new();
+		
+		for attribute in attributes {
+			header.push(attribute.name.to_string());
+		}
+
+		csv.write_record(header.as_slice())?;
+
+		Ok(())
 	}
 
+	fn write_rows(csv: &mut Writer<File>, module: &Module, attributes: &Vec<Attribute>, objects: &Vec<Object>) -> Result<(), CsvError> {
+		for object in objects {
+			let mut row: Vec<String> = Vec::new();
+			for attribute in attributes {
+				row.push(Self::get_value(&module, &attribute, &object));
+			}
+			csv.write_record(row.as_slice())?;
+			row.clear();
+		}
+		Ok(())
+	}
+
+	fn get_content(object: &Object) -> String {
+		let mut content: String = String::new();
+		if object.header.is_empty() && object.content.is_empty() {
+			return content;
+		}
+		if !object.header.is_empty() {
+			let mut level: String = "".into();
+			if let Some(metadata) = &object.metadata {
+				level = metadata.level.to_string();
+			}
+			let header: String = format!("{} {}", level, object.header);
+			content.push_str(&header);
+		}
+		if !object.content.is_empty() {
+			let text: String = RichText::parse(&object.content).clear_format();
+			content.push_str(&text);
+		}
+		return content;
+	}
+
+	fn get_id(module: &Module, object: &Object) -> String {
+		return format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id());
+	}
+
+	fn get_value(module: &Module, attribute: &Attribute, object: &Object) -> String {
+		if attribute.key == "id" {
+			return Self::get_id(&module, &object);
+		}
+		if attribute.key == "content" {
+			return Self::get_content(&object);
+		}
+		let value = get_attribute_value(&attribute, &object);
+		if attribute.kind == AttributeKind::General {
+			return RichText::parse(&value).clear_format();
+		}
+		return value;
+	}
 }
