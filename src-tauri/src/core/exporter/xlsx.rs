@@ -4,6 +4,7 @@ use chrono::{DateTime, Datelike, Timelike};
 use xlsxwriter::{format, prelude::DateTime as XlsxDateTime, Format, Workbook, Worksheet, XlsxError};
 
 use crate::core::{exporter::rich_text::RichText, module::{Attribute, AttributeKind, Module, Object, ObjectStatus, View, READ_ONLY_ATTRIBUTES}};
+use super::utils::get_attribute_value;
 
 pub struct XlsxOptions {
 	sheet_name: Option<String>,
@@ -133,7 +134,7 @@ impl XlsxExporter {
 					col += 1;
 					continue;
 				}
-				Self::write_cell(ws, row, col, &attribute.kind, &Self::get_attribute_value(&attribute, &object))?;
+				Self::write_cell(ws, row, col, &attribute.kind, &get_attribute_value(&attribute, &object))?;
 				col += 1;
 			}
 			row += 1;
@@ -217,31 +218,6 @@ impl XlsxExporter {
 			ws.write_rich_string(row, col, &text, None)?;
 		}
 		Ok(())
-	}
-
-	fn get_attribute_value(attribute: &Attribute, object: &Object) -> String {
-		match attribute.key.as_str() {
-			"id" => object.id().to_string(),
-			"header" => object.header.clone(),
-			"content" => object.content.clone(),
-			"index_parent_id" => object.index_parent_id.to_string(),
-			"index_level" => object.index_level.clone(),
-			"author" => object.author.clone(),
-			"created_at" => object.created_at.to_string(),
-			"updated_at" => object.updated_at.to_string(),
-			"deleted_at" => if object.deleted_at.is_none() { "".into() } else { object.deleted_at.unwrap().to_string() },
-			_ => {
-				if let Some(attributes) = &object.attributes {
-					if let Some(value) = attributes.get(&attribute.key) {
-						value.to_string()
-					} else {
-						String::new()
-					}
-				} else {
-					String::new()
-				}
-			}
-		}
 	}
 
 	fn get_font_size_from_level(level: &String) -> f64 {
