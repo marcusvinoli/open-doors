@@ -1,11 +1,9 @@
-use std::{collections::HashMap, fmt::format, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 
-use chrono::{DateTime, Datelike, Local, Timelike, Utc};
-use regex::Regex;
-use pulldown_cmark::{Parser, Event, Tag};
+use chrono::{DateTime, Datelike, Timelike};
 use xlsxwriter::{format, prelude::DateTime as XlsxDateTime, Format, Workbook, Worksheet, XlsxError};
 
-use crate::core::{exporter::rich_text::{self, RichText}, module::{Attribute, AttributeKind, Module, Object, ObjectStatus, Template, View, ViewItem, READ_ONLY_ATTRIBUTES}};
+use crate::core::{exporter::rich_text::RichText, module::{Attribute, AttributeKind, Module, Object, ObjectStatus, View, READ_ONLY_ATTRIBUTES}};
 
 pub struct XlsxOptions {
 	sheet_name: Option<String>,
@@ -65,11 +63,11 @@ pub struct XlsxExporter {
 }
 
 impl XlsxExporter {
-	pub fn export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, objects: &Vec<Object>, option: &XlsxOptions) -> Result<(), XlsxError> {
+	pub fn export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, objects: &Vec<Object>, options: &XlsxOptions) -> Result<(), XlsxError> {
 		let wb: Workbook = Workbook::new(&path.join(filename).to_string_lossy())?;
 		let mut ws: Worksheet = wb.add_worksheet(None)?;
 		let objects: Vec<Object> = objects.iter().filter(|obj| {
-			if !option.show_deleted {
+			if !options.show_deleted {
 				if let Some(metadata) = &obj.metadata {
 					if metadata.status == ObjectStatus::Deleted {
 						return false;
