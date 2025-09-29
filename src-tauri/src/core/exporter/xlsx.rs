@@ -1,11 +1,11 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, fmt::format, path::PathBuf};
 
 use chrono::{DateTime, Datelike, Local, Timelike, Utc};
 use regex::Regex;
 use pulldown_cmark::{Parser, Event, Tag};
 use xlsxwriter::{format, prelude::DateTime as XlsxDateTime, Format, Workbook, Worksheet, XlsxError};
 
-use crate::core::module::{Attribute, AttributeKind, READ_ONLY_ATTRIBUTES, Module, Object, ObjectStatus, Template, View, ViewItem};
+use crate::core::{exporter::rich_text::{self, RichText}, module::{Attribute, AttributeKind, Module, Object, ObjectStatus, Template, View, ViewItem, READ_ONLY_ATTRIBUTES}};
 
 pub struct XlsxOptions {
 	sheet_name: Option<String>,
@@ -65,16 +65,7 @@ pub struct XlsxExporter {
 }
 
 impl XlsxExporter {
-	pub fn export(path: &PathBuf, filename: &String, module: &Module, objects: &Vec<Object>, option: &XlsxOptions) -> Result<(), XlsxError> {
-		let wb: Workbook = Workbook::new(&path.join(filename).to_string_lossy())?;
-		let mut ws: Worksheet = wb.add_worksheet(None)?;
-		XlsxExporter::write_header(&mut ws, &module.template)?;
-		XlsxExporter::write_content(&mut ws, &module, &module.template, &objects)?;
-		wb.close()?;
-		Ok(())
-	}
-
-	pub fn _export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, objects: &Vec<Object>, option: &XlsxOptions) -> Result<(), XlsxError> {
+	pub fn export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, objects: &Vec<Object>, option: &XlsxOptions) -> Result<(), XlsxError> {
 		let wb: Workbook = Workbook::new(&path.join(filename).to_string_lossy())?;
 		let mut ws: Worksheet = wb.add_worksheet(None)?;
 		let objects: Vec<Object> = objects.iter().filter(|obj| {
@@ -89,13 +80,17 @@ impl XlsxExporter {
 			}
 			true
 		}).cloned().collect();
-		
-		let mut attribute_list: HashMap<String, &Attribute> = HashMap::new();
+		let mut attribute_list: HashMap<String, Attribute> = HashMap::new();
 		let mut attributes: Vec<Attribute> = Vec::new();
+
+		for read_only_attribute in READ_ONLY_ATTRIBUTES.clone() {
+			attribute_list.insert(read_only_attribute.key.to_string(), read_only_attribute.clone());
+		}
 		
-		let _ = READ_ONLY_ATTRIBUTES.iter().map(|attribute| attribute_list.insert(attribute.key.clone(), attribute));
-		let _ = module.template.fields.iter().map(|attribute| attribute_list.insert(attribute.key.clone(), attribute));
-		
+		for custom_attribute in module.template.fields.clone() {
+			attribute_list.insert(custom_attribute.key.to_string(), custom_attribute.clone());
+		}
+
 		for view_item in &view.items {
 			if view_item.show {
 				if let Some(attribute) = attribute_list.get(&view_item.key) {
@@ -130,10 +125,17 @@ impl XlsxExporter {
 		let mut col: u16 = 0;
 		for object in objects {
 			for attribute in attributes {
-				let mut content: String = String::new();
-				let content: String = XlsxExporter::get_attribute_value(&attribute, &object);
-
-				XlsxExporter::write_cell(ws, row, col, &attribute.kind, &content)?;
+				if attribute.key == "content" {
+					Self::write_content_cell(ws, row, col, object)?;
+					col += 1;
+					continue;
+				}
+				if attribute.key == "id" {
+					Self::write_cell(ws, row, col, &attribute.kind, &format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id()))?;
+					col += 1;
+					continue;
+				}
+				Self::write_cell(ws, row, col, &attribute.kind, &Self::get_attribute_value(&attribute, &object))?;
 				col += 1;
 			}
 			row += 1;
@@ -143,6 +145,9 @@ impl XlsxExporter {
 	}
 
 	fn write_cell(ws: &mut Worksheet, row: u32, col: u16, kind: &AttributeKind, content: &String) -> Result<(), XlsxError> {
+		if content.is_empty() {
+			return Ok(());
+		}
 		match kind {
 			AttributeKind::Integer => {
 				if let Ok(number) = content.parse::<f64>() {
@@ -165,7 +170,20 @@ impl XlsxExporter {
 				} else {
 					ws.write_string(row, col, &content, None)?;
 				}
-			}
+			},
+			AttributeKind::General => {
+				let segments = RichText::parse(&content).to_xlsxwriter_format();
+				if segments.len() == 0 {
+					return Ok(());
+				}
+				if segments.len() > 1 {
+					let text = segments.iter().map(|(text, format)| (text.as_str(), format.as_ref())).collect::<Vec<_>>();
+					ws.write_rich_string(row, col, &text.as_slice(), None)?;
+					return  Ok(());
+				} else {
+					ws.write_string(row, col, &segments[0].0, segments[0].1.as_ref())?;
+				}
+			},
 			_ => {
 				ws.write_string(row, col, &content, None)?;
 			}
@@ -174,62 +192,33 @@ impl XlsxExporter {
 	}
 
 	fn write_content_cell(ws: &mut Worksheet, row: u32, col: u16, object: &Object) -> Result<(), XlsxError> {
-
-		Ok(())
-	}
-
-	fn to_rich_string(content: &String) -> Vec<(String, Format)> {
-		let parser = Parser::new(content);
-
-		let mut current_format: Option<Format> = None;
-		let mut current_text = String::new();
-
-		let mut rich_string_segments: Vec<(&Format, String)> = Vec::new();
-
-		for event in parser {
-			match event {
-				Event::Text(text) => {
-					current_text.push_str(&text);
-				}
-				Event::Start(Tag::Strong) => {
-					if !current_text.is_empty() {
-						rich_string_segments.push((current_format, std::mem::take(&mut current_text)));
-					}
-					current_format = &format_bold;
-				}
-				Event::End(Tag::Strong) => {
-					if !current_text.is_empty() {
-						rich_string_segments.push((current_format, std::mem::take(&mut current_text)));
-					}
-					current_format = &format_normal;
-				}
-				Event::Start(Tag::Emphasis) => {
-					if !current_text.is_empty() {
-						rich_string_segments.push((current_format, std::mem::take(&mut current_text)));
-					}
-					current_format = &format_italic;
-				}
-				Event::End(Tag::Emphasis) => {
-					if !current_text.is_empty() {
-						rich_string_segments.push((current_format, std::mem::take(&mut current_text)));
-					}
-					current_format = &format_normal;
-				}
-				// Ignora outros eventos (parágrafos, cabeçalhos, etc.)
-				_ => {}
+		if object.header.is_empty() && object.content.is_empty() {
+			return Ok(());
+		}
+		let mut content: Vec<(String, Option<Format>)> = Vec::new();
+		if !object.header.is_empty() {
+			let mut level: String = "".into();
+			if let Some(metadata) = &object.metadata {
+				level = metadata.level.to_string();
 			}
+			let header: String = format!("{} {}", level, object.header);
+			let mut format = Format::new();
+			format.set_bold().set_font_size(Self::get_font_size_from_level(&level));
+			content.push((header, Some(format)));
 		}
-
-		if !current_text.is_empty() {
-			rich_string_segments.push((current_format, current_text));
+		if !object.content.is_empty() && !content.is_empty() {
+			content.push(("\n\n".into(), None));
 		}
-
-		let rich_string_refs: Vec<(String, Format)> = rich_string_segments
-			.iter()
-			.map(|(format, text)| (text.to_string(), *format.clone()))
-			.collect();
-
-		return rich_string_refs;
+		if !object.content.is_empty() {
+			content.append(&mut RichText::parse(&object.content).to_xlsxwriter_format());
+		}
+		let text = content.iter().map(|(text, format)| (text.as_str(), format.as_ref())).collect::<Vec<_>>();
+		if content.len() == 1 {
+			ws.write_string(row, col, &text[0].0, text[0].1)?;
+		} else {
+			ws.write_rich_string(row, col, &text, None)?;
+		}
+		Ok(())
 	}
 
 	fn get_attribute_value(attribute: &Attribute, object: &Object) -> String {
@@ -255,87 +244,6 @@ impl XlsxExporter {
 				}
 			}
 		}
-	}
-
-	fn write_header(ws: &mut Worksheet, template: &Template) -> Result<(), XlsxError> {
-		let mut binding: Format = Format::new();
-  		let bold_fmt = binding.set_bold();
-		ws.write_string(0, 0, "ID", Some(&bold_fmt))?;
-		ws.write_string(0, 1, "Object Text", Some(&bold_fmt))?;
-		ws.write_string(0, 2, "Author", Some(&bold_fmt))?;
-		ws.write_string(0, 3, "Is Active", Some(&bold_fmt))?;
-		ws.write_string(0, 4, "Is Normative", Some(&bold_fmt))?;
-		ws.write_string(0, 5, "Is Requirement", Some(&bold_fmt))?;
-		
-		let mut col: u16 = 6;
-		let mut has_error: bool = false;
-
-		<Vec<Attribute> as Clone>::clone(&template.fields).into_iter().for_each(|field| {
-			has_error |= ws.write_string(0, col, &field.name, Some(Format::new().set_bold())).is_err();
-			col += 1;
-		});
-
-		Ok(())
-	}
-
-	fn write_content(ws: &mut Worksheet, module: &Module, template: &Template, objects: &Vec<Object>) -> Result<(), XlsxError> {
-		let mut col: u16 = 6;
-		let mut row: u32 = 1;
-
-		objects.into_iter().try_for_each(|object| -> Result<(), XlsxError> {
-			let fmt: Format;
-			let format: Option<&Format> = if object.header.is_empty() {
-				None
-			} else {
-				// fmt = Format::new().set_bold().set_font_size(XlsxExporter::get_font_size_from_level(&object.level)).to_owned();
-				fmt = Format::new();
-				Some(&fmt)
-			};
-
-			if object.header.is_empty() {
-				ws.write_string(row, 1, &XlsxExporter::remove_markdown(&object.content), format.clone())?;
-			} else {
-				ws.write_string(row, 1, &XlsxExporter::remove_markdown(&object.header), format.clone())?;
-			}
-
-			ws.write_string(row, 0, &format!("{}{}{}", module.manifest.prefix, module.manifest.separator, object.id()), format.clone())?;
-			ws.write_string(row, 2, &object.author, None)?;
-
-			<Vec<Attribute> as Clone>::clone(&template.fields).into_iter().for_each(|field| {
-				ws.write_string(row, col, 
-					&<Option<HashMap<String, String>> as Clone>::clone(&object.attributes)
-						.unwrap_or_default()
-						.get(&field.key)
-						.unwrap_or(&String::new()), 
-					None).unwrap_or_default();
-				col += 1;
-			});
-
-			col = 6;
-			row += 1;
-
-			Ok(())
-		})?;
-
-		Ok(())
-	}
-
-	fn remove_markdown(input: &str) -> String {
-		let re_bold = Regex::new(r"\*\*(.*?)\*\*").unwrap();     	// Bold: **text**
-		let re_italic = Regex::new(r"\*(.*?)\*").unwrap();        	// Italic: *text*
-		let re_italic_underline = Regex::new(r"_(.*?)_").unwrap();	// Underscore Underline: _text_
-		let re_header = Regex::new(r"#+\s*(.*)").unwrap();        	// Header: # Headers
-		let re_links = Regex::new(r"\[.*?\]\(.*?\)").unwrap();    	// Links: [text](link)
-		let re_inline_code = Regex::new(r"`(.*?)`").unwrap();     	// Code: `code`
-	
-		let result = re_bold.replace_all(input, "$1");
-		let result = re_italic.replace_all(&result, "$1");
-		let result = re_italic_underline.replace_all(&result, "$1");
-		let result = re_header.replace_all(&result, "$1");
-		let result = re_links.replace_all(&result, "$1 ($2)");
-		let result = re_inline_code.replace_all(&result, "$1");
-
-		result.to_string()
 	}
 
 	fn get_font_size_from_level(level: &String) -> f64 {

@@ -14,16 +14,7 @@ pub fn export_csv(module_path: PathBuf, file_path: PathBuf) -> Result<bool, Open
 }
 
 #[command]
-pub fn export_xlsx(module_path: PathBuf, file_path: PathBuf) -> Result<(), OpenDoorsError> {
-	let mut module: Module = Module::read(&module_path)?;
-	let objects: Vec<Object> = module.read_objects()?;
-	let file_name: String = format!("{}_{}.xlsx", module.manifest.prefix, module.baselines.pop().unwrap_or_default().version.to_string());
-	let options: XlsxOptions = XlsxOptions::builder().default_view(true).show_deleted(false).build();
-	Ok(XlsxExporter::export(&file_path, &file_name, &module, &objects, &options)?)
-}
-
-#[command]
-pub fn _export_xlsx(destination: PathBuf, file_name: String, module: Module, view: View, objects: Vec<Object>) -> Result<(), OpenDoorsError> {
+pub fn export_xlsx(destination: PathBuf, file_name: String, module: Module, view: View, objects: Vec<Object>) -> Result<(), OpenDoorsError> {
 	let options: XlsxOptions = XlsxOptions::builder().default_view(true).show_deleted(true).build();
-	Ok(XlsxExporter::_export_view(&destination, &file_name, &module, &view, &objects, &options)?)
+	Ok(XlsxExporter::export_view(&destination, &file_name, &module, &view, &objects, &options)?)
 }

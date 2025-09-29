@@ -422,7 +422,6 @@
         };
         addGlobalTask(csvTask);
         const fileName: string = module.manifest.prefix + '_current.xlsx';
-        console.log(fileName, module, view, objects);
         exportXlsxCurrentView(fileName, module, view, objects)
             .then(() => {
                 csvTask.status = "done";
