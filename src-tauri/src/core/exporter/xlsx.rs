@@ -7,9 +7,7 @@ use crate::core::{exporter::rich_text::RichText, module::{Attribute, AttributeKi
 use super::utils::get_attribute_value;
 
 pub struct XlsxOptions {
-	sheet_name: Option<String>,
 	show_deleted: bool,
-	formatted: bool,
 }
 
 impl XlsxOptions {
@@ -20,46 +18,23 @@ impl XlsxOptions {
 
 #[derive(Debug, Default)]
 pub struct XlsxOptionsBuilder {
-	sheet_name: Option<String>,
 	show_deleted: bool,
-	default_view: bool,
-	rich_text: bool,
 }
 
 impl XlsxOptionsBuilder {
-	pub fn sheet_name(mut self, name: impl Into<String>) -> Self {
-		self.sheet_name = Some(name.into());
-		self
-	}
-
 	pub fn show_deleted(mut self, yes: bool) -> Self {
 		self.show_deleted = yes;
 		self
 	}
 
-	pub fn rich_text(mut self, yes: bool) -> Self {
-		self.rich_text = yes;
-		self
-	}
-
-	pub fn default_view(mut self, yes: bool) -> Self {
-		self.default_view = yes;
-		self
-	}
-
 	pub fn build(self) -> XlsxOptions {
 		XlsxOptions {
-			sheet_name: self.sheet_name,
-			show_deleted: self.show_deleted, 
-			formatted: self.rich_text
+			show_deleted: self.show_deleted,
 		}
 	}
 }
 
-pub struct XlsxExporter {
-	file: PathBuf,
-	options: XlsxOptions,
-}
+pub struct XlsxExporter { }
 
 impl XlsxExporter {
 	pub fn export_view(path: &PathBuf, filename: &String, module: &Module, view: &View, objects: &Vec<Object>, options: &XlsxOptions) -> Result<(), XlsxError> {
