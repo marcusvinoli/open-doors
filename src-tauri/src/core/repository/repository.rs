@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 use git2::Repository as GitRepository;
 use serde::{Serialize, Deserialize};
-use crate::core::git;
+use crate::core::{git, API_VERSION};
 
+use crate::core::utils::SemVer;
 use crate::core::{middleware as mid, error::RepositoryError, tree::{TreeItem, TreeItemType}};
 
 use super::definitions as defs;
@@ -11,6 +12,7 @@ use super::definitions as defs;
 #[serde(rename_all="camelCase")]
 pub struct RepositoryManifest {
 	pub name: String,
+	pub api_version: SemVer,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -24,7 +26,10 @@ impl Repository {
 	pub fn create(repo: &mut Option<GitRepository>, path: &str, name: &str, remote: &Option<String>) -> Result<Repository, RepositoryError> {         
 		let repo_path: PathBuf = mid::create_folder(&path.into(), name)?;
 		let git_repository: GitRepository = git::init(&repo_path.to_string_lossy())?;
-		let manifest: RepositoryManifest = RepositoryManifest {name: name.into()};
+		let manifest: RepositoryManifest = RepositoryManifest {
+			name: name.into(),
+			api_version: SemVer::from(API_VERSION),
+		};
 
 		mid::create_yml_file(&repo_path, defs::MANIFEST_FILE_NAME , &manifest)?;
 		git::create_ignore_rules(&git_repository, &defs::IGNORE_RULES)?;

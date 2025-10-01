@@ -5,8 +5,8 @@ use chrono::Utc;
 use serde::{Serialize, Deserialize};
 use git2::{Repository, Tree, TreeEntry, ObjectType};
 
-use crate::core::{error::ModuleError, git, middleware as mid, User};
-use super::{definitions as defs, Baseline, BaselineStatus, Link, Links, Object, ObjectStatus, SemVer, Template, View};
+use crate::core::{error::ModuleError, utils::SemVer, User, git, middleware as mid};
+use super::{definitions as defs, Baseline, BaselineStatus, Link, Links, Object, ObjectStatus, Template, View};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct ModuleManifest {

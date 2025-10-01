@@ -1,25 +1,4 @@
-pub mod path_utils {
-	use serde::{Serializer, Deserialize, Deserializer};
-	use std::{borrow::Cow, path::PathBuf};
+pub mod path_utils;
+pub mod semver;
 
-	pub fn serialize<S>(p: &String, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: Serializer,
-	{
-		// Convert the path to a Unix-style string
-		let p = PathBuf::from(p);
-		let unix_style_path = p.to_str()
-			.unwrap_or("")
-			.replace(std::path::MAIN_SEPARATOR, "/");
-		serializer.serialize_str(&unix_style_path)
-	}
-	
-	pub fn deserialize<'de, D>(deserializer: D) -> Result<String, D::Error>
-	where
-		D: Deserializer<'de>,
-	{
-		let s: Cow<'de, str> = Deserialize::deserialize(deserializer)?;
-		let path_str = s.replace("/", &std::path::MAIN_SEPARATOR.to_string());
-		Ok(path_str)
-	}
-}
+pub use semver::SemVer;
