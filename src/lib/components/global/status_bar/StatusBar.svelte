@@ -55,7 +55,7 @@
                     <Icon icon="ci:data" width="20px"/>
                 </Tooltip.Trigger>
                 <Tooltip.Content class="">
-                    <p>{repo.manifest.name}</p>
+                    <p class="font-bold">{repo.manifest.name} (API Version {repo.manifest.apiVersion})</p>
                     <p>{repo.tree.path}</p>
                 </Tooltip.Content>    
             </Tooltip.Root>
@@ -65,7 +65,7 @@
         <div class="flex grow px-1">
                 <div class="flex justify-center items-center text-slate-100 text-xs whitespace-nowrap">
                     <Icon icon="ci:user-02" width="15px" class="mx-1"/>
-                    <p class="mr-1">{getFirstAndLastName(user?.name??"") + " <"+ user?.email + ">"}</p>
+                    <p class="mr-1">{user.toString()}</p>
                 </div>
         </div>
     {/if}
