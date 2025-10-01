@@ -9,16 +9,16 @@
     import AttributesForm from "$lib/components/forms/module/AttributesForm.svelte";
 
     import { app } from "$lib/stores/AppState.svelte";
-    import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { setActiveTab } from "$lib/stores/Tabs.svelte";
+    import { onMount, tick } from "svelte";
     import { confirm, message } from '@tauri-apps/api/dialog';
     import { absolutePath, encodePath, relativePath } from "$lib/utils/path-handler";
     import { buildTreeIndex } from "$lib/utils/index-tree.utils";
     import { clearToolbar, setToolbar } from "$lib/stores/Toolbar.svelte";
     import { computeIndexLevelChild, computeIndexLevelSibilings, newObject } from "$lib/utils/object-utils";
-    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCSV, exportXlsx, readObjects, restoreObject, updateTemplate, updateViews } from "$lib/controllers/Module";
+    import { createBaseline, createDraftObject, createLink, createObject, deleteLink, deleteObject, exportCsvCurrentView, exportXlsxCurrentView, readObjects, restoreObject, updateTemplate, updateViews } from "$lib/controllers/Module";
 
     import * as Resizable from "$lib/components/ui/resizable";
 
@@ -392,8 +392,8 @@
             icon: "line-md:uploading-loop",
             tooltip: "Export " + module?.manifest.title + " to .CSV",
         };
-        addGlobalTask(csvTask);
-        exportCSV(module?.path)
+        const fileName: string = module.manifest.prefix + `_${page.params.version}.csv`;
+        exportCsvCurrentView(fileName, module, view, objects)
             .then(() => {
                 csvTask.status = "done";
             })
@@ -409,7 +409,7 @@
     }
 
     async function handleExportXLSX() {
-        if (!module) {
+            if (!module) {
             return;
         }
         const taskId= 'xlsx_exporting';
@@ -421,12 +421,14 @@
             tooltip: "Export " + module?.manifest.title + " to .XLSX",
         };
         addGlobalTask(csvTask);
-        exportXlsx(module?.path)
+        const fileName: string = module.manifest.prefix + `_${page.params.version}.xlsx`;
+        exportXlsxCurrentView(fileName, module, view, objects)
             .then(() => {
                 csvTask.status = "done";
             })
-            .catch(() => {
+            .catch((e) => {
                 csvTask.status = "error";
+                console.error(e);
             })
             .finally(() => {
                 addGlobalTask(csvTask);
