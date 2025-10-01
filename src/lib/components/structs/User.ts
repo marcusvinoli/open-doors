@@ -16,11 +16,11 @@ export class User {
 
     static fromString(serialized: string): User {
         const match = serialized.match(/^(.*) <(.*)>$/);
-        if (!match) {
-            throw new Error(`Invalid format for User: ${serialized}`);
+        if (match) {
+            const [_, name, email] = match;
+            return new User(name, email);
         }
-        const [_, name, email] = match;
-        return new User(name, email);
+        return new User(serialized);
     }
 
     getFirstAndLastName(): string {
