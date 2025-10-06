@@ -282,27 +282,27 @@ impl Module {
 		Ok(objs)
 	}
 
-	pub fn create_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
+	pub fn create_asset(_path: &PathBuf, _asset: &PathBuf) -> Result<(), ModuleError> {
 		todo!()
 	}
 	
-	pub fn remove_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
+	pub fn remove_asset(_path: &PathBuf, _asset: &PathBuf) -> Result<(), ModuleError> {
 		todo!()
 	}
 
-	pub fn update_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
+	pub fn update_asset(_path: &PathBuf, _asset: &PathBuf) -> Result<(), ModuleError> {
 		todo!()
 	}
 
-	pub fn delete_asset(path: &PathBuf, asset: &PathBuf) -> Result<(), ModuleError> {
+	pub fn delete_asset(_path: &PathBuf, _asset: &PathBuf) -> Result<(), ModuleError> {
 		todo!()
 	}
 		
-	pub fn update_draft_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
+	pub fn update_draft_objects(_path: &PathBuf, _objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
 		todo!()
 	}
 	
-	pub fn delete_draft_objects(path: &PathBuf, objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
+	pub fn delete_draft_objects(_path: &PathBuf, _objs: &Vec<Object>) -> Result<Vec<Object>, ModuleError> {
 		todo!()
 	}
 
@@ -403,7 +403,7 @@ impl Module {
 		self.baselines.iter().find(|bl| bl.status == BaselineStatus::Latest)
 	}
 
-	fn object_relative_folder(&self) -> String {
+	fn _object_relative_folder(&self) -> String {
 		let folder_path: &PathBuf = &self.path.join(defs::OD_OBJS_FOLDER_NAME);
 		folder_path.to_string_lossy().into()
 	}
@@ -686,7 +686,7 @@ impl Module {
 		None
 	}
 
-	fn subtract_paths(base: &PathBuf, absolute: &PathBuf) -> Option<PathBuf> {
+	fn _subtract_paths(base: &PathBuf, absolute: &PathBuf) -> Option<PathBuf> {
 		absolute.strip_prefix(base).ok().map(|p| p.to_path_buf())
 	}
 
@@ -773,7 +773,7 @@ impl Module {
 		result
 	}
 
-	fn sort_objects_by_hierarchy(objects: &[Object]) -> Vec<Object> {
+	fn _sort_objects_by_hierarchy(objects: &[Object]) -> Vec<Object> {
 		let mut by_id: HashMap<usize, &Object> = HashMap::new();
 		let mut children: HashMap<usize, Vec<&Object>> = HashMap::new();
 

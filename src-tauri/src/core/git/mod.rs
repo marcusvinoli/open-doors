@@ -1,9 +1,7 @@
 mod definitions;
-use std::path::{PathBuf, Path};
+use std::path::PathBuf;
 use definitions as defs;
 use git2::{self, Error, ErrorClass, ErrorCode, IndexAddOption, ObjectType, RemoteCallbacks, Repository};
-
-use crate::git::GitError;
 
 use super::middleware;
 
