@@ -79,7 +79,7 @@
 </script>
 
 <Dialog.Root bind:open={openDialog}>
-    <Dialog.Content class="sm:max-w-[550px]">
+    <Dialog.Content class="sm:max-w-[80%]">
         <Dialog.Header>
             <Dialog.Title>New Module</Dialog.Title>
             <Dialog.Description>
@@ -101,7 +101,7 @@
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="name" class="text-left col-span-1">Module name</Label>
-                <Input id="name" placeholder="Module" bind:value={moduleManifest.title}  class="col-span-3" />
+                <Input id="name" placeholder="Module" bind:value={moduleManifest.title}  class="col-span-3" autocomplete="off" />
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
                 <Label for="desc" class="text-left col-span-1">Module description</Label>
@@ -109,9 +109,9 @@
             </div>
             <div class="grid grid-cols-4 items-center gap-2 text-left">
                 <Label for="prefix" class="text-left col-span-1">Prefix</Label>
-                <Input id="prefix" placeholder="PRJ" bind:value={moduleManifest.prefix} class="col-span-1" />
+                <Input id="prefix" placeholder="PRJ" bind:value={moduleManifest.prefix} class="col-span-1" autocomplete="off"/>
                 <Label for="separator" class="text-left col-span-1">Separator</Label>
-                <Input id="separator" placeholder="-" bind:value={moduleManifest.separator} class="col-span-1"/>
+                <Input id="separator" placeholder="-" bind:value={moduleManifest.separator} class="col-span-1" autocomplete="off"/>
             </div>
             <Dialog.Description>
                 {#if (moduleManifest.title !== "") && (moduleManifest.prefix !== "") && (parent)}

@@ -132,7 +132,7 @@
 </script>
 
 <Dialog.Root bind:open={openDialog}>
-    <Dialog.Content class="sm:max-w-[520px]">
+    <Dialog.Content class="sm:max-w-[80%]">
         {#if loading}
             <div class="flex flex-col items-center">
                 <Loading />
@@ -158,7 +158,7 @@
                     <Input id="name" placeholder="Module" bind:value={updatedModule.manifest.title}  class="col-span-3" autocomplete="off"/>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="desc" class="text-left col-span-1"><p class="whitespace-nowrap">Module description</p></Label>
+                    <Label for="desc" class="text-left col-span-1 whitespace"><p class="whitespace-nowrap">Module description</p></Label>
                     <Input multiple id="desc" placeholder="Module Description" bind:value={updatedModule.manifest.description}  class="col-span-3" autocomplete="off"/>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
