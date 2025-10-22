@@ -56,8 +56,8 @@
         </div>
         <div class="flex text-left p-0.5 w-full mr-1 min-w-0">
             {#if isHeader()}
-                <button class="flex justify-center items-center w-[20px] ratio-square" onclick={toggleItem}>
-                    <Icon icon={open ? "gravity-ui:chevron-down" : "gravity-ui:chevron-right"} width="12px"/>
+                <button class="flex justify-center items-center min-w-[20px] ratio-square transition-all" onclick={toggleItem}>
+                    <Icon icon="gravity-ui:chevron-right" width="12px" rotate={open ? 45 : 0} class="transition-all"/>
                 </button>
                 <p class={cn(
                     'truncate font-semibold select-none',
