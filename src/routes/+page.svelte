@@ -1,7 +1,7 @@
 <script lang="ts">   
     import Icon from '@iconify/svelte';
     import Button from "$lib/components/ui/button/button.svelte";
-    import OpenDoorsLogo from "$lib/assets/open-doors-logo-optimized.svg";
+    import OpenDoorsLogo from "$lib/components/global/logo/OpenDoorsLogo.svelte";
     import OpenRepositoryForm from "$lib/components/forms/repository/OpenRepositoryForm.svelte";
     import CloneRepositoryForms from "$lib/components/forms/repository/CloneRepositoryForms.svelte";
     import CreateRepositoryForms from "$lib/components/forms/repository/CreateRepositoryForms.svelte";
@@ -76,26 +76,23 @@
 
 </script>
 
-<div class="flex flex-col items-center text-zinc-60 py-10">
+<div class="h-full flex flex-col items-center justify-center text-slate-500 pb-20">
     <OpenRepositoryForm bind:openDialog={openRepositoryFlag} on:open={handleOpenRepository}/>
     <CloneRepositoryForms bind:openDialog={cloneRepositoryFlag} on:clone={handleCloneRepository} />
     <CreateRepositoryForms bind:openDialog={createRepositoryFlag} on:create={handleCreateRepository}/>
-    <div class="p-5">
-        <img class="object-contain p-2 w-[480px]" src={OpenDoorsLogo} alt="OpenDOORs"/>
+    <div class="flex flex-col items-center justify-center text-center">
+        <OpenDoorsLogo class="p-1"/>
+        <p class="font-bold">WELCOME TO OPEN-DOORS!</p>
+        <p class="items-center">A simple requirement management tool for your projects.</p>
     </div>
-    <div class="text-center leading-10 mb-4">
-        <h1 class="text-2xl font-bold p-2">Welcome to OpenDOORS!</h1>
-        <p class="text-xl">A simple tool that open doors for yours projects.</p>
-        <p class="font-semi italic text-[0.95em]">Let's start opening, creating or cloning a repository.</p>
-    </div>
-    <div class="flex w-[50%] justify-center text-center gap-4">
-        <Button onclick={openRepositoryDialog} class="px-5">
+    <div class="flex w-[50%] justify-center text-center gap-4 py-4">
+        <Button onclick={openRepositoryDialog} class="px-5 bg-slate-500 hover:bg-slate-600">
             <Icon class="mr-1" icon="bi:database-add" width="25px"/> Open
         </Button>
-        <Button variant="secondary" onclick={cloneRepositoryDialog} class="px-5">
+        <Button variant="secondary" onclick={cloneRepositoryDialog} class="px-5 text-slate-500 hover:bg-slate-300 hover:text-slate-600">
             <Icon class="mr-1" icon="bi:database-down" width="25px"/> Clone
         </Button>
-        <Button variant="secondary" onclick={createRepositoryDialog} class="px-5">
+        <Button variant="secondary" onclick={createRepositoryDialog} class="px-5 text-slate-500 hover:bg-slate-300 hover:text-slate-600">
             <Icon class="mr-1" icon="bi:database-gear" width="25px"/> Create
         </Button>
     </div>

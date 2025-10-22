@@ -10,7 +10,7 @@
     "dialog": {}
   },
   "package": {
-    "productName": "Open-DOORS",
+    "productName": "open-doors",
     "version": "1.0.0"
   },
   "tauri": {

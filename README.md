@@ -1,4 +1,8 @@
-![alt "open-doors logo"](./images/open-doors-readme-cover.png)
+<picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./images/open-doors-readme-cover-white.png">
+    <source media="(prefers-color-scheme: light)" srcset="./images/open-doors-readme-cover-dark.png">
+    <img alt="Open-Doors Logo" src="default-rainbow-image.png">
+</picture>
 
 [![publish](https://github.com/marcusvinoli/open-doors/actions/workflows/main.yml/badge.svg)](https://github.com/marcusvinoli/open-doors/actions/workflows/main.yml)
 
