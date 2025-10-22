@@ -94,23 +94,23 @@
             </div> 
             {:else}
             <div class="grid grid-cols-4 items-center  gap-2">
-                <Label for="location" class="text-right col-span-1 ">Create Here</Label>
+                <Label for="location" class="text-left col-span-1 ">Location</Label>
                 <div class="col-span-3" id="location">
                     <TreeItemsComboBox bind:selectedItem={selectedParent} items={possibleParents} placeholder={placeholder}/>
                 </div>
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
-                <Label for="name" class="text-right col-span-1">Module name</Label>
+                <Label for="name" class="text-left col-span-1">Module name</Label>
                 <Input id="name" placeholder="Module" bind:value={moduleManifest.title}  class="col-span-3" />
             </div>
             <div class="grid grid-cols-4 items-center gap-2">
-                <Label for="desc" class="text-right col-span-1">Module Description</Label>
+                <Label for="desc" class="text-left col-span-1">Module description</Label>
                 <Input multiple id="desc" placeholder="Module Description" bind:value={moduleManifest.description}  class="col-span-3" />
             </div>
             <div class="grid grid-cols-4 items-center gap-2 text-left">
-                <Label for="prefix" class="text-right col-span-1">Prefix</Label>
+                <Label for="prefix" class="text-left col-span-1">Prefix</Label>
                 <Input id="prefix" placeholder="PRJ" bind:value={moduleManifest.prefix} class="col-span-1" />
-                <Label for="separator" class="text-right col-span-1">Separator</Label>
+                <Label for="separator" class="text-left col-span-1">Separator</Label>
                 <Input id="separator" placeholder="-" bind:value={moduleManifest.separator} class="col-span-1"/>
             </div>
             <Dialog.Description>

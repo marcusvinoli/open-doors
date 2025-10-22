@@ -148,23 +148,23 @@
                     </Dialog.Description>
                 </Dialog.Header>
                 <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="name" class="text-right col-span-1">Parent</Label>
+                    <Label for="name" class="text-left col-span-1">Parent</Label>
                     <div class="col-span-3">
                         <TreeItemsComboBox items={possibleParents} bind:selectedItem={newParent} />
                     </div>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="name" class="text-right col-span-1">Module name</Label>
-                    <Input id="name" placeholder="Module" bind:value={updatedModule.manifest.title}  class="col-span-3" />
+                    <Label for="name" class="text-left col-span-1">Module name</Label>
+                    <Input id="name" placeholder="Module" bind:value={updatedModule.manifest.title}  class="col-span-3" autocomplete="off"/>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="desc" class="text-right col-span-1">Module description</Label>
+                    <Label for="desc" class="text-left col-span-1"><p class="whitespace-nowrap">Module description</p></Label>
                     <Input multiple id="desc" placeholder="Module Description" bind:value={updatedModule.manifest.description}  class="col-span-3" autocomplete="off"/>
                 </div>
                 <div class="grid grid-cols-4 items-center gap-2">
-                    <Label for="prefix" class="text-right col-span-1">Prefix</Label>
+                    <Label for="prefix" class="text-left col-span-1">Prefix</Label>
                     <Input id="prefix" placeholder="PRJ" bind:value={updatedModule.manifest.prefix} class="col-span-1" disabled/>
-                    <Label for="name" class="text-right col-span-1">Separator</Label>
+                    <Label for="name" class="text-left col-span-1">Separator</Label>
                     <Input id="name" placeholder="-" bind:value={updatedModule.manifest.separator} class="col-span-1" autocomplete="off"/>
                 </div>
             {/if}
