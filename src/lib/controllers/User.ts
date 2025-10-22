@@ -10,7 +10,6 @@ export function loadAuthorInformation() : Promise<void> {
         }     
         invoke('get_user', {path: app.repository.tree.path})
             .then(usr => {
-                console.log(usr);
                 app.user = User.fromString(usr as string);
                 resolve();
             })
