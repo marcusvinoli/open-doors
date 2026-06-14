@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Icon from "@iconify/svelte";
+
     import type { Object } from "$lib/components/structs/Object";
     import type { Linker } from "$lib/components/structs/States";
 
@@ -29,27 +31,42 @@
 
 </script>
 
+{#snippet contextMenuItem(object: Object, event: string, label: string, disabled?: boolean, icon?: string)}
+    <ContextMenu.Item
+        disabled={disabled}
+        onclick={
+        (e: any) => {
+            e.preventDefault;
+            itemClick(object.id, event);
+        }}>
+        {#if icon}
+            <Icon {icon} />
+        {/if}
+        <p class="leading-5">{label}</p>
+    </ContextMenu.Item>
+{/snippet}
+
 <ContextMenu.Root>
     <ContextMenu.Trigger class="p-0 h-full">
         {@render children?.()}
     </ContextMenu.Trigger>
-    <ContextMenu.Content>
-        <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'properties');}}>Properties</ContextMenu.Item>
+    <ContextMenu.Content class="min-w-50">
+        {@render contextMenuItem(object, 'properties', 'Properties')}
         <ContextMenu.Separator class="mx-1"/>
         {#if !linker}
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'createLink');}} disabled={readOnly}>Link...</ContextMenu.Item>
+            {@render contextMenuItem(object, 'createLink', 'Start linking...')}
         {:else}
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopLinking');}}>Stop linking</ContextMenu.Item>
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stablishLink');}}>Stablish link</ContextMenu.Item>
+            {@render contextMenuItem(object, 'stopLinking', 'Stop linking')}
+            {@render contextMenuItem(object, 'establishLink', 'Establish link')}
         {/if}
         {#if !readOnly}
-        <ContextMenu.Separator class="mx-1"/>
+            <ContextMenu.Separator class="mx-1"/>
             {#if object.metadata?.status === 'draft'}
-                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'commitDraftObject');}}>Commit</ContextMenu.Item>
+                {@render contextMenuItem(object, 'commitDraftObject', 'Commit')}
             {/if}
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'commitAllDrafts');}}>Commit all</ContextMenu.Item>
+                {@render contextMenuItem(object, 'commitAllDrafts', 'Commit all')}
             {#if object.metadata?.status === 'deleted'}
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'restoreObject');}}>Restore object</ContextMenu.Item>
+                {@render contextMenuItem(object, 'restoreObject', 'Restore object')}
             {/if}
         {/if}
         <ContextMenu.Separator class="mx-1"/>
@@ -57,23 +74,23 @@
             <ContextMenu.SubTrigger disabled={readOnly}>
                 <p>New Object</p>
             </ContextMenu.SubTrigger>
-            <ContextMenu.SubContent> 
-                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'newObjectAfter');}}>Create after</ContextMenu.Item>
-                <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'newObjectBelow');}}>Create below</ContextMenu.Item>
+            <ContextMenu.SubContent class="min-w-50">
+                {@render contextMenuItem(object, 'newObjectAfter', 'Create after', false, 'gravity-ui:arrow-down-from-line')}
+                {@render contextMenuItem(object, 'newObjectBelow', 'Create below', false, 'gravity-ui:arrow-uturn-ccw-right')}
             </ContextMenu.SubContent>
         </ContextMenu.Sub>
         {@const movingId = state.get('moving') ? Number.parseInt(state.get('moving')!) : -1}
         {#if (movingId === -1) }
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'startMoving');}} disabled={readOnly}>Start moving</ContextMenu.Item>
+            {@render contextMenuItem(object, 'startMoving', 'Start moving...')}
         {:else}
             <ContextMenu.Sub>
                 <ContextMenu.SubTrigger disabled={(object.id === movingId) || readOnly}>Move...</ContextMenu.SubTrigger>
-                <ContextMenu.SubContent> 
-                    <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveAfter');}}>Move after</ContextMenu.Item>
-                    <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'moveBelow');}}>Move below</ContextMenu.Item>
+                <ContextMenu.SubContent>
+                    {@render contextMenuItem(object, 'moveAfter', 'Move after', false, 'gravity-ui:arrow-down-from-line')}
+                    {@render contextMenuItem(object, 'moveBelow', 'Move below', false, 'gravity-ui:arrow-uturn-ccw-right')}
                 </ContextMenu.SubContent>
-            </ContextMenu.Sub>  
-            <ContextMenu.Item onclick={(e: any) => {e.preventDefault; itemClick(object.id, 'stopMoving');}}>Stop moving</ContextMenu.Item>
+            </ContextMenu.Sub>
+            {@render contextMenuItem(object, 'stopMoving', 'Stop moving')}
         {/if}
     </ContextMenu.Content>
 </ContextMenu.Root>
