@@ -713,7 +713,7 @@
                 app.linker = linker = newLinker;
                 break;
             }
-            case 'stablishLink': {
+            case 'establishLink': {
                 if (!linker) {
                     return;
                 }
